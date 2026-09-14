@@ -1,3 +1,5 @@
+import { cn } from '~/lib/utils';
+
 // The landing illustration: layered ridges with ski tracks down the nearest slope. A crisp day for the
 // light theme and dusk with alpenglow for the dark one, swapped by CSS so the right one paints first.
 
@@ -80,13 +82,14 @@ interface SceneProps {
   palette: Palette;
   night: boolean;
   className: string;
+  anchor: 'top' | 'bottom';
 }
 
-function Scene({ id, palette: c, night, className }: SceneProps) {
+function Scene({ id, palette: c, night, className, anchor }: SceneProps) {
   return (
     <svg
       viewBox="0 0 1440 900"
-      preserveAspectRatio="xMidYMax slice"
+      preserveAspectRatio={anchor === 'top' ? 'xMidYMin slice' : 'xMidYMax slice'}
       aria-hidden
       className={className}
       xmlns="http://www.w3.org/2000/svg"
@@ -178,11 +181,20 @@ function Scene({ id, palette: c, night, className }: SceneProps) {
   );
 }
 
-export function HeroArt() {
+interface HeroArtProps {
+  className?: string;
+  /**
+   * Which edge stays in view when the art is cropped. The landing keeps the slope at the bottom; inside the
+   * app the sky stays at the top, so page titles always sit on sky rather than on a snowy peak.
+   */
+  anchor?: 'top' | 'bottom';
+}
+
+export function HeroArt({ className, anchor = 'bottom' }: HeroArtProps) {
   return (
-    <div aria-hidden className="absolute inset-0 -z-10">
-      <Scene id="day" palette={DAY} night={false} className="size-full dark:hidden" />
-      <Scene id="dusk" palette={DUSK} night className="hidden size-full dark:block" />
+    <div aria-hidden className={cn('absolute inset-0 -z-10', className)}>
+      <Scene id={`day-${anchor}`} palette={DAY} night={false} anchor={anchor} className="size-full dark:hidden" />
+      <Scene id={`dusk-${anchor}`} palette={DUSK} night anchor={anchor} className="hidden size-full dark:block" />
     </div>
   );
 }
