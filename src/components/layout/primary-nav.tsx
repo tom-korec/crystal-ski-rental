@@ -20,7 +20,9 @@ export function PrimaryNav({ links }: PrimaryNavProps) {
   return (
     <nav aria-label={t('primary')} className="hidden items-center gap-5 text-sm md:flex">
       {links.map((link) => {
-        const current = pathname === link.href;
+        const current =
+          pathname === link.href ||
+          (link.href !== '/staff' && link.href !== '/app' && pathname.startsWith(`${link.href}/`));
 
         return (
           <Link

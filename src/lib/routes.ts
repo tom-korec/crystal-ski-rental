@@ -4,6 +4,11 @@ export const LANDING = '/';
 export const APP_HOME = '/app';
 export const APP_RESERVATIONS = '/app/reservations';
 export const STAFF_HOME = '/staff';
+export const STAFF_SKIS = '/staff/skis';
+
+export function staffSkiRoute(id: string): string {
+  return `${STAFF_SKIS}/${id}`;
+}
 
 /** Where a signed-in account belongs (FR-3): customers search skis, staff start at the front desk. */
 export function homeForRole(role?: string | null): string {

@@ -1,33 +1,49 @@
 'use client';
 
+import { StarIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { ConfirmDialog } from '~/components/common/confirm-dialog';
 import { FormError } from '~/components/common/form-error';
-import { CustomerContact } from '~/components/reservations/customer-contact';
 import { Button } from '~/components/ui/button';
 import { useFormatDateRange } from '~/hooks/use-format-date-range';
 import { useFormatMoney } from '~/hooks/use-format-money';
 import { rentalPeriod, todayUtc } from '~/lib/date';
 import { canCancelAsStore, canPickUp, canReturn } from '~/lib/reservation-lifecycle';
 import { api, type RouterOutputs } from '~/trpc/react';
+import { cn } from '~/lib/utils';
 
-export type DeskReservation = RouterOutputs['reservation']['frontDesk']['pickupsDueToday'][number];
+import { CustomerContact } from './customer-contact';
+import { StatusBadge } from './status-badge';
 
-interface DeskRowProps {
-  reservation: DeskReservation;
+export type StaffReservation = RouterOutputs['reservation']['bySki']['items'][number];
+
+interface StaffReservationRowProps {
+  reservation: StaffReservation;
+  /** Leave out what the surrounding page already says: the customer on their page, the ski on its page. */
+  show: { customer?: boolean; skis?: boolean; status?: boolean; rating?: boolean };
 }
 
-/** One reservation at the counter, with the actions its status allows (FR-51). */
-export function DeskRow({ reservation }: DeskRowProps) {
-  const t = useTranslations('frontDesk');
+/**
+ * One reservation as staff see it, with the lifecycle actions its status allows (FR-51, FR-60). Used by
+ * the front desk and by the ski and customer histories.
+ */
+export function StaffReservationRow({ reservation, show }: StaffReservationRowProps) {
+  const t = useTranslations('staffReservations');
   const formatMoney = useFormatMoney();
   const formatDateRange = useFormatDateRange();
   const utils = api.useUtils();
   const [confirmingCancel, setConfirmingCancel] = useState(false);
 
-  const refresh = () => utils.reservation.frontDesk.invalidate();
+  // Any list this reservation appears in may change.
+  const refresh = () =>
+    Promise.all([
+      utils.reservation.frontDesk.invalidate(),
+      utils.reservation.bySki.invalidate(),
+      utils.reservation.byUser.invalidate(),
+      utils.reservation.blockersBySki.invalidate(),
+    ]);
   const pickUp = api.reservation.pickUp.useMutation({ onSuccess: refresh });
   const markReturned = api.reservation.markReturned.useMutation({ onSuccess: refresh });
   const cancel = api.reservation.cancel.useMutation({
@@ -45,25 +61,53 @@ export function DeskRow({ reservation }: DeskRowProps) {
 
   return (
     <li
-      className="grid gap-3 py-3 md:grid-cols-[16rem_minmax(0,1fr)_auto] md:items-center"
-      data-testid="desk-row"
+      className={cn(
+        'grid gap-3 py-3 md:items-center',
+        show.customer ? 'md:grid-cols-[16rem_minmax(0,1fr)_auto]' : 'md:grid-cols-[minmax(0,1fr)_auto]',
+      )}
+      data-testid="staff-reservation-row"
       data-reservation-id={reservation.id}
+      data-status={reservation.status}
     >
-      <CustomerContact name={user.name} email={user.email} />
+      {show.customer ? <CustomerContact name={user.name} email={user.email} /> : null}
 
-      <span className="flex flex-col text-sm">
-        <span>
-          <span
-            className="bg-secondary text-secondary-foreground me-2 rounded px-1.5 py-0.5 font-mono text-xs"
-            data-testid="inventory-code"
-          >
-            {ski.inventoryCode}
-          </span>
-          {skis} · {t('length', { length: ski.lengthCm })}
+      <span className="flex flex-col gap-0.5 text-sm">
+        <span className="flex flex-wrap items-center gap-2">
+          {show.skis ? (
+            <>
+              <span
+                className="bg-secondary text-secondary-foreground rounded px-1.5 py-0.5 font-mono text-xs"
+                data-testid="inventory-code"
+              >
+                {ski.inventoryCode}
+              </span>
+              <span>
+                {skis} · {t('length', { length: ski.lengthCm })}
+              </span>
+            </>
+          ) : (
+            <span className="font-medium">{period}</span>
+          )}
+          {show.status ? <StatusBadge status={reservation.status} audience="staff" /> : null}
         </span>
         <span className="text-muted-foreground text-xs">
-          {period} · {formatMoney(reservation.totalPrice)}
+          {show.skis ? `${period} · ` : ''}
+          {formatMoney(reservation.totalPrice)}
+          {reservation.status === 'CANCELLED_BY_STORE' && reservation.cancelledBy
+            ? ` · ${t('cancelledBy', { name: reservation.cancelledBy.name })}`
+            : ''}
         </span>
+        {show.rating && reservation.rating ? (
+          <span className="flex items-start gap-1 text-xs" data-testid="rental-rating">
+            <StarIcon className="fill-highlight text-highlight mt-px size-3.5 shrink-0" aria-hidden />
+            <span>
+              {t('rentalRating', { score: reservation.rating.score })}
+              {reservation.rating.note ? (
+                <span className="text-muted-foreground"> · “{reservation.rating.note}”</span>
+              ) : null}
+            </span>
+          </span>
+        ) : null}
       </span>
 
       <span className="flex flex-wrap items-center gap-2 md:justify-end">
@@ -110,7 +154,7 @@ export function DeskRow({ reservation }: DeskRowProps) {
       </span>
 
       {error ? (
-        <div className="md:col-span-3">
+        <div className={show.customer ? 'md:col-span-3' : 'md:col-span-2'}>
           <FormError message={error} />
         </div>
       ) : null}

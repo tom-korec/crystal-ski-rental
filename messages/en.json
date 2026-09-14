@@ -37,7 +37,8 @@
     "closeMenu": "Close menu",
     "findSkis": "Find skis",
     "frontDesk": "Front desk",
-    "myReservations": "My reservations"
+    "myReservations": "My reservations",
+    "fleet": "Fleet"
   },
   "roles": {
     "USER": "Customer",
@@ -196,6 +197,13 @@
       "returned": "Thanks for renting with us.",
       "cancelledByUser": "You cancelled this booking.",
       "cancelledByStore": "The store cancelled this booking, usually because the skis were not picked up."
+    },
+    "staffStatus": {
+      "CREATED": "Booked",
+      "ACTIVE": "Picked up",
+      "RETURNED": "Returned",
+      "CANCELLED_BY_USER": "Cancelled by customer",
+      "CANCELLED_BY_STORE": "Cancelled by store"
     }
   },
   "ratings": {
@@ -232,15 +240,6 @@
     "title": "Front desk",
     "description": "Today's pickups and returns, and anything overdue.",
     "stores": "Stores",
-    "length": "{length} cm",
-    "pickUp": "Mark picked up",
-    "markReturned": "Mark returned",
-    "cancel": "Cancel booking",
-    "working": "Saving…",
-    "cancelTitle": "Cancel this booking?",
-    "cancelDescription": "{customer}'s booking of {skis} for {period} will be cancelled by the store. Use this for a no-show; the customer sees that the store cancelled it.",
-    "cancelConfirm": "Cancel booking",
-    "keep": "Keep it",
     "sections": {
       "pickupsDueToday": {
         "title": "Pickups today",
@@ -260,11 +259,84 @@
       }
     }
   },
+  "staffReservations": {
+    "length": "{length} cm",
+    "pickUp": "Mark picked up",
+    "markReturned": "Mark returned",
+    "cancel": "Cancel booking",
+    "working": "Saving…",
+    "cancelTitle": "Cancel this booking?",
+    "cancelDescription": "{customer}'s booking of {skis} for {period} will be cancelled by the store. Use this for a no-show; the customer sees that the store cancelled it.",
+    "cancelConfirm": "Cancel booking",
+    "keep": "Keep it",
+    "cancelledBy": "Cancelled by {name}",
+    "rentalRating": "Rental rated {score} / 5"
+  },
+  "fleet": {
+    "title": "Fleet",
+    "description": "Every ski in every store, including the ones out of rental.",
+    "count": "{count, plural, =0 {No skis} one {# ski} other {# skis}}",
+    "empty": "There are no skis in the fleet yet.",
+    "emptyFiltered": "No skis match these filters.",
+    "inventoryCode": "Inventory code",
+    "inventoryCodePlaceholder": "e.g. SK-0142",
+    "outOfRental": "Out of rental",
+    "removed": "Removed",
+    "details": "Details",
+    "add": "Add ski",
+    "addTitle": "Add a ski",
+    "addDescription": "A physical pair with its own sticker. Model and length cannot be changed later.",
+    "model": "Model",
+    "selectModel": "Select a model",
+    "store": "Store",
+    "selectStore": "Select a store",
+    "lengthCm": "Length (cm)",
+    "lengthHint": "A different length is a different ski.",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "errors": {
+      "inventoryCode": "Use letters, digits and dashes, like SK-0142.",
+      "model": "Choose a model.",
+      "store": "Choose a store.",
+      "length": "Enter a length between {min} and {max} cm."
+    }
+  },
   "errors": {
     "title": "Something went wrong",
     "description": "This page could not be displayed. Try again, and if it keeps happening, come back a little later.",
     "reference": "Reference: {digest}",
     "notFoundTitle": "Page not found",
     "notFoundDescription": "The address may be mistyped, or the page no longer exists."
+  },
+  "skiDetail": {
+    "back": "Back to fleet",
+    "removed": "Removed from the fleet",
+    "available": "Offered for rental",
+    "outOfRental": "Out of rental",
+    "length": "{length} cm",
+    "store": "Store",
+    "pricePerDay": "Price per day",
+    "modelRating": "Model rating",
+    "model": "Model",
+    "edit": "Edit",
+    "editTitle": "Edit ski",
+    "editDescription": "Change the inventory code or move the ski to another store. Model and length are fixed.",
+    "storeLocked": "{count, plural, one {# open reservation expects the ski at its current store, so it cannot move until it is settled.} other {# open reservations expect the ski at its current store, so it cannot move until they are settled.}}",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "offerForRental": "Offer for rental",
+    "takeOutOfRental": "Take out of rental",
+    "takeOutTitle": "Take this ski out of rental?",
+    "takeOutDescription": "Customers will no longer be able to book it. You can offer it again at any time.",
+    "takeOutWithBookings": "Customers will no longer be able to book it. {count, plural, one {# booking already made stays valid} other {# bookings already made stay valid}}; cancel them below if the ski is out of service.",
+    "outOfRentalNotice": "{count, plural, one {This ski is out of rental but # upcoming booking stands. It is honoured; cancel it below if the ski cannot be rented.} other {This ski is out of rental but # upcoming bookings stand. They are honoured; cancel them below if the ski cannot be rented.}}",
+    "delete": "Delete",
+    "deleting": "Deleting…",
+    "deleteTitle": "Delete {code}?",
+    "deleteDescription": "The ski leaves the fleet. If it has been rented before, its history stays in the records.",
+    "deleteBlocked": "{count, plural, one {# reservation is booked or picked up. Settle it before deleting the ski.} other {# reservations are booked or picked up. Settle them before deleting the ski.}}",
+    "reservations": "Reservations",
+    "noReservations": "This ski has not been reserved yet."
   }
 }

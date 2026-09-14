@@ -44,7 +44,8 @@ export function MobileNav({ links, name }: MobileNavProps) {
 
         <nav className="flex flex-col">
           {links.map((link) => {
-            const current = pathname === link.href;
+            const current =
+              pathname === link.href || (link.includesSubpages === true && pathname.startsWith(`${link.href}/`));
 
             return (
               <SheetClose

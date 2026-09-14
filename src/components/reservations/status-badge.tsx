@@ -13,14 +13,16 @@ const VARIANT: Record<ReservationStatus, 'default' | 'secondary' | 'outline' | '
 
 interface StatusBadgeProps {
   status: ReservationStatus;
+  /** Customers read "cancelled by you"; staff read who cancelled. */
+  audience?: 'customer' | 'staff';
 }
 
-export function StatusBadge({ status }: StatusBadgeProps) {
-  const t = useTranslations('reservations.status');
+export function StatusBadge({ status, audience = 'customer' }: StatusBadgeProps) {
+  const t = useTranslations('reservations');
 
   return (
     <Badge variant={VARIANT[status]} data-testid="reservation-status" data-status={status}>
-      {t(status)}
+      {audience === 'staff' ? t(`staffStatus.${status}`) : t(`status.${status}`)}
     </Badge>
   );
 }

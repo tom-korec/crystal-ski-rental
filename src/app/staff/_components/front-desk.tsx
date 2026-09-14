@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { useUrlFilters } from '~/hooks/use-url-filters';
 import { api } from '~/trpc/react';
 
-import { type DeskReservation, DeskRow } from './desk-row';
+import { type StaffReservation, StaffReservationRow } from '~/components/reservations/staff-reservation-row';
 
 const SECTIONS = ['pickupsDueToday', 'returnsDueToday', 'overduePickups', 'overdueReturns'] as const;
 
@@ -65,7 +65,7 @@ export function FrontDesk() {
 
 interface DeskSectionProps {
   section: (typeof SECTIONS)[number];
-  reservations: DeskReservation[];
+  reservations: StaffReservation[];
 }
 
 function DeskSection({ section, reservations }: DeskSectionProps) {
@@ -88,7 +88,11 @@ function DeskSection({ section, reservations }: DeskSectionProps) {
         ) : (
           <ul className="divide-border divide-y">
             {reservations.map((reservation) => (
-              <DeskRow key={reservation.id} reservation={reservation} />
+              <StaffReservationRow
+                key={reservation.id}
+                reservation={reservation}
+                show={{ customer: true, skis: true }}
+              />
             ))}
           </ul>
         )}
