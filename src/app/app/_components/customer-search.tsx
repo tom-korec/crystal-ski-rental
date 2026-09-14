@@ -50,7 +50,7 @@ function StartSearch({ storeId: initialStore, range: initialRange, filters: init
 
   return (
     <Card
-      className="mx-auto w-full max-w-3xl shadow-xl shadow-black/10 dark:shadow-black/40"
+      className="w-full shadow-xl shadow-black/10 dark:shadow-black/40"
       data-testid="customer-search"
     >
       <CardHeader>
@@ -70,7 +70,7 @@ function StartSearch({ storeId: initialStore, range: initialRange, filters: init
           <fieldset className="flex flex-col gap-3">
             <legend className="mb-3 text-sm font-medium">{t('store')}</legend>
             {stores.data ? (
-              <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label={t('store')}>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(13rem,1fr))] gap-2" role="radiogroup" aria-label={t('store')}>
                 {stores.data.map((store) => {
                   const selected = store.id === storeId;
                   return (
