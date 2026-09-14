@@ -1,6 +1,7 @@
 'use client';
 
 import { CheckCircle2Icon } from 'lucide-react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 
@@ -24,6 +25,7 @@ import { useFormatMoney } from '~/hooks/use-format-money';
 import { rentalPeriod, toUtcDate } from '~/lib/date';
 import type { RentalQuote } from '~/lib/pricing';
 import type { DateRange } from '~/lib/rental-range';
+import { APP_RESERVATIONS } from '~/lib/routes';
 import { api } from '~/trpc/react';
 
 export interface ReserveSelection {
@@ -85,6 +87,14 @@ function ReserveSkiContent({ ski, quote, range }: ReserveSelection & { range: Da
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link href={APP_RESERVATIONS} />}
+              data-testid="booked-reservations"
+            >
+              {t('viewReservations')}
+            </Button>
             <DialogClose render={<Button data-testid="booked-close" />}>{t('done')}</DialogClose>
           </DialogFooter>
         </>

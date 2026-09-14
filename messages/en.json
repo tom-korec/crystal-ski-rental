@@ -36,7 +36,8 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "findSkis": "Find skis",
-    "frontDesk": "Front desk"
+    "frontDesk": "Front desk",
+    "myReservations": "My reservations"
   },
   "roles": {
     "USER": "Customer",
@@ -57,7 +58,11 @@
     "actions": {
       "home": "Back to home",
       "tryAgain": "Try again"
-    }
+    },
+    "pagination": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {pageCount}"
   },
   "filters": {
     "title": "Search filters",
@@ -159,7 +164,69 @@
     "confirm": "Reserve for {total}",
     "bookedTitle": "Booked",
     "bookedDescription": "{skis} are yours for {period}. Pick them up at {store} on the first day.",
-    "done": "Done"
+    "done": "Done",
+    "viewReservations": "My reservations"
+  },
+  "reservations": {
+    "title": "My reservations",
+    "description": "Your bookings, rentals and ratings.",
+    "count": "{count, plural, one {# reservation} other {# reservations}}",
+    "empty": "You have no reservations yet.",
+    "findSkis": "Find skis",
+    "length": "{length} cm",
+    "store": "Store",
+    "storeDetails": "Store details",
+    "storeDetailsDescription": "Where to pick up and return the skis.",
+    "priceSummary": "{days, plural, one {# day} other {# days}} × {price}{discount, select, 0 {} other { · −{discount} %}}",
+    "cancelTitle": "Cancel this reservation?",
+    "cancelDescription": "{skis} for {period} will be released for other customers. This cannot be undone.",
+    "cancelConfirm": "Cancel reservation",
+    "cancelling": "Cancelling…",
+    "keep": "Keep it",
+    "status": {
+      "CREATED": "Booked",
+      "ACTIVE": "Picked up",
+      "RETURNED": "Returned",
+      "CANCELLED_BY_USER": "Cancelled by you",
+      "CANCELLED_BY_STORE": "Cancelled by the store"
+    },
+    "hint": {
+      "created": "Pick the skis up at {store} on the first day.",
+      "active": "Return the skis by the end of the last day.",
+      "returned": "Thanks for renting with us.",
+      "cancelledByUser": "You cancelled this booking.",
+      "cancelledByStore": "The store cancelled this booking, usually because the skis were not picked up."
+    }
+  },
+  "ratings": {
+    "score": "Your score",
+    "scoreRequired": "Choose a score.",
+    "stars": "{score, plural, one {# star} other {# stars}}",
+    "scoreOutOf": "{score} / 5",
+    "windowHint": "You can change it for one hour after saving.",
+    "reopenHint": "You rented this model again, so you can update your rating. You can change it for one hour after saving.",
+    "staffOnly": "Only our staff read this. We may reply by e-mail.",
+    "cancel": "Cancel",
+    "save": "Save rating",
+    "saving": "Saving…",
+    "rental": {
+      "label": "Rental",
+      "rate": "Rate rental",
+      "update": "Update rental rating",
+      "title": "How was your rental at {subject}?",
+      "textLabel": "Note (optional)",
+      "textPlaceholder": "Pickup, service, return…",
+      "editUntil": "Edit rental rating (until {time})"
+    },
+    "model": {
+      "label": "Skis",
+      "rate": "Rate skis",
+      "update": "Update ski rating",
+      "title": "How were the {subject}?",
+      "textLabel": "Comment (optional)",
+      "textPlaceholder": "How they skied, who they suit…",
+      "editUntil": "Edit ski rating (until {time})"
+    }
   },
   "frontDesk": {
     "title": "Front desk",
