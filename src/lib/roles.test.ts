@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { Role } from '../../generated/prisma/enums';
+
 import { isAdmin, isCustomer, isStaff, roleSchema } from '~/lib/roles';
 
 // The role arrives from the session as a plain string, so what matters most is that anything that
@@ -47,6 +49,6 @@ describe('isAdmin', () => {
 
 describe('roleSchema', () => {
   it('matches the roles in the database', () => {
-    expect(roleSchema.options).toEqual(['USER', 'MANAGER', 'ADMIN']);
+    expect(roleSchema.options).toEqual(Object.values(Role));
   });
 });
