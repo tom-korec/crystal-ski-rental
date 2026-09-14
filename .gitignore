@@ -49,7 +49,7 @@ yarn-error.log*
 
 # local editor and assistant settings
 .vscode
-.claude
+/.claude
 
 # prisma client, generated on install
 /generated
