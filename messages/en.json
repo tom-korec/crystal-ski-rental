@@ -70,7 +70,6 @@
   "filters": {
     "title": "Search filters",
     "dates": "Dates",
-    "datesHint": "Pick the first and last day. Rentals last up to {max} days.",
     "store": "Store",
     "anyStore": "Any store",
     "brand": "Brand",
@@ -100,7 +99,9 @@
       "priceDesc": "Price: high to low"
     },
     "clear": "Clear filters",
-    "moreFilters": "{count, plural, =0 {More filters} other {More filters (#)}}"
+    "moreFilters": "{count, plural, =0 {More filters} other {More filters (#)}}",
+    "pickFirstDay": "Pick the first day of your rental.",
+    "pickLastDay": "Now pick the last day. Rentals last up to {max} days."
   },
   "catalog": {
     "type": {
@@ -156,7 +157,18 @@
   },
   "search": {
     "title": "Find skis",
-    "description": "Pick your dates and store to see which skis are free."
+    "description": "Skis waiting at our stores in Jasná, Tatranská Lomnica, Štrbské Pleso and Donovaly."
+  },
+  "customerSearch": {
+    "title": "Where and when are you skiing?",
+    "description": "Pick a store and your dates to see the skis waiting for you there.",
+    "store": "Store",
+    "dates": "Dates",
+    "pickDates": "Pick your dates",
+    "showSkis": "Show available skis",
+    "pickBoth": "Pick a store and dates to continue.",
+    "pickStore": "Pick a store to continue.",
+    "pickDatesHint": "Pick your dates to continue."
   },
   "booking": {
     "title": "Reserve {skis}",

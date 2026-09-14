@@ -7,6 +7,33 @@ test.describe('customer', () => {
     await signIn(page, 'customer');
   });
 
+  test('picks a store and dates before any skis are shown, and can move the first day later', async ({ page }) => {
+    await expect(page.getByTestId('customer-search')).toBeVisible();
+    await expect(page.getByTestId('ski-card')).toHaveCount(0);
+    await expect(page.getByTestId('show-skis')).toBeDisabled();
+
+    await page.getByTestId('store-option').filter({ hasText: 'Jasná' }).click();
+    await expect(page.getByTestId('show-skis')).toBeDisabled();
+
+    const days = page.getByTestId('search-dates-calendar').locator('[role="grid"] button:not([disabled])');
+    await page.getByTestId('search-dates').click();
+    await days.nth(2).click();
+    await expect(page.getByTestId('search-dates-hint')).toContainText('last day');
+    await days.nth(4).click();
+    const firstPick = await page.getByTestId('search-dates').textContent();
+
+    // Picking again starts from the first day, even when it is later than the current range.
+    await page.getByTestId('search-dates').click();
+    await days.nth(6).click();
+    await days.nth(9).click();
+    await expect(page.getByTestId('search-dates')).not.toHaveText(firstPick ?? '');
+
+    await page.getByTestId('show-skis').click();
+    await expect(page).toHaveURL(/store=.+from=.+to=/);
+    await expect(page.getByTestId('customer-search-bar')).toBeVisible();
+    await expect(page.getByTestId('ski-card').first()).toBeVisible();
+  });
+
   test('searches, books with the length-of-rental discount, and cancels', async ({ page }) => {
     // Past the end of the seeded bookings, so every Donovaly ski is free; five days earns 10 %.
     const from = dayFromToday(45);

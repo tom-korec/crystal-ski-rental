@@ -64,18 +64,30 @@ export const skiListSchema = z
 export const SKI_SORTS = ['rating', 'priceAsc', 'priceDesc'] as const;
 export type SkiSort = (typeof SKI_SORTS)[number];
 
-/** The customer search (FR-30, FR-31). Dates are required: availability only means something for a period. */
+/** The customer search's narrowing filters; the store and the dates are required on top of them. */
+export const skiSearchFiltersSchema = z.object({
+  brandId: catalogueFilters.brandId,
+  modelId: catalogueFilters.modelId,
+  type: catalogueFilters.type,
+  gender: catalogueFilters.gender,
+  skillLevel: catalogueFilters.skillLevel,
+  minLengthCm: catalogueFilters.minLengthCm,
+  maxLengthCm: catalogueFilters.maxLengthCm,
+  maxPricePerDay: moneySchema.optional(),
+  minRating: z.number().int().min(MIN_SCORE).max(MAX_SCORE).optional(),
+  sort: z.enum(SKI_SORTS).default('rating'),
+});
+
+/**
+ * The customer search (FR-30, FR-31). A store and dates are required: customers pick where and when they
+ * ski before any skis are shown, and availability only means something for a period at a place.
+ */
 export const skiSearchSchema = dateRangeSchema
-  .extend({
-    ...catalogueFilters,
-    maxPricePerDay: moneySchema.optional(),
-    minRating: z.number().int().min(MIN_SCORE).max(MAX_SCORE).optional(),
-    sort: z.enum(SKI_SORTS).default('rating'),
-    cursor: cursorSchema,
-  })
+  .extend({ storeId: z.uuid(), ...skiSearchFiltersSchema.shape, cursor: cursorSchema })
   .superRefine(refineRentalRange);
 
 export type SkiCreateInput = z.infer<typeof skiCreateSchema>;
 export type SkiUpdateInput = z.infer<typeof skiUpdateSchema>;
 export type SkiListInput = z.infer<typeof skiListSchema>;
 export type SkiSearchInput = z.input<typeof skiSearchSchema>;
+export type SkiSearchFilters = z.output<typeof skiSearchFiltersSchema>;

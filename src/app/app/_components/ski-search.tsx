@@ -4,7 +4,6 @@ import { SlidersHorizontalIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-import { DateRangeFilter } from '~/components/common/filters/date-range-filter';
 import { type FilterOption, SelectFilter } from '~/components/common/filters/select-filter';
 import { LoadMore } from '~/components/common/load-more';
 import { QueryState } from '~/components/common/query-state';
@@ -14,36 +13,62 @@ import { Button } from '~/components/ui/button';
 import { useFormatMoney } from '~/hooks/use-format-money';
 import { useUrlFilters } from '~/hooks/use-url-filters';
 import { SKI_GENDERS, SKI_TYPES, SKILL_LEVELS } from '~/lib/catalog';
-import { SKI_SORTS } from '~/lib/ski-schema';
+import { SKI_SORTS, type SkiSearchFilters, type SkiSearchInput } from '~/lib/ski-schema';
 import { api } from '~/trpc/react';
 
 import { type ReserveSelection, ReserveSkiDialog } from './reserve-ski-dialog';
-import { parseSearch, type SearchFilters, serialiseSearch } from './search-params';
+import { CustomerSearch } from './customer-search';
+import { parseSearch, type SearchState, searchInput, serialiseSearch } from './search-params';
 
 const LENGTH_STEPS = [100, 120, 140, 150, 160, 170, 180, 190];
 const PRICE_STEPS = ['20', '25', '30', '35', '40', '45'];
 const RATING_STEPS = [3, 4, 5];
 
-/** The customer's ski search (FR-30…35). Every filter lives in the URL. */
+/**
+ * The customer's ski search (FR-30…35). It starts by asking for a store and dates, and shows skis only
+ * once both are picked. Everything lives in the URL.
+ */
 export function SkiSearch() {
+  const { filters: state, apply } = useUrlFilters({ parse: parseSearch, serialise: serialiseSearch });
+  const input = searchInput(state);
+
+  const search = ({ storeId, range }: Required<Omit<SearchState, 'filters'>>) => apply({ ...state, storeId, range });
+
+  if (!input) {
+    return <CustomerSearch variant="start" storeId={state.storeId} range={state.range} onSearch={search} />;
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <CustomerSearch variant="bar" storeId={state.storeId} range={state.range} onSearch={search} />
+      <SkiResults input={input} filters={state.filters} onFiltersChange={(filters) => apply({ ...state, filters })} />
+    </div>
+  );
+}
+
+interface SkiResultsProps {
+  input: SkiSearchInput;
+  filters: SkiSearchFilters;
+  onFiltersChange: (filters: SkiSearchFilters) => void;
+}
+
+function SkiResults({ input, filters, onFiltersChange }: SkiResultsProps) {
   const t = useTranslations('filters');
   const tCatalog = useTranslations('catalog');
   const tSkis = useTranslations('skis');
   const formatMoney = useFormatMoney();
-  const { filters, apply } = useUrlFilters({ parse: parseSearch, serialise: serialiseSearch });
   const [selection, setSelection] = useState<ReserveSelection | null>(null);
   const [moreFilters, setMoreFilters] = useState(false);
 
-  const stores = api.store.list.useQuery();
   const brands = api.brand.list.useQuery();
   const models = api.skiModel.list.useQuery({});
 
-  const skis = api.ski.search.useInfiniteQuery(filters, { getNextPageParam: (page) => page.nextCursor });
+  const skis = api.ski.search.useInfiniteQuery(input, { getNextPageParam: (page) => page.nextCursor });
   const found = skis.data?.pages.flatMap((page) => page.items) ?? [];
   const total = skis.data?.pages[0]?.total ?? 0;
 
-  const set = (patch: Partial<SearchFilters>) => apply({ ...filters, ...patch });
-  const range = { startDate: filters.startDate, endDate: filters.endDate };
+  const set = (patch: Partial<SkiSearchFilters>) => onFiltersChange({ ...filters, ...patch });
+  const range = { startDate: input.startDate, endDate: input.endDate };
   const isNarrowed = hasNarrowingFilter(filters);
 
   const modelOptions: FilterOption[] = (models.data ?? [])
@@ -53,24 +78,6 @@ export function SkiSearch() {
   return (
     <div className="flex flex-col gap-6">
       <section aria-label={t('title')} className="bg-card ring-foreground/10 flex flex-col gap-4 rounded-xl p-4 ring-1">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <DateRangeFilter
-            id="filter-dates"
-            label={t('dates')}
-            value={range}
-            onChange={(next) => set({ ...next, cursor: undefined })}
-          />
-          <SelectFilter
-            id="filter-store"
-            label={t('store')}
-            anyLabel={t('anyStore')}
-            options={(stores.data ?? []).map((store) => ({ value: store.id, label: store.name }))}
-            disabled={stores.isPending}
-            value={filters.storeId}
-            onChange={(storeId) => set({ storeId })}
-          />
-        </div>
-
         <Button
           variant="ghost"
           size="sm"
@@ -117,7 +124,7 @@ export function SkiSearch() {
             anyLabel={t('anyType')}
             options={SKI_TYPES.map((type) => ({ value: type, label: tCatalog(`type.${type}`) }))}
             value={filters.type}
-            onChange={(type) => set({ type: type as SearchFilters['type'] })}
+            onChange={(type) => set({ type: type as SkiSearchFilters['type'] })}
           />
           <SelectFilter
             id="filter-gender"
@@ -125,7 +132,7 @@ export function SkiSearch() {
             anyLabel={t('anyGender')}
             options={SKI_GENDERS.map((gender) => ({ value: gender, label: tCatalog(`gender.${gender}`) }))}
             value={filters.gender}
-            onChange={(gender) => set({ gender: gender as SearchFilters['gender'] })}
+            onChange={(gender) => set({ gender: gender as SkiSearchFilters['gender'] })}
           />
           <SelectFilter
             id="filter-level"
@@ -133,7 +140,7 @@ export function SkiSearch() {
             anyLabel={t('anyLevel')}
             options={SKILL_LEVELS.map((level) => ({ value: level, label: tCatalog(`level.${level}`) }))}
             value={filters.skillLevel}
-            onChange={(skillLevel) => set({ skillLevel: skillLevel as SearchFilters['skillLevel'] })}
+            onChange={(skillLevel) => set({ skillLevel: skillLevel as SkiSearchFilters['skillLevel'] })}
           />
           <div className="grid grid-cols-2 gap-2">
             <SelectFilter
@@ -178,7 +185,7 @@ export function SkiSearch() {
         </p>
         <div className="flex flex-wrap items-end gap-3">
           {isNarrowed ? (
-            <Button variant="ghost" size="sm" onClick={() => apply({ ...range, sort: filters.sort })}>
+            <Button variant="ghost" size="sm" onClick={() => onFiltersChange({ sort: filters.sort })}>
               {t('clear')}
             </Button>
           ) : null}
@@ -192,7 +199,7 @@ export function SkiSearch() {
                 label: t(`sortOptions.${sort}`),
               }))}
               value={filters.sort === 'rating' ? undefined : filters.sort}
-              onChange={(sort) => set({ sort: (sort as SearchFilters['sort'] | undefined) ?? 'rating' })}
+              onChange={(sort) => set({ sort: (sort as SkiSearchFilters['sort'] | undefined) ?? 'rating' })}
             />
           </div>
         </div>
@@ -242,7 +249,7 @@ export function SkiSearch() {
 }
 
 /** Filters tucked behind "More filters" on small screens, counted so a hidden filter is never a surprise. */
-function secondaryFilterCount(filters: SearchFilters): number {
+function secondaryFilterCount(filters: SkiSearchFilters): number {
   return [
     filters.brandId,
     filters.modelId,
@@ -256,9 +263,8 @@ function secondaryFilterCount(filters: SearchFilters): number {
   ].filter((value) => value !== undefined).length;
 }
 
-function hasNarrowingFilter(filters: SearchFilters): boolean {
+function hasNarrowingFilter(filters: SkiSearchFilters): boolean {
   return [
-    filters.storeId,
     filters.brandId,
     filters.modelId,
     filters.type,

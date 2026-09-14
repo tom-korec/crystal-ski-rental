@@ -1,13 +1,14 @@
-import { addDays, todayDateString } from '~/lib/date';
-import { type SkiSearchInput, skiSearchSchema } from '~/lib/ski-schema';
+import { z } from 'zod';
+
+import { type DateRange, rentalRangeSchema } from '~/lib/rental-range';
 import { SEARCH_PARAMS as P } from '~/lib/routes';
+import { type SkiSearchFilters, skiSearchFiltersSchema, type SkiSearchInput } from '~/lib/ski-schema';
 
-export type SearchFilters = SkiSearchInput & { sort: NonNullable<SkiSearchInput['sort']> };
-
-/** A weekend-length rental starting tomorrow: a useful first question for someone just browsing. */
-export function defaultRange() {
-  const startDate = addDays(todayDateString(), 1);
-  return { startDate, endDate: addDays(startDate, 2) };
+/** What the search page keeps in the URL. The store and the dates stay empty until the customer picks them. */
+export interface SearchState {
+  storeId?: string;
+  range?: DateRange;
+  filters: SkiSearchFilters;
 }
 
 function numberParam(params: URLSearchParams, name: string): number | undefined {
@@ -16,15 +17,15 @@ function numberParam(params: URLSearchParams, name: string): number | undefined 
 }
 
 /**
- * The URL is untrusted, so it goes through the router's own schema. Filters that do not survive are
- * dropped one by one, and dates that are no longer bookable fall back to the default window, rather than
- * leaving the page with nothing to show.
+ * The URL is untrusted, so each part goes through the router's own schemas and is dropped on its own when
+ * it does not survive. Dates that are no longer bookable are dropped too, which sends the customer back to
+ * picking them rather than showing a search for the past.
  */
-export function parseSearch(params: URLSearchParams): SearchFilters {
+export function parseSearch(params: URLSearchParams): SearchState {
+  const store = z.uuid().safeParse(params.get(P.store));
+  const range = rentalRangeSchema.safeParse({ startDate: params.get(P.from), endDate: params.get(P.to) });
+
   const candidate: Record<string, unknown> = {
-    startDate: params.get(P.from) ?? undefined,
-    endDate: params.get(P.to) ?? undefined,
-    storeId: params.get(P.store) ?? undefined,
     brandId: params.get(P.brand) ?? undefined,
     modelId: params.get(P.model) ?? undefined,
     type: params.get(P.type) ?? undefined,
@@ -37,23 +38,31 @@ export function parseSearch(params: URLSearchParams): SearchFilters {
     sort: params.get(P.sort) ?? undefined,
   };
 
-  const parsed = skiSearchSchema.safeParse(candidate);
-  if (parsed.success) return { ...parsed.data, cursor: undefined };
+  const parsed = skiSearchFiltersSchema.safeParse(candidate);
+  let filters: SkiSearchFilters;
 
-  const invalid = new Set(parsed.error.issues.map((issue) => String(issue.path[0])));
-  const cleaned = Object.fromEntries(Object.entries(candidate).filter(([key]) => !invalid.has(key)));
-  const dates = invalid.has('startDate') || invalid.has('endDate') ? defaultRange() : {};
+  if (parsed.success) {
+    filters = parsed.data;
+  } else {
+    const invalid = new Set(parsed.error.issues.map((issue) => String(issue.path[0])));
+    filters = skiSearchFiltersSchema.parse(
+      Object.fromEntries(Object.entries(candidate).filter(([key]) => !invalid.has(key))),
+    );
+  }
 
-  const retried = skiSearchSchema.safeParse({ ...cleaned, ...dates });
-  return retried.success ? { ...retried.data, cursor: undefined } : { ...defaultRange(), sort: 'rating' };
+  return {
+    storeId: store.success ? store.data : undefined,
+    range: range.success ? range.data : undefined,
+    filters,
+  };
 }
 
-/** Dates are always written; unset filters are left out rather than written empty. */
-export function serialiseSearch(filters: SearchFilters): URLSearchParams {
+/** Unset parts are left out rather than written empty; the default sort is left out too. */
+export function serialiseSearch({ storeId, range, filters }: SearchState): URLSearchParams {
   const entries: [string, string | number | undefined][] = [
-    [P.from, filters.startDate],
-    [P.to, filters.endDate],
-    [P.store, filters.storeId],
+    [P.store, storeId],
+    [P.from, range?.startDate],
+    [P.to, range?.endDate],
     [P.brand, filters.brandId],
     [P.model, filters.modelId],
     [P.type, filters.type],
@@ -69,6 +78,11 @@ export function serialiseSearch(filters: SearchFilters): URLSearchParams {
   return new URLSearchParams(
     entries
       .filter((entry): entry is [string, string | number] => entry[1] !== undefined)
-      .map(([k, v]) => [k, String(v)]),
+      .map(([key, value]) => [key, String(value)]),
   );
+}
+
+/** The search request, once the customer has picked both a store and dates. */
+export function searchInput({ storeId, range, filters }: SearchState): SkiSearchInput | null {
+  return storeId && range ? { ...filters, storeId, ...range } : null;
 }
