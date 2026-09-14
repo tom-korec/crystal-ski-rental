@@ -188,7 +188,7 @@ owner's manual deployment steps (§4 Part E).
 | --- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
 | 26  | `Prepare for Vercel and Neon` | `vercel.json` (region `fra1`, migrate before build), migrations on `DATABASE_URL_UNPOOLED` with the pooled `DATABASE_URL` for the app, Better Auth base URL and trusted origins resolved from Vercel's variables with unit tests, env schema for the Vercel variables, README deployment section.                                                                                                | S    |
 | 27  | `Add demo mode`               | `NEXT_PUBLIC_DEMO_MODE`: one-click sign-in for each demo role and a "data resets nightly" banner. Rate limits kept in a Postgres table (failed sign-ins per address and per client, sign-ups per client), enforced in the tRPC auth router, with Better Auth's own sign-in and sign-up HTTP endpoints closed so they cannot bypass them. Text length limits were already in the schemas (NFR-9). | M    |
-| 28  | `Add scheduled demo reset`    | GitHub Actions workflow on a nightly cron plus a manual trigger that migrates and re-seeds production. The seed refuses production unless `ALLOW_PRODUCTION_SEED=true`.                                                                                                                                                                                                                          | S    |
+| 28  | `Add scheduled demo reset`    | GitHub Actions workflow on a nightly cron (03:00 UTC) and a manual trigger: fails clearly without the `DEMO_DATABASE_URL` secret, migrates, then reseeds with `NODE_ENV=production` and `ALLOW_PRODUCTION_SEED=true`.                                                                                                                                                                            | S    |
 
 **Manual steps, done by the owner in the dashboards and documented in the README:**
 
@@ -198,7 +198,7 @@ owner's manual deployment steps (§4 Part E).
 4. Install the Neon integration on the Vercel project. It creates a database branch per preview,
    so enable automatic deletion of preview branches (the Free plan allows 10 branches).
 5. Vercel Deployment Checks: require the CI workflow before promoting to production. On GitHub, protect `main` with the same checks.
-6. GitHub: add `DATABASE_URL` (Neon direct URL of `main`) as a secret for the reset workflow, then run it once.
+6. GitHub: add `DEMO_DATABASE_URL` (Neon direct URL of the production branch) as a secret for the reset workflow, then run it once.
 7. Smoke test on the production URL: sign in as each demo role and run a booking through to a rating.
 
 ## 5. Testing strategy

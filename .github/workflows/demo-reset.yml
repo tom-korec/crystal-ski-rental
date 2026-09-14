@@ -1,0 +1,41 @@
+name: Reset demo data
+
+on:
+  schedule:
+    # 03:00 UTC, the quietest hour for a demo used from Central Europe.
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: demo-reset
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  reset:
+    name: Migrate and reseed the demo database
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # Neon's direct (unpooled) connection string for the production branch, stored as a repository secret.
+      DATABASE_URL: ${{ secrets.DEMO_DATABASE_URL }}
+      NODE_ENV: production
+      # The seed refuses to run in production without this, so it cannot wipe a real database by accident.
+      ALLOW_PRODUCTION_SEED: 'true'
+    steps:
+      - name: Require the database secret
+        if: env.DATABASE_URL == ''
+        run: |
+          echo "::error::Set the DEMO_DATABASE_URL repository secret to the demo database's direct connection string."
+          exit 1
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - run: pnpm exec tsx prisma/seed/index.ts
