@@ -1,29 +1,80 @@
-// Prisma schema for Better Auth
-// learn more: https://better-auth.com/docs/concepts/database
+// Crystal Ski Rental schema. Requirement IDs refer to docs/REQUIREMENTS.md.
+//
+// User, Session, Account and Verification are the tables Better Auth requires; everything after
+// them is the rental domain.
+//
+// One guarantee is invisible here: `reservation_no_overlap`, an exclusion constraint added by the
+// migration of that name, stops a ski from holding two CREATED or ACTIVE reservations that share a
+// day (BR-20). Prisma cannot express exclusion constraints, so it lives only in that migration.
+//
+// Rules that need a message worth showing someone (pricing, lifecycle transitions, rating windows,
+// the rental window) are enforced in the service layer.
 
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
 }
 
-// NOTE: When using mysql or sqlserver, uncomment the //@db.Text annotations in model Account below
-// Further reading:
-// https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
-
 datasource db {
   provider = "postgresql"
 }
 
+// USER rents skis. MANAGER runs the shop floor. ADMIN is a manager who also owns the catalogue and
+// the staff accounts.
+enum Role {
+  USER
+  MANAGER
+  ADMIN
+}
+
+enum SkiType {
+  PISTE
+  ALL_MOUNTAIN
+  FREERIDE
+  FREESTYLE
+}
+
+enum SkiGender {
+  MAN
+  WOMAN
+  KID
+  UNISEX
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  EXPERT
+}
+
+// CREATED → ACTIVE (picked up) → RETURNED, or CREATED → CANCELLED_BY_USER / CANCELLED_BY_STORE (BR-11).
+enum ReservationStatus {
+  CREATED
+  ACTIVE
+  RETURNED
+  CANCELLED_BY_USER
+  CANCELLED_BY_STORE
+}
+
 model User {
-  id            String    @id
-  name          String //@db.Text
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String? //@db.Text
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  id                    String        @id
+  name                  String
+  email                 String
+  emailVerified         Boolean       @default(false)
+  image                 String?
+  // Never accepted from the client: Better Auth exposes it with `input: false`.
+  role                  Role          @default(USER)
+  // Soft delete keeps reservation history truthful. The e-mail stays taken (FR-63).
+  deletedAt             DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @default(now()) @updatedAt
+  sessions              Session[]
+  accounts              Account[]
+  reservations          Reservation[]
+  modelRatings          ModelRating[]
+  pickedUpReservations  Reservation[] @relation("PickedUpBy")
+  returnedReservations  Reservation[] @relation("ReturnedBy")
+  cancelledReservations Reservation[] @relation("CancelledBy")
 
   @@unique([email])
   @@map("user")
@@ -35,8 +86,8 @@ model Session {
   token     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  ipAddress String? //@db.Text
-  userAgent String? //@db.Text
+  ipAddress String?
+  userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -46,17 +97,17 @@ model Session {
 
 model Account {
   id                    String    @id
-  accountId             String //@db.Text
-  providerId            String //@db.Text
+  accountId             String
+  providerId            String
   userId                String
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessToken           String? //@db.Text
-  refreshToken          String? //@db.Text
-  idToken               String? //@db.Text
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
-  scope                 String? //@db.Text
-  password              String? //@db.Text
+  scope                 String?
+  password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
@@ -65,11 +116,170 @@ model Account {
 
 model Verification {
   id         String   @id
-  identifier String //@db.Text
-  value      String //@db.Text
+  identifier String
+  value      String
   expiresAt  DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("verification")
+}
+
+model Brand {
+  id        String     @id @default(uuid(7))
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
+  models    SkiModel[]
+
+  @@map("brand")
+}
+
+// Price, type, gender and level belong to the model; length belongs to the individual ski (FR-11).
+model SkiModel {
+  id          String        @id @default(uuid(7))
+  brandId     String
+  name        String
+  type        SkiType
+  gender      SkiGender
+  skillLevel  SkillLevel
+  pricePerDay Decimal       @db.Decimal(10, 2)
+  // Denormalised from ModelRating so search can sort and filter without an aggregate join.
+  // Recomputed in the same transaction as every rating write. Null means not rated yet.
+  avgRating   Decimal?      @db.Decimal(3, 2)
+  ratingCount Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
+  brand       Brand         @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  skis        Ski[]
+  ratings     ModelRating[]
+
+  @@unique([brandId, name])
+  @@index([pricePerDay])
+  @@index([avgRating])
+  @@map("ski_model")
+}
+
+model Store {
+  id                    String   @id @default(uuid(7))
+  name                  String   @unique
+  street                String
+  // Text, not a number: "12/A" and "1543/7" are ordinary Slovak house numbers.
+  houseNumber           String
+  city                  String
+  // Five digits without the space, e.g. "03101".
+  zipCode               String
+  phone                 String
+  email                 String
+  // Free text per day, shown as written. An empty string means closed (FR-12).
+  openingHoursMonday    String   @default("")
+  openingHoursTuesday   String   @default("")
+  openingHoursWednesday String   @default("")
+  openingHoursThursday  String   @default("")
+  openingHoursFriday    String   @default("")
+  openingHoursSaturday  String   @default("")
+  openingHoursSunday    String   @default("")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @default(now()) @updatedAt
+  skis                  Ski[]
+
+  @@map("store")
+}
+
+model Ski {
+  id            String        @id @default(uuid(7))
+  // Staff-only (BR-50).
+  inventoryCode String        @unique
+  modelId       String
+  storeId       String
+  lengthCm      Int
+  // Offered for rental at all. Distinct from "free for these dates" (BR-22).
+  isAvailable   Boolean       @default(true)
+  deletedAt     DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now()) @updatedAt
+  model         SkiModel      @relation(fields: [modelId], references: [id], onDelete: Restrict)
+  store         Store         @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  reservations  Reservation[]
+
+  @@index([deletedAt, isAvailable])
+  @@index([modelId])
+  @@index([storeId])
+  @@index([lengthCm])
+  @@map("ski")
+}
+
+model Reservation {
+  id                String             @id @default(uuid(7))
+  skiId             String
+  userId            String
+  // Whole days in UTC: startDate inclusive, endDate exclusive, so one rental can end on the day the
+  // next begins. The overlap constraint uses the same '[)' range.
+  startDate         DateTime           @db.Date
+  endDate           DateTime           @db.Date
+  status            ReservationStatus  @default(CREATED)
+  // Price snapshot at booking time. Later price changes never touch these (BR-5).
+  pricePerDay       Decimal            @db.Decimal(10, 2)
+  rentalDays        Int
+  discountPercent   Int
+  totalPrice        Decimal            @db.Decimal(10, 2)
+  // Who moved the reservation through its lifecycle, and when (BR-13).
+  pickedUpAt        DateTime?
+  pickedUpById      String?
+  returnedAt        DateTime?
+  returnedById      String?
+  cancelledAt       DateTime?
+  cancelledById     String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @default(now()) @updatedAt
+  ski               Ski                @relation(fields: [skiId], references: [id], onDelete: Restrict)
+  user              User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  pickedUpBy        User?              @relation("PickedUpBy", fields: [pickedUpById], references: [id], onDelete: SetNull)
+  returnedBy        User?              @relation("ReturnedBy", fields: [returnedById], references: [id], onDelete: SetNull)
+  cancelledBy       User?              @relation("CancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+  rating            ReservationRating?
+  openedModelRating ModelRating[]
+
+  // The overlap lookup behind every booking and search.
+  @@index([skiId, status, startDate])
+  @@index([userId, startDate])
+  // Front desk: pickups and returns due or overdue.
+  @@index([status, startDate])
+  @@index([status, endDate])
+  @@map("reservation")
+}
+
+// Feedback on the rental experience, one per reservation (BR-40).
+model ReservationRating {
+  id            String      @id @default(uuid(7))
+  reservationId String      @unique
+  score         Int
+  note          String?
+  // The edit window is one hour from here.
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @default(now()) @updatedAt
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@map("reservation_rating")
+}
+
+// Feedback on a ski model, one per customer per model (BR-41). Each write goes through a returned
+// reservation; `reservationId` and `windowStartedAt` record which one opened the current edit window.
+model ModelRating {
+  id              String      @id @default(uuid(7))
+  modelId         String
+  userId          String
+  reservationId   String
+  windowStartedAt DateTime
+  score           Int
+  comment         String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @default(now()) @updatedAt
+  model           SkiModel    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reservation     Reservation @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+
+  @@unique([modelId, userId])
+  @@index([reservationId])
+  @@map("model_rating")
 }
