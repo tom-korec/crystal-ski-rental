@@ -50,10 +50,13 @@ const reservationFields = {
 
 const skiModelSummary = { select: { id: true, name: true, brand: { select: { name: true } } } } as const;
 
+const rentalRatingSelect = { select: { score: true, note: true, createdAt: true } } as const;
+
 /** A customer's own reservation: the store's full details, never the inventory code (FR-40, BR-50). */
 const customerReservationSelect = {
   ...reservationFields,
   ski: { select: { id: true, lengthCm: true, model: skiModelSummary, store: { select: storeSelect } } },
+  rating: rentalRatingSelect,
 } satisfies Prisma.ReservationSelect;
 
 const staffReservationSelect = {
@@ -72,6 +75,7 @@ const staffReservationSelect = {
   pickedUpBy: { select: { id: true, name: true } },
   returnedBy: { select: { id: true, name: true } },
   cancelledBy: { select: { id: true, name: true } },
+  rating: rentalRatingSelect,
 } satisfies Prisma.ReservationSelect;
 
 function withPlainPrices<T extends { pricePerDay: { toString(): string }; totalPrice: { toString(): string } }>(
@@ -225,9 +229,13 @@ export const reservationRouter = createTRPCRouter({
     return { id: reservation.id };
   }),
 
-  /** The caller's own reservations, newest first (FR-40). */
+  /**
+   * The caller's own reservations, newest first (FR-40). Each carries the customer's rating of its ski
+   * model, if any, so the screen can tell whether this reservation may create, edit or reopen it.
+   */
   listMine: userProcedure.input(myReservationsSchema).query(async ({ ctx, input }) => {
-    const where = { userId: ctx.session.user.id };
+    const userId = ctx.session.user.id;
+    const where = { userId };
     const { total, page, skip, take } = await pageOf(ctx.db, where, input.page);
     const rows = await ctx.db.reservation.findMany({
       where,
@@ -237,7 +245,18 @@ export const reservationRouter = createTRPCRouter({
       take,
     });
 
-    return { items: rows.map(withPlainPrices), total, page };
+    const modelRatings = await ctx.db.modelRating.findMany({
+      where: { userId, modelId: { in: rows.map((row) => row.ski.model.id) } },
+      select: { modelId: true, score: true, comment: true, reservationId: true, windowStartedAt: true },
+    });
+    const ratingByModel = new Map(modelRatings.map(({ modelId, ...rating }) => [modelId, rating]));
+
+    const items = rows.map((row) => ({
+      ...withPlainPrices(row),
+      modelRating: ratingByModel.get(row.ski.model.id) ?? null,
+    }));
+
+    return { items, total, page };
   }),
 
   /** Every reservation of one ski, for its detail page (FR-60). */
