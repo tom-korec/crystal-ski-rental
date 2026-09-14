@@ -3,13 +3,15 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { APIError } from 'better-auth/api';
 
 import { env } from '~/env';
+import { appUrl, trustedOrigins } from '~/lib/app-url';
 import { db } from '~/server/db';
 
 // Identical to Better Auth's own wrong-password message, so a deleted account is indistinguishable from it.
 export const INVALID_CREDENTIALS = 'Invalid email or password';
 
 export const auth = betterAuth({
-  baseURL: env.BETTER_AUTH_URL,
+  baseURL: appUrl(env),
+  trustedOrigins: trustedOrigins(env),
   secret: env.BETTER_AUTH_SECRET,
   database: prismaAdapter(db, { provider: 'postgresql' }),
   emailAndPassword: {

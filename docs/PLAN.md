@@ -184,11 +184,11 @@ owner's manual deployment steps (§4 Part E).
 
 ### Part E — Deployment (last)
 
-| #   | Commit                        | Contents                                                                                                                                                                                                                      | Size |
-| --- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 26  | `Prepare for Vercel and Neon` | Prisma pooled URL at runtime and direct URL for migrations. Build command `prisma migrate deploy && next build`. `vercel.json` with region `fra1`. Better Auth trusted origins for preview URLs. Env schema for `VERCEL_URL`. | S    |
-| 27  | `Add demo mode`               | Demo accounts shown on the landing page with one-click sign-in, a "demo data resets daily" banner, Better Auth rate limits on sign-in and sign-up, and text length limits (NFR-9).                                            | M    |
-| 28  | `Add scheduled demo reset`    | GitHub Actions workflow on a nightly cron plus a manual trigger that migrates and re-seeds production. The seed refuses production unless `ALLOW_PRODUCTION_SEED=true`.                                                       | S    |
+| #   | Commit                        | Contents                                                                                                                                                                                                                                                                                          | Size |
+| --- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 26  | `Prepare for Vercel and Neon` | `vercel.json` (region `fra1`, migrate before build), migrations on `DATABASE_URL_UNPOOLED` with the pooled `DATABASE_URL` for the app, Better Auth base URL and trusted origins resolved from Vercel's variables with unit tests, env schema for the Vercel variables, README deployment section. | S    |
+| 27  | `Add demo mode`               | Demo accounts shown on the landing page with one-click sign-in, a "demo data resets daily" banner, Better Auth rate limits on sign-in and sign-up, and text length limits (NFR-9).                                                                                                                | M    |
+| 28  | `Add scheduled demo reset`    | GitHub Actions workflow on a nightly cron plus a manual trigger that migrates and re-seeds production. The seed refuses production unless `ALLOW_PRODUCTION_SEED=true`.                                                                                                                           | S    |
 
 **Manual steps, done by the owner in the dashboards and documented in the README:**
 

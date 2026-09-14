@@ -228,3 +228,27 @@ have refused.
 check, unit tests and a production build in one job, and the Playwright suite against a Postgres 17
 service in another. The same checks locally are `pnpm check`, `pnpm format:check`, `pnpm test` and
 `pnpm test:e2e`.
+
+## Deployment
+
+The public demo runs on **Vercel** (Hobby) with **Neon** Postgres (Free), both in Frankfurt.
+
+- `vercel.json` pins the functions to `fra1` and makes the build run `prisma migrate deploy` before
+  `next build`, so a deployment never serves code ahead of its schema.
+- The app connects through Neon's pooled `DATABASE_URL`; migrations use the direct
+  `DATABASE_URL_UNPOOLED`, because a pooler cannot hold the locks a migration takes.
+- The Neon integration gives every preview deployment its own database branch, so previews and their
+  migrations never touch production data.
+- Better Auth's base URL and trusted origins come from Vercel's own variables (`src/lib/app-url.ts`):
+  production uses its domain, a preview both its unique and its branch host. `BETTER_AUTH_URL`
+  overrides them when set.
+
+One-time setup, in the dashboards:
+
+1. Create a Neon project in `aws-eu-central-1` with Postgres 17.
+2. Import the GitHub repository into Vercel and add `BETTER_AUTH_SECRET` (`openssl rand -base64 32`).
+3. Install the Neon integration on the Vercel project, and turn on automatic deletion of preview
+   branches (the free plan allows ten).
+4. Under the project's Deployment Checks, require the CI workflow before a deployment is promoted to
+   production, and protect `main` on GitHub with the same checks.
+5. Seed the production database once, as described below.
