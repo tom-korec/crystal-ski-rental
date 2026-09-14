@@ -1,11 +1,9 @@
 import { idSchema } from '~/lib/id-schema';
-import { toMoneyString } from '~/lib/money';
 import { skiModelCreateSchema, skiModelListSchema, skiModelUpdateSchema } from '~/lib/ski-model-schema';
 import { conflict, rethrowPrismaError } from '~/server/api/errors';
 import { countOf } from '~/server/api/plural';
+import { plainSkiModel, skiModelSelect } from '~/server/api/selects';
 import { adminProcedure, createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
-
-import type { Prisma } from '../../../../generated/prisma/client';
 
 // Readable by any signed-in account (search filters, fleet forms), writable by admins (FR-11). The model
 // carries the price, so a price change applies to every ski of the model from the next booking on;
@@ -14,29 +12,6 @@ import type { Prisma } from '../../../../generated/prisma/client';
 const NAME_TAKEN = 'This brand already has a model with that name.';
 const NOT_FOUND = 'Ski model not found.';
 const BRAND_MISSING = 'The selected brand no longer exists.';
-
-const skiModelSelect = {
-  id: true,
-  name: true,
-  type: true,
-  gender: true,
-  skillLevel: true,
-  pricePerDay: true,
-  avgRating: true,
-  ratingCount: true,
-  brand: { select: { id: true, name: true } },
-} satisfies Prisma.SkiModelSelect;
-
-type SkiModelRow = Prisma.SkiModelGetPayload<{ select: typeof skiModelSelect }>;
-
-/** Money as a string; the average rating is a display value, so a plain number is fine. */
-function toSkiModel(row: SkiModelRow) {
-  return {
-    ...row,
-    pricePerDay: toMoneyString(row.pricePerDay),
-    avgRating: row.avgRating === null ? null : row.avgRating.toNumber(),
-  };
-}
 
 export const skiModelRouter = createTRPCRouter({
   list: protectedProcedure.input(skiModelListSchema).query(async ({ ctx, input }) => {
@@ -47,12 +22,12 @@ export const skiModelRouter = createTRPCRouter({
       orderBy: [{ brand: { name: 'asc' } }, { name: 'asc' }],
     });
 
-    return rows.map(({ _count, ...row }) => ({ ...toSkiModel(row), skiCount: _count.skis }));
+    return rows.map(({ _count, ...row }) => ({ ...plainSkiModel(row), skiCount: _count.skis }));
   }),
 
   create: adminProcedure.input(skiModelCreateSchema).mutation(async ({ ctx, input }) => {
     try {
-      return toSkiModel(await ctx.db.skiModel.create({ data: input, select: skiModelSelect }));
+      return plainSkiModel(await ctx.db.skiModel.create({ data: input, select: skiModelSelect }));
     } catch (error) {
       rethrowPrismaError(error, { P2002: NAME_TAKEN, P2003: BRAND_MISSING });
     }
@@ -62,7 +37,7 @@ export const skiModelRouter = createTRPCRouter({
     const { id, ...data } = input;
 
     try {
-      return toSkiModel(await ctx.db.skiModel.update({ where: { id }, data, select: skiModelSelect }));
+      return plainSkiModel(await ctx.db.skiModel.update({ where: { id }, data, select: skiModelSelect }));
     } catch (error) {
       rethrowPrismaError(error, { P2002: NAME_TAKEN, P2003: BRAND_MISSING, P2025: NOT_FOUND });
     }

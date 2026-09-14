@@ -2,33 +2,14 @@ import { idSchema } from '~/lib/id-schema';
 import { storeCreateSchema, storeUpdateSchema } from '~/lib/store-schema';
 import { conflict, notFound, rethrowPrismaError } from '~/server/api/errors';
 import { countOf } from '~/server/api/plural';
+import { storeSelect } from '~/server/api/selects';
 import { adminProcedure, createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
-
-import type { Prisma } from '../../../../generated/prisma/client';
 
 // Readable by any signed-in account (customers need addresses, contacts and hours), writable by
 // admins (FR-12).
 
 const NAME_TAKEN = 'A store with that name already exists.';
 const NOT_FOUND = 'Store not found.';
-
-const storeSelect = {
-  id: true,
-  name: true,
-  street: true,
-  houseNumber: true,
-  city: true,
-  zipCode: true,
-  phone: true,
-  email: true,
-  openingHoursMonday: true,
-  openingHoursTuesday: true,
-  openingHoursWednesday: true,
-  openingHoursThursday: true,
-  openingHoursFriday: true,
-  openingHoursSaturday: true,
-  openingHoursSunday: true,
-} satisfies Prisma.StoreSelect;
 
 export const storeRouter = createTRPCRouter({
   list: protectedProcedure.query(async ({ ctx }) => {

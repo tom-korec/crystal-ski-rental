@@ -1,6 +1,5 @@
 import { todayUtc, toUtcDate, utcDaysBetween } from '~/lib/date';
 import { idSchema } from '~/lib/id-schema';
-import { toMoneyString } from '~/lib/money';
 import { BATCH_SIZE, nextCursor } from '~/lib/pagination';
 import { quoteRental } from '~/lib/pricing';
 import { DATE_HOLDING_STATUSES } from '~/lib/reservation-lifecycle';
@@ -15,6 +14,7 @@ import {
 import { conflict, isPrismaError, notFound, rethrowPrismaError } from '~/server/api/errors';
 import { overlappingReservation } from '~/server/api/overlap';
 import { countOf } from '~/server/api/plural';
+import { plainSkiModel, skiModelSelect } from '~/server/api/selects';
 import { createTRPCRouter, staffProcedure, userProcedure } from '~/server/api/trpc';
 
 import type { Prisma } from '../../../../generated/prisma/client';
@@ -26,25 +26,11 @@ const NOT_FOUND = 'Ski not found.';
 const CODE_TAKEN = 'Another ski already has that inventory code.';
 const REFERENCE_MISSING = 'The selected model or store no longer exists.';
 
-const modelSelect = {
-  select: {
-    id: true,
-    name: true,
-    type: true,
-    gender: true,
-    skillLevel: true,
-    pricePerDay: true,
-    avgRating: true,
-    ratingCount: true,
-    brand: { select: { id: true, name: true } },
-  },
-} satisfies Prisma.SkiModelDefaultArgs;
-
 /** What customers may see: no inventory code, availability flag or timestamps (BR-50). */
 const skiPublicSelect = {
   id: true,
   lengthCm: true,
-  model: modelSelect,
+  model: { select: skiModelSelect },
   store: { select: { id: true, name: true, city: true } },
 } satisfies Prisma.SkiSelect;
 
@@ -56,18 +42,9 @@ const skiStaffSelect = {
   createdAt: true,
 } satisfies Prisma.SkiSelect;
 
-type SkiPublicRow = Prisma.SkiGetPayload<{ select: typeof skiPublicSelect }>;
-
-/** Decimal columns leave the API as strings (money) or numbers (the display-only rating average). */
-function withPlainModel<T extends SkiPublicRow>(row: T) {
-  return {
-    ...row,
-    model: {
-      ...row.model,
-      pricePerDay: toMoneyString(row.model.pricePerDay),
-      avgRating: row.model.avgRating === null ? null : row.model.avgRating.toNumber(),
-    },
-  };
+/** Decimal columns leave the API as plain values. */
+function withPlainModel<T extends { model: Parameters<typeof plainSkiModel>[0] }>(row: T) {
+  return { ...row, model: plainSkiModel(row.model) };
 }
 
 type CatalogueFilters = Omit<SkiListInput, 'inventoryCode' | 'cursor'>;
