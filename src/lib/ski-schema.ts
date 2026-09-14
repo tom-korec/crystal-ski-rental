@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { SKI_GENDERS, SKI_TYPES, SKILL_LEVELS } from '~/lib/catalog';
+import { GENDER_FILTERS, SKI_TYPES, SKILL_LEVELS } from '~/lib/catalog';
 import { moneySchema } from '~/lib/money';
 import { cursorSchema } from '~/lib/pagination';
 import { MAX_SCORE, MIN_SCORE } from '~/lib/rating-rules';
@@ -46,7 +46,7 @@ const catalogueFilters = {
   modelId: z.uuid().optional(),
   storeId: z.uuid().optional(),
   type: z.enum(SKI_TYPES).optional(),
-  gender: z.enum(SKI_GENDERS).optional(),
+  gender: z.enum(GENDER_FILTERS).optional(),
   skillLevel: z.enum(SKILL_LEVELS).optional(),
   minLengthCm: lengthCmSchema.optional(),
   maxLengthCm: lengthCmSchema.optional(),

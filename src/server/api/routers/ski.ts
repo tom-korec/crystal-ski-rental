@@ -1,3 +1,4 @@
+import { gendersMatching } from '~/lib/catalog';
 import { todayUtc, toUtcDate, utcDaysBetween } from '~/lib/date';
 import { idSchema } from '~/lib/id-schema';
 import { BATCH_SIZE, nextCursor } from '~/lib/pagination';
@@ -53,7 +54,7 @@ function modelWhere(filters: CatalogueFilters): Prisma.SkiModelWhereInput {
   return {
     brandId: filters.brandId,
     type: filters.type,
-    gender: filters.gender,
+    gender: filters.gender ? { in: gendersMatching(filters.gender) } : undefined,
     skillLevel: filters.skillLevel,
   };
 }

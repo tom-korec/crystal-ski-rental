@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { type FilterOption, SelectFilter } from '~/components/common/filters/select-filter';
 import { Button } from '~/components/ui/button';
 import { useFormatMoney } from '~/hooks/use-format-money';
-import { SKI_GENDERS, SKI_TYPES, SKILL_LEVELS } from '~/lib/catalog';
+import { GENDER_FILTERS, SKI_TYPES, SKILL_LEVELS } from '~/lib/catalog';
 import type { SkiSearchFilters } from '~/lib/ski-schema';
 import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
@@ -114,7 +114,7 @@ export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
           id="filter-gender"
           label={t('gender')}
           anyLabel={t('anyGender')}
-          options={SKI_GENDERS.map((gender) => ({ value: gender, label: tCatalog(`gender.${gender}`) }))}
+          options={GENDER_FILTERS.map((gender) => ({ value: gender, label: tCatalog(`gender.${gender}`) }))}
           value={filters.gender}
           onChange={(gender) => set({ gender: gender as SkiSearchFilters['gender'] })}
         />

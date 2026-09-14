@@ -12,7 +12,7 @@ import { SkiCard } from '~/components/skis/ski-card';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { useUrlFilters } from '~/hooks/use-url-filters';
-import { SKI_GENDERS, SKI_TYPES, SKILL_LEVELS } from '~/lib/catalog';
+import { GENDER_FILTERS, SKI_TYPES, SKILL_LEVELS } from '~/lib/catalog';
 import { staffSkiRoute } from '~/lib/routes';
 import { api } from '~/trpc/react';
 
@@ -94,7 +94,7 @@ export function Fleet() {
           id="filter-gender"
           label={tFilters('gender')}
           anyLabel={tFilters('anyGender')}
-          options={SKI_GENDERS.map((gender) => ({ value: gender, label: tCatalog(`gender.${gender}`) }))}
+          options={GENDER_FILTERS.map((gender) => ({ value: gender, label: tCatalog(`gender.${gender}`) }))}
           value={filters.gender}
           onChange={(gender) => set({ gender: gender as FleetFilters['gender'] })}
         />
