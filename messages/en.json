@@ -1,0 +1,30 @@
+{
+  "app": {
+    "name": "Crystal Ski Rental",
+    "description": "Book skis online at our stores in Jasná, Tatranská Lomnica, Štrbské Pleso and Donovaly.",
+    "wordmark": "Crystal",
+    "wordmarkTagline": "Ski Rental"
+  },
+  "home": {
+    "comingSoon": "Online ski reservations are on their way."
+  },
+  "theme": {
+    "label": "Colour theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "common": {
+    "actions": {
+      "home": "Back to home",
+      "tryAgain": "Try again"
+    }
+  },
+  "errors": {
+    "title": "Something went wrong",
+    "description": "This page could not be displayed. Try again, and if it keeps happening, come back a little later.",
+    "reference": "Reference: {digest}",
+    "notFoundTitle": "Page not found",
+    "notFoundDescription": "The address may be mistyped, or the page no longer exists."
+  }
+}

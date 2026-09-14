@@ -2,25 +2,39 @@ import '~/styles/globals.css';
 
 import type { Metadata } from 'next';
 import { Geist } from 'next/font/google';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getTranslations } from 'next-intl/server';
 
+import { ThemeScript } from '~/components/layout/theme-script';
 import { TRPCReactProvider } from '~/trpc/react';
 
-export const metadata: Metadata = {
-  title: 'Crystal Ski Rental',
-  description: 'Ski rental reservations in Jasná, Tatranská Lomnica, Štrbské Pleso and Donovaly.',
-  icons: [{ rel: 'icon', url: '/favicon.ico' }],
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('app');
+
+  return {
+    title: { default: t('name'), template: `%s · ${t('name')}` },
+    description: t('description'),
+  };
+}
 
 const geist = Geist({
-  subsets: ['latin'],
+  subsets: ['latin', 'latin-ext'],
   variable: '--font-geist-sans',
 });
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await getLocale();
+
   return (
-    <html lang="en" className={`${geist.variable}`}>
+    // The theme script sets the `dark` class before hydration, which React would otherwise flag.
+    <html lang={locale} className={geist.variable} suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
       <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <NextIntlClientProvider>
+          <TRPCReactProvider>{children}</TRPCReactProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

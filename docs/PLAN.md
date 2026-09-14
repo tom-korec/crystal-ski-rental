@@ -71,8 +71,9 @@ These are the calls that shape the code. Each one also gets a short section in t
       messages. Anything else is masked in production and logged.
     - `error.tsx`, `global-error.tsx` and `not-found.tsx` render the app shell with a retry and a way home.
 12. **Theme without flash (NFR-3).**
-    - A `theme` cookie holds `light | dark | system`. Light and dark are rendered server-side; `system`
-      uses a tiny inline head script.
+    - A `theme` cookie holds `light | dark | system`. A tiny inline head script applies it before the
+      first paint and follows the OS setting while it is `system`.
+    - The server never reads the cookie, so pages stay statically renderable.
     - Tokens are oklch CSS variables, and contrast is verified.
 
 ## 3. Data model
@@ -144,7 +145,7 @@ owner's manual deployment steps (§4 Part E).
 | 2   | `Add requirements and implementation plan`  | `docs/REQUIREMENTS.md`, `docs/PLAN.md`.                                                                                                                                                                                                                                                                                                                  | S    |
 | 3   | `Upgrade to Next.js 16, Prisma 7 and Zod 4` | Dependency upgrades (TypeScript 6 and ESLint 9, the newest the lint plugins support). Prisma 7 config file, `prisma-client` generator and `pg` driver adapter. ESLint flat config without `next lint`. Remove the sample post router, page and GitHub sign-in, and replace them with a `health.ping` router. Exclude local-only folders from `tsconfig`. | M    |
 | 4   | `Set up tooling`                            | Prettier (single quotes, 120 columns, Tailwind plugin) applied to the whole repo, Vitest + Testing Library (jsdom), Playwright config with its own port, build directory and `.env.test`, Docker Compose Postgres on 5433 (`pnpm db:up`), env validation for the auth URL and secret. Test specs and the e2e seed step arrive with their features.       | M    |
-| 5   | `Add UI foundation and Crystal theme`       | shadcn/ui primitives, oklch tokens for light and dark, theme cookie + switcher without flash, Ski Flake logo component and favicons, next-intl with `messages/en.json`, error and not-found boundaries.                                                                                                                                                  | M    |
+| 5   | `Add UI foundation and Crystal theme`       | shadcn/ui setup with the button primitive (others arrive with the screens that need them), oklch tokens for light and dark, theme cookie + switcher without flash, Ski Flake logo, SVG favicon and generated Apple touch icon, next-intl with a type-checked `messages/en.json`, error, global-error and not-found pages.                                | M    |
 
 ### Part B — Domain and API
 

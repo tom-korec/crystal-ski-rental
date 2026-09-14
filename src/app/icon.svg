@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <style>
+    .arm { fill: #0068a7; }
+    .tip { fill: none; stroke: #102034; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+    @media (prefers-color-scheme: dark) {
+      .arm { fill: #60ceef; }
+      .tip { stroke: #ecf3f8; }
+    }
+  </style>
+  <g><rect class="arm" x="22" y="3.5" width="4" height="41" rx="2"/><path class="tip" d="M18.5 10 L24 14.5 L29.5 10 M18.5 38 L24 33.5 L29.5 38"/></g>
+  <g transform="rotate(60 24 24)"><rect class="arm" x="22" y="3.5" width="4" height="41" rx="2"/><path class="tip" d="M18.5 10 L24 14.5 L29.5 10 M18.5 38 L24 33.5 L29.5 38"/></g>
+  <g transform="rotate(120 24 24)"><rect class="arm" x="22" y="3.5" width="4" height="41" rx="2"/><path class="tip" d="M18.5 10 L24 14.5 L29.5 10 M18.5 38 L24 33.5 L29.5 38"/></g>
+</svg>

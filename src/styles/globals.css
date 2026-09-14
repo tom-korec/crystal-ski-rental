@@ -1,7 +1,157 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
 
 @theme {
   --font-sans:
     var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
     'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+@theme inline {
+  /* `--font-sans` must not be re-declared here: `@theme inline` would resolve it to itself. */
+  --font-heading: var(--font-sans);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/*
+ * "Crystal" palette. Glacier blue for everything interactive, cold ink and snow neutrals, and one
+ * warm alpenglow `highlight` reserved for prices, discounts and ratings.
+ *
+ * Contrast (WCAG 2.1): body text ≥ 15.8:1, primary button text 5.8:1 light / 10:1 dark, muted text
+ * on muted ≥ 5.3:1, input edges ≥ 3.2:1. Light `highlight` on white is 3.3:1, so it is for icons,
+ * stars and large text only; text on a highlight fill uses `highlight-foreground`.
+ */
+:root {
+  --radius: 0.625rem;
+  --background: oklch(0.985 0.006 240);
+  --foreground: oklch(0.24 0.045 255);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.24 0.045 255);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.24 0.045 255);
+  --primary: oklch(0.5 0.13 245);
+  --primary-foreground: oklch(0.99 0.004 240);
+  --secondary: oklch(0.94 0.025 235);
+  --secondary-foreground: oklch(0.3 0.06 250);
+  --muted: oklch(0.955 0.012 240);
+  --muted-foreground: oklch(0.5 0.03 250);
+  --accent: oklch(0.94 0.025 235);
+  --accent-foreground: oklch(0.3 0.06 250);
+  --highlight: oklch(0.66 0.16 38);
+  --highlight-foreground: oklch(0.22 0.05 30);
+  --destructive: oklch(0.55 0.21 27);
+  --border: oklch(0.9 0.015 240);
+  --input: oklch(0.63 0.03 245);
+  --ring: oklch(0.5 0.13 245);
+  --chart-1: oklch(0.5 0.13 245);
+  --chart-2: oklch(0.66 0.16 38);
+  --chart-3: oklch(0.7 0.1 220);
+  --chart-4: oklch(0.35 0.07 255);
+  --chart-5: oklch(0.8 0.06 235);
+  --sidebar: oklch(0.985 0.006 240);
+  --sidebar-foreground: oklch(0.24 0.045 255);
+  --sidebar-primary: oklch(0.5 0.13 245);
+  --sidebar-primary-foreground: oklch(0.99 0.004 240);
+  --sidebar-accent: oklch(0.94 0.025 235);
+  --sidebar-accent-foreground: oklch(0.3 0.06 250);
+  --sidebar-border: oklch(0.9 0.015 240);
+  --sidebar-ring: oklch(0.5 0.13 245);
+}
+
+.dark {
+  --background: oklch(0.16 0.03 255);
+  --foreground: oklch(0.96 0.01 235);
+  --card: oklch(0.21 0.035 255);
+  --card-foreground: oklch(0.96 0.01 235);
+  --popover: oklch(0.21 0.035 255);
+  --popover-foreground: oklch(0.96 0.01 235);
+  --primary: oklch(0.8 0.11 220);
+  --primary-foreground: oklch(0.2 0.05 250);
+  --secondary: oklch(0.28 0.04 255);
+  --secondary-foreground: oklch(0.96 0.01 235);
+  --muted: oklch(0.25 0.03 255);
+  --muted-foreground: oklch(0.75 0.03 240);
+  --accent: oklch(0.3 0.045 250);
+  --accent-foreground: oklch(0.96 0.01 235);
+  --highlight: oklch(0.78 0.13 45);
+  --highlight-foreground: oklch(0.2 0.05 30);
+  --destructive: oklch(0.7 0.19 25);
+  --border: oklch(0.32 0.03 255);
+  --input: oklch(0.52 0.035 250);
+  --ring: oklch(0.8 0.11 220);
+  --chart-1: oklch(0.8 0.11 220);
+  --chart-2: oklch(0.78 0.13 45);
+  --chart-3: oklch(0.6 0.09 240);
+  --chart-4: oklch(0.9 0.04 230);
+  --chart-5: oklch(0.45 0.06 250);
+  --sidebar: oklch(0.21 0.035 255);
+  --sidebar-foreground: oklch(0.96 0.01 235);
+  --sidebar-primary: oklch(0.8 0.11 220);
+  --sidebar-primary-foreground: oklch(0.2 0.05 250);
+  --sidebar-accent: oklch(0.3 0.045 250);
+  --sidebar-accent-foreground: oklch(0.96 0.01 235);
+  --sidebar-border: oklch(0.32 0.03 255);
+  --sidebar-ring: oklch(0.8 0.11 220);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
 }
