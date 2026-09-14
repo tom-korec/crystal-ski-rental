@@ -156,8 +156,7 @@
     }
   },
   "search": {
-    "title": "Find skis",
-    "description": "Skis waiting at our stores in Jasná, Tatranská Lomnica, Štrbské Pleso and Donovaly."
+    "title": "Find skis"
   },
   "customerSearch": {
     "title": "Where and when are you skiing?",
@@ -292,7 +291,6 @@
   },
   "fleet": {
     "title": "Fleet",
-    "description": "Every ski in every store, including the ones out of rental.",
     "count": "{count, plural, =0 {No skis} one {# ski} other {# skis}}",
     "empty": "There are no skis in the fleet yet.",
     "emptyFiltered": "No skis match these filters.",
@@ -417,7 +415,6 @@
   },
   "accounts": {
     "title": "Accounts",
-    "description": "Customers and staff. Managers look after customer accounts; admins also manage staff.",
     "back": "Back to accounts",
     "search": "Name or e-mail",
     "searchPlaceholder": "Search accounts",

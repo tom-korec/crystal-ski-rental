@@ -12,7 +12,7 @@ export default async function AccountsPage() {
 
   return (
     <>
-      <PageHeader title={t('title')} description={t('description')} />
+      <PageHeader title={t('title')} visuallyHidden />
       <Suspense>
         <AccountList actorRole={user.role} />
       </Suspense>

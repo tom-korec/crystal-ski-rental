@@ -13,7 +13,7 @@ export default async function FindSkisPage() {
 
   return (
     <>
-      <PageHeader title={t('title')} description={t('description')} />
+      <PageHeader title={t('title')} visuallyHidden />
       {/* The search reads its filters from the URL, which needs a Suspense boundary. */}
       <Suspense fallback={<CardGridSkeleton />}>
         <SkiSearch />

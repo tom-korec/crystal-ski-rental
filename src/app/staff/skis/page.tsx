@@ -13,7 +13,7 @@ export default async function FleetPage() {
 
   return (
     <>
-      <PageHeader title={t('title')} description={t('description')} />
+      <PageHeader title={t('title')} visuallyHidden />
       <Suspense fallback={<CardGridSkeleton />}>
         <Fleet />
       </Suspense>
