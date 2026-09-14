@@ -1,9 +1,9 @@
 import { isAdmin, isStaff } from '~/lib/roles';
-import { APP_HOME, APP_RESERVATIONS, STAFF_CATALOG, STAFF_HOME, STAFF_SKIS } from '~/lib/routes';
+import { APP_HOME, APP_RESERVATIONS, STAFF_ACCOUNTS, STAFF_CATALOG, STAFF_HOME, STAFF_SKIS } from '~/lib/routes';
 
 export interface NavLink {
   href: string;
-  labelKey: 'findSkis' | 'myReservations' | 'frontDesk' | 'fleet' | 'catalog';
+  labelKey: 'findSkis' | 'myReservations' | 'frontDesk' | 'fleet' | 'accounts' | 'catalog';
   testId: string;
   /** Also current on pages below it, such as a ski's detail page under the fleet. */
   includesSubpages?: boolean;
@@ -15,6 +15,7 @@ export function navLinksFor(role?: string | null): NavLink[] {
     ? [
         { href: STAFF_HOME, labelKey: 'frontDesk', testId: 'nav-front-desk' },
         { href: STAFF_SKIS, labelKey: 'fleet', testId: 'nav-fleet', includesSubpages: true },
+        { href: STAFF_ACCOUNTS, labelKey: 'accounts', testId: 'nav-accounts', includesSubpages: true },
         // Admin only; the page guard turns a manager away as well.
         ...(isAdmin(role) ? [{ href: STAFF_CATALOG, labelKey: 'catalog' as const, testId: 'nav-catalog' }] : []),
       ]

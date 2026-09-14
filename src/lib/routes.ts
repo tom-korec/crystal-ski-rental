@@ -6,9 +6,15 @@ export const APP_RESERVATIONS = '/app/reservations';
 export const STAFF_HOME = '/staff';
 export const STAFF_SKIS = '/staff/skis';
 export const STAFF_CATALOG = '/staff/catalog';
+export const STAFF_ACCOUNTS = '/staff/accounts';
+export const PROFILE = '/profile';
 
 export function staffSkiRoute(id: string): string {
   return `${STAFF_SKIS}/${id}`;
+}
+
+export function staffAccountRoute(id: string): string {
+  return `${STAFF_ACCOUNTS}/${id}`;
 }
 
 /** Where a signed-in account belongs (FR-3): customers search skis, staff start at the front desk. */

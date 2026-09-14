@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { isStaff, type Role, roleSchema } from '~/lib/roles';
-import { homeForRole } from '~/lib/routes';
+import { homeForRole, PROFILE } from '~/lib/routes';
 
 import { Logo } from './logo';
 import { MobileNav } from './mobile-nav';
@@ -41,9 +41,13 @@ export function AppShell({ name, role, children }: AppShellProps) {
           <PrimaryNav links={links} />
 
           <div className="ms-auto flex items-center gap-3">
-            <span className="text-muted-foreground hidden text-sm lg:inline" data-testid="account-name">
+            <Link
+              href={PROFILE}
+              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 hidden rounded-md text-sm transition-colors outline-none focus-visible:ring-3 lg:inline"
+              data-testid="account-name"
+            >
               {name}
-            </span>
+            </Link>
             {isStaff(role) ? (
               <span className="hidden sm:inline-flex">
                 <RoleBadge role={parsedRole} />

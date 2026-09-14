@@ -39,7 +39,8 @@
     "frontDesk": "Front desk",
     "myReservations": "My reservations",
     "fleet": "Fleet",
-    "catalog": "Catalogue"
+    "catalog": "Catalogue",
+    "accounts": "Accounts"
   },
   "roles": {
     "USER": "Customer",
@@ -302,13 +303,6 @@
       "length": "Enter a length between {min} and {max} cm."
     }
   },
-  "errors": {
-    "title": "Something went wrong",
-    "description": "This page could not be displayed. Try again, and if it keeps happening, come back a little later.",
-    "reference": "Reference: {digest}",
-    "notFoundTitle": "Page not found",
-    "notFoundDescription": "The address may be mistyped, or the page no longer exists."
-  },
   "skiDetail": {
     "back": "Back to fleet",
     "removed": "Removed from the fleet",
@@ -404,5 +398,81 @@
       "email": "Enter a valid e-mail address.",
       "hours": "Keep it under {max} characters."
     }
+  },
+  "accounts": {
+    "title": "Accounts",
+    "description": "Customers and staff. Managers look after customer accounts; admins also manage staff.",
+    "back": "Back to accounts",
+    "search": "Name or e-mail",
+    "searchPlaceholder": "Search accounts",
+    "role": "Role",
+    "anyRole": "Any role",
+    "showRemoved": "Show removed",
+    "count": "{count, plural, one {# account} other {# accounts}}",
+    "removedCount": "{count, plural, one {# removed account} other {# removed accounts}}",
+    "empty": "No accounts match.",
+    "name": "Name",
+    "email": "E-mail",
+    "joined": "Joined",
+    "joinedOn": "joined {date}",
+    "removed": "Removed",
+    "add": "Add account",
+    "addTitle": "Add an account",
+    "addDescription": "Creates a customer account, for example for a walk-in customer.",
+    "addDescriptionAdmin": "Creates a customer or staff account.",
+    "password": "Password",
+    "passwordHint": "At least {min} characters. Share it with the person securely.",
+    "edit": "Edit",
+    "editTitle": "Edit account",
+    "editDescription": "Leave the new password empty to keep the current one. Setting one signs the account out everywhere.",
+    "newPassword": "New password",
+    "newPasswordHint": "Optional.",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "remove": "Remove account",
+    "removeTitle": "Remove {name}?",
+    "removeDescription": "The account is signed out and can no longer sign in. Its reservations stay in the history, and the account can be restored later.",
+    "restore": "Restore account",
+    "reservations": "Reservations",
+    "noReservations": "No reservations yet.",
+    "errors": {
+      "name": "Enter a name.",
+      "email": "Enter a valid e-mail address.",
+      "password": "Use at least {min} characters."
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "description": "Your name and password.",
+    "detailsTitle": "Details",
+    "detailsDescription": "How you appear to the store.",
+    "name": "Name",
+    "email": "E-mail",
+    "emailHint": "You sign in with this address, so it cannot be changed here.",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved.",
+    "passwordTitle": "Password",
+    "passwordDescription": "Changing it signs you out on your other devices.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Repeat new password",
+    "passwordHint": "At least {min} characters.",
+    "changePassword": "Change password",
+    "passwordChanged": "Password changed.",
+    "errors": {
+      "name": "Enter your name.",
+      "currentPassword": "Enter your current password.",
+      "newPassword": "Use at least {min} characters.",
+      "confirmPassword": "The passwords do not match."
+    }
+  },
+  "errors": {
+    "title": "Something went wrong",
+    "description": "This page could not be displayed. Try again, and if it keeps happening, come back a little later.",
+    "reference": "Reference: {digest}",
+    "notFoundTitle": "Page not found",
+    "notFoundDescription": "The address may be mistyped, or the page no longer exists."
   }
 }

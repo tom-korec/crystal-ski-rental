@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 
 import { Button } from '~/components/ui/button';
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '~/components/ui/sheet';
+import { PROFILE } from '~/lib/routes';
 import { cn } from '~/lib/utils';
 
 import type { NavLink } from './nav-links';
@@ -35,7 +36,14 @@ export function MobileNav({ links, name }: MobileNavProps) {
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
             <SheetTitle>{t('menu')}</SheetTitle>
-            <span className="text-muted-foreground text-sm">{name}</span>
+            <SheetClose
+              render={<Link href={PROFILE} />}
+              nativeButton={false}
+              className="text-muted-foreground hover:text-foreground w-fit text-sm underline-offset-4 hover:underline"
+              data-testid="mobile-profile"
+            >
+              {name}
+            </SheetClose>
           </div>
           <SheetClose render={<Button variant="ghost" size="icon-sm" />} aria-label={t('closeMenu')}>
             <XIcon />
