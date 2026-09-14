@@ -58,3 +58,7 @@ yarn-error.log*
 
 # prisma client, generated on install
 /generated
+
+# agent instructions that `next dev` writes into the project root
+/AGENTS.md
+/CLAUDE.md

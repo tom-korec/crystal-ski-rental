@@ -49,19 +49,121 @@
     "dark": "Dark",
     "system": "System"
   },
-  "search": {
-    "title": "Find skis",
-    "description": "Pick your dates and store to see which skis are free."
-  },
-  "frontDesk": {
-    "title": "Front desk",
-    "description": "Today's pickups and returns, and anything overdue."
-  },
   "common": {
+    "loading": "Loading…",
+    "loadMore": "Show more",
+    "loadingMore": "Loading more…",
+    "shownOfTotal": "Showing {shown} of {total}",
     "actions": {
       "home": "Back to home",
       "tryAgain": "Try again"
     }
+  },
+  "filters": {
+    "title": "Search filters",
+    "dates": "Dates",
+    "datesHint": "Pick the first and last day. Rentals last up to {max} days.",
+    "store": "Store",
+    "anyStore": "Any store",
+    "brand": "Brand",
+    "anyBrand": "Any brand",
+    "model": "Model",
+    "anyModel": "Any model",
+    "type": "Type",
+    "anyType": "Any type",
+    "gender": "For",
+    "anyGender": "Anyone",
+    "level": "Skill level",
+    "anyLevel": "Any level",
+    "minLength": "Min length",
+    "maxLength": "Max length",
+    "any": "Any",
+    "cm": "{length} cm",
+    "maxPrice": "Price per day",
+    "anyPrice": "Any price",
+    "upTo": "Up to {price}",
+    "rating": "Rating",
+    "anyRating": "Any rating",
+    "ratingAtLeast": "{score, plural, =5 {5 stars} other {# stars and up}}",
+    "sort": "Sort by",
+    "sortOptions": {
+      "rating": "Best rated",
+      "priceAsc": "Price: low to high",
+      "priceDesc": "Price: high to low"
+    },
+    "clear": "Clear filters",
+    "moreFilters": "{count, plural, =0 {More filters} other {More filters (#)}}"
+  },
+  "catalog": {
+    "type": {
+      "PISTE": "Piste",
+      "ALL_MOUNTAIN": "All-mountain",
+      "FREERIDE": "Freeride",
+      "FREESTYLE": "Freestyle"
+    },
+    "gender": {
+      "MAN": "Men",
+      "WOMAN": "Women",
+      "KID": "Kids",
+      "UNISEX": "Unisex"
+    },
+    "level": {
+      "BEGINNER": "Beginner",
+      "INTERMEDIATE": "Intermediate",
+      "EXPERT": "Expert"
+    }
+  },
+  "skis": {
+    "length": "{length} cm",
+    "store": "Store",
+    "ratingLabel": "Rating",
+    "notRated": "Not rated yet",
+    "rating": "{score} ({count, plural, one {# rating} other {# ratings}})",
+    "pricePerDay": "{price} / day",
+    "pricePerDayForDays": "{price} / day · {days, plural, one {# day} other {# days}}",
+    "discount": "−{percent} %",
+    "count": "{count, plural, =0 {No skis free} one {# ski free} other {# skis free}}",
+    "emptyForDates": "No skis are free for these dates. Try other dates.",
+    "emptyFiltered": "No skis match these filters for these dates. Try fewer filters.",
+    "reserve": "Reserve"
+  },
+  "pricing": {
+    "daysTimesPrice": "{days, plural, one {# day} other {# days}} × {price}",
+    "discount": "Longer-rental discount ({percent} %)",
+    "total": "Total",
+    "nextTier": "Rent for {days} days or more to get {percent} % off ({total} for {days} days)."
+  },
+  "stores": {
+    "openingHours": "Opening hours",
+    "closed": "Closed",
+    "weekdays": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    }
+  },
+  "search": {
+    "title": "Find skis",
+    "description": "Pick your dates and store to see which skis are free."
+  },
+  "booking": {
+    "title": "Reserve {skis}",
+    "summary": "{length} cm · {period} · {days, plural, one {# day} other {# days}}",
+    "pickupAt": "Pick up and return at",
+    "cancel": "Cancel",
+    "reserving": "Reserving…",
+    "confirm": "Reserve for {total}",
+    "bookedTitle": "Booked",
+    "bookedDescription": "{skis} are yours for {period}. Pick them up at {store} on the first day.",
+    "done": "Done"
+  },
+  "frontDesk": {
+    "title": "Front desk",
+    "description": "Today's pickups and returns, and anything overdue."
   },
   "errors": {
     "title": "Something went wrong",
