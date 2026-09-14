@@ -15,7 +15,13 @@ export const env = createEnv({
     VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
   },
 
-  client: {},
+  client: {
+    // Public demo: shows the demo accounts on the landing page and a notice that data resets daily.
+    NEXT_PUBLIC_DEMO_MODE: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+  },
 
   // Destructured by hand: edge runtimes and the client cannot enumerate `process.env`.
   runtimeEnv: {
@@ -27,6 +33,7 @@ export const env = createEnv({
     VERCEL_URL: process.env.VERCEL_URL,
     VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
     VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE,
   },
 
   // For builds without real secrets, e.g. a Docker image build.

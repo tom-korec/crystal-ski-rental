@@ -199,6 +199,16 @@ never match the browser's.
 Most calls use the streaming batch link. Auth calls do not: a streamed response sends its headers
 before the procedure runs, so a session cookie set by signing in would never reach the browser.
 
+### Safeguards for a public demo
+
+With `NEXT_PUBLIC_DEMO_MODE=true` the landing page offers one-click sign-in for each demo role and every
+page says the data resets nightly. Because anyone can reach the demo, sign-ins and sign-ups are
+rate-limited in the tRPC auth router, with counts kept in Postgres so every serverless instance sees the
+same numbers: five failed sign-ins per address and twenty per client in ten minutes, and five sign-ups
+per client an hour. Only failures count, so someone who knows their password is never slowed down.
+Better Auth's own HTTP endpoints for those two actions are closed, since calling them directly would
+bypass the limits. The client is taken from `x-forwarded-for`, which Vercel sets itself.
+
 ### Translations
 
 The app ships in English, but every user-facing string is in `messages/en.json` and message keys are
@@ -246,7 +256,8 @@ The public demo runs on **Vercel** (Hobby) with **Neon** Postgres (Free), both i
 One-time setup, in the dashboards:
 
 1. Create a Neon project in `aws-eu-central-1` with Postgres 17.
-2. Import the GitHub repository into Vercel and add `BETTER_AUTH_SECRET` (`openssl rand -base64 32`).
+2. Import the GitHub repository into Vercel and add `BETTER_AUTH_SECRET` (`openssl rand -base64 32`)
+   and `NEXT_PUBLIC_DEMO_MODE=true`.
 3. Install the Neon integration on the Vercel project, and turn on automatic deletion of preview
    branches (the free plan allows ten).
 4. Under the project's Deployment Checks, require the CI workflow before a deployment is promoted to

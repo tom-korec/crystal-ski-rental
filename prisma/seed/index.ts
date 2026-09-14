@@ -30,7 +30,7 @@ async function write(data: SeedData): Promise<void> {
 
   await db.$transaction(
     async (tx) => {
-      await tx.$executeRaw`TRUNCATE model_rating, reservation_rating, reservation, ski, ski_model, brand, store, session, account, verification, "user" CASCADE`;
+      await tx.$executeRaw`TRUNCATE model_rating, reservation_rating, reservation, ski, ski_model, brand, store, session, account, verification, rate_limit, "user" CASCADE`;
 
       const catalogueTimes = { createdAt: CATALOGUE_CREATED, updatedAt: CATALOGUE_CREATED };
 

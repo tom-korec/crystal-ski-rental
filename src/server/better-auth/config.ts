@@ -17,6 +17,9 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  // Every sign-in and sign-up goes through the tRPC auth router, which rate-limits them. Better Auth's own
+  // HTTP endpoints for the same actions would bypass that, so they are closed; server-side calls still work.
+  disabledPaths: ['/sign-in/email', '/sign-up/email'],
   user: {
     additionalFields: {
       // `input: false` is the security control: without it a sign-up request could send

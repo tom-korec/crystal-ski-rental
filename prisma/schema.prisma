@@ -283,3 +283,13 @@ model ModelRating {
   @@index([reservationId])
   @@map("model_rating")
 }
+
+// Recent sign-in failures and sign-ups per client or per address, to slow down guessing and sign-up
+// floods on the public demo. `count` restarts when `windowStartedAt` is older than the limit's window.
+model RateLimit {
+  key             String   @id
+  count           Int
+  windowStartedAt DateTime
+
+  @@map("rate_limit")
+}

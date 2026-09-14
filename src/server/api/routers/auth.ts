@@ -3,6 +3,7 @@ import { APIError } from 'better-auth/api';
 
 import { signInSchema, signUpSchema } from '~/lib/auth-schema';
 import { passwordChangeSchema, profileUpdateSchema } from '~/lib/profile-schema';
+import { clientKey, isRateLimited, RATE_LIMITS, recordAttempt } from '~/server/api/rate-limit';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '~/server/api/trpc';
 import { auth } from '~/server/better-auth';
 
@@ -18,6 +19,8 @@ function forwardCookies(from: Headers, to: Headers | undefined): void {
     to.append('set-cookie', cookie);
   }
 }
+
+const TOO_MANY_ATTEMPTS = 'Too many attempts. Please wait a few minutes and try again.';
 
 function toTRPCError(error: unknown): TRPCError {
   if (!(error instanceof APIError)) {
@@ -48,6 +51,13 @@ export const authRouter = createTRPCRouter({
 
   /** Every sign-up is a customer: `role` is not accepted as input (FR-1). */
   signUp: publicProcedure.input(signUpSchema).mutation(async ({ ctx, input }) => {
+    const clientLimit = `sign-up:client:${clientKey(ctx.headers)}`;
+
+    if (await isRateLimited(ctx.db, clientLimit, RATE_LIMITS.signUpPerClient)) {
+      throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: TOO_MANY_ATTEMPTS });
+    }
+    await recordAttempt(ctx.db, clientLimit, RATE_LIMITS.signUpPerClient);
+
     try {
       const { headers, response } = await auth.api.signUpEmail({
         body: { name: input.name, email: input.email, password: input.password },
@@ -64,6 +74,16 @@ export const authRouter = createTRPCRouter({
   }),
 
   signIn: publicProcedure.input(signInSchema).mutation(async ({ ctx, input }) => {
+    const clientLimit = `sign-in:client:${clientKey(ctx.headers)}`;
+    const accountLimit = `sign-in:account:${input.email.toLowerCase()}`;
+
+    if (
+      (await isRateLimited(ctx.db, clientLimit, RATE_LIMITS.signInPerClient)) ||
+      (await isRateLimited(ctx.db, accountLimit, RATE_LIMITS.signInPerAccount))
+    ) {
+      throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: TOO_MANY_ATTEMPTS });
+    }
+
     try {
       const { headers, response } = await auth.api.signInEmail({
         body: { email: input.email, password: input.password },
@@ -75,7 +95,16 @@ export const authRouter = createTRPCRouter({
 
       return { id: response.user.id, role: response.user.role };
     } catch (error) {
-      throw toTRPCError(error);
+      const failure = toTRPCError(error);
+
+      if (failure.code === 'UNAUTHORIZED') {
+        await Promise.all([
+          recordAttempt(ctx.db, clientLimit, RATE_LIMITS.signInPerClient),
+          recordAttempt(ctx.db, accountLimit, RATE_LIMITS.signInPerAccount),
+        ]);
+      }
+
+      throw failure;
     }
   }),
 

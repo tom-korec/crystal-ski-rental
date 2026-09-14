@@ -474,5 +474,10 @@
     "reference": "Reference: {digest}",
     "notFoundTitle": "Page not found",
     "notFoundDescription": "The address may be mistyped, or the page no longer exists."
+  },
+  "demo": {
+    "banner": "Demo site: data resets every night and no real bookings are made.",
+    "title": "Try the demo",
+    "description": "Sign in as one of the demo accounts to see each role."
   }
 }

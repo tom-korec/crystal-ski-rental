@@ -1,6 +1,8 @@
 import { getTranslations } from 'next-intl/server';
 
 import { AuthPanel } from '~/components/layout/auth-panel';
+import { DemoAccounts } from '~/components/layout/demo-accounts';
+import { DemoBanner } from '~/components/layout/demo-banner';
 import { HeroArt } from '~/components/layout/hero-art';
 import { Logo } from '~/components/layout/logo';
 import { ThemeSwitcher } from '~/components/layout/theme-switcher';
@@ -14,6 +16,7 @@ export default async function Landing() {
   return (
     <div className="relative isolate flex min-h-screen flex-col overflow-hidden">
       <HeroArt />
+      <DemoBanner />
 
       <header className="flex items-center justify-between gap-4 px-4 py-5 sm:px-10">
         <Logo />
@@ -33,7 +36,10 @@ export default async function Landing() {
           </p>
         </div>
 
-        <AuthPanel />
+        <div className="flex w-full flex-col items-center gap-4">
+          <AuthPanel />
+          <DemoAccounts />
+        </div>
       </main>
     </div>
   );

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { isStaff, type Role, roleSchema } from '~/lib/roles';
 import { homeForRole, PROFILE } from '~/lib/routes';
 
+import { DemoBanner } from './demo-banner';
 import { Logo } from './logo';
 import { MobileNav } from './mobile-nav';
 import { navLinksFor } from './nav-links';
@@ -25,6 +26,7 @@ export function AppShell({ name, role, children }: AppShellProps) {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <DemoBanner />
       <header className="border-border/60 bg-card/60 sticky top-0 z-20 border-b backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center gap-6 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
