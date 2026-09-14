@@ -5,14 +5,57 @@
     "wordmark": "Crystal",
     "wordmarkTagline": "Ski Rental"
   },
-  "home": {
-    "comingSoon": "Online ski reservations are on their way."
+  "landing": {
+    "eyebrow": "Crystal Ski Rental",
+    "headline": "Fresh tracks start here",
+    "subtitle": "Skis waiting in Jasná, Tatranská Lomnica, Štrbské Pleso and Donovaly, booked by the day."
+  },
+  "auth": {
+    "signInTitle": "Sign in",
+    "signUpTitle": "Create an account",
+    "name": "Name",
+    "email": "E-mail",
+    "password": "Password",
+    "passwordHint": "At least {min} characters.",
+    "signIn": "Sign in",
+    "signUp": "Create account",
+    "signOut": "Sign out",
+    "submitting": "Please wait…",
+    "switchToSignUp": "Need an account? Create one",
+    "switchToSignIn": "Already have an account? Sign in",
+    "errors": {
+      "name": "Enter your name.",
+      "email": "Enter a valid e-mail address.",
+      "password": "Use at least {min} characters.",
+      "passwordRequired": "Enter your password."
+    }
+  },
+  "nav": {
+    "primary": "Main",
+    "menu": "Menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "findSkis": "Find skis",
+    "frontDesk": "Front desk"
+  },
+  "roles": {
+    "USER": "Customer",
+    "MANAGER": "Manager",
+    "ADMIN": "Admin"
   },
   "theme": {
     "label": "Colour theme",
     "light": "Light",
     "dark": "Dark",
     "system": "System"
+  },
+  "search": {
+    "title": "Find skis",
+    "description": "Pick your dates and store to see which skis are free."
+  },
+  "frontDesk": {
+    "title": "Front desk",
+    "description": "Today's pickups and returns, and anything overdue."
   },
   "common": {
     "actions": {
