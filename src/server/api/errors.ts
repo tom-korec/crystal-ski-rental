@@ -48,6 +48,10 @@ export function rethrowPrismaError(error: unknown, messages: Partial<Record<Hand
   throw error;
 }
 
+export function isPrismaError(error: unknown, code: HandledPrismaCode): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === code;
+}
+
 export const INTERNAL_ERROR_MESSAGE = 'Something went wrong. Please try again.';
 
 /** The message the browser may see: unhandled failures are masked in production. */

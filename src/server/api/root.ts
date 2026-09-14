@@ -1,6 +1,7 @@
 import { authRouter } from '~/server/api/routers/auth';
 import { brandRouter } from '~/server/api/routers/brand';
 import { healthRouter } from '~/server/api/routers/health';
+import { skiRouter } from '~/server/api/routers/ski';
 import { skiModelRouter } from '~/server/api/routers/ski-model';
 import { storeRouter } from '~/server/api/routers/store';
 import { createCallerFactory, createTRPCRouter } from '~/server/api/trpc';
@@ -10,6 +11,7 @@ export const appRouter = createTRPCRouter({
   auth: authRouter,
   brand: brandRouter,
   health: healthRouter,
+  ski: skiRouter,
   skiModel: skiModelRouter,
   store: storeRouter,
 });
