@@ -8,20 +8,20 @@ app building, and together they tell the story of the project. Deployment is the
 
 ## 1. Stack
 
-| Concern | Choice |
-| --- | --- |
-| Framework | Next.js 16 (App Router), React 19, TypeScript strict |
-| API | tRPC 11 + TanStack Query, superjson |
-| Database | PostgreSQL 17, Prisma 7 |
-| Auth | Better Auth (e-mail + password) with a role field |
-| Validation | Zod 4, schemas shared by server and forms |
-| Money | `Decimal` in Postgres, `decimal.js` for arithmetic, strings on the wire |
-| UI | Tailwind CSS 4, shadcn/ui on Base UI, lucide icons, Geist |
-| Forms | React Hook Form + Zod resolver |
-| i18n | next-intl (English catalogue in release 1) |
-| Tests | Vitest + Testing Library, Playwright |
-| Local infra | Docker Compose Postgres on port 5433 |
-| CI / hosting | GitHub Actions, Vercel (Hobby), Neon (Free), Frankfurt region |
+| Concern      | Choice                                                                  |
+| ------------ | ----------------------------------------------------------------------- |
+| Framework    | Next.js 16 (App Router), React 19, TypeScript strict                    |
+| API          | tRPC 11 + TanStack Query, superjson                                     |
+| Database     | PostgreSQL 17, Prisma 7                                                 |
+| Auth         | Better Auth (e-mail + password) with a role field                       |
+| Validation   | Zod 4, schemas shared by server and forms                               |
+| Money        | `Decimal` in Postgres, `decimal.js` for arithmetic, strings on the wire |
+| UI           | Tailwind CSS 4, shadcn/ui on Base UI, lucide icons, Geist               |
+| Forms        | React Hook Form + Zod resolver                                          |
+| i18n         | next-intl (English catalogue in release 1)                              |
+| Tests        | Vitest + Testing Library, Playwright                                    |
+| Local infra  | Docker Compose Postgres on port 5433                                    |
+| CI / hosting | GitHub Actions, Vercel (Hobby), Neon (Free), Frankfurt region           |
 
 ## 2. Architecture decisions
 
@@ -32,7 +32,7 @@ These are the calls that shape the code. Each one also gets a short section in t
    - Server-side page guards redirect (FR-5).
    - tRPC procedures protect data: `publicProcedure`, `protectedProcedure`, `userProcedure`
      (customers only), `staffProcedure` and `adminProcedure`.
-   - Which *accounts* a manager may write to depends on the target's role, so the account router
+   - Which _accounts_ a manager may write to depends on the target's role, so the account router
      checks it before every write, and again when a write would change the role (FR-62).
    - Better Auth's `role` field is `input: false`, so sign-up cannot set it.
 2. **Whole-day dates.**
@@ -123,6 +123,7 @@ model ModelRating {
 
 All timestamps have `createdAt` and `updatedAt`. Foreign keys to catalogue rows and skis are `Restrict`.
 Indexes serve:
+
 - the overlap lookup `(skiId, status, startDate)`
 - customer history `(userId, startDate)`
 - the front desk `(status, startDate)` and `(status, endDate)`
@@ -137,56 +138,56 @@ owner's manual deployment steps (§4 Part E).
 
 ### Part A — Foundation
 
-| # | Commit | Contents | Size |
-| --- | --- | --- | --- |
-| 1 | `Initial commit from Create T3 App` ✅ | Scaffold. | — |
-| 2 | `Add requirements and implementation plan` | `docs/REQUIREMENTS.md`, `docs/PLAN.md`. | S |
-| 3 | `Upgrade to Next.js 16, Prisma 7 and Zod 4` | Dependency upgrades (TypeScript 6 and ESLint 9, the newest the lint plugins support). Prisma 7 config file, `prisma-client` generator and `pg` driver adapter. ESLint flat config without `next lint`. Remove the sample post router, page and GitHub sign-in, and replace them with a `health.ping` router. Exclude local-only folders from `tsconfig`. | M |
-| 4 | `Set up tooling` | ESLint flat config + Prettier (Tailwind plugin), Vitest + Testing Library, Playwright config, `pnpm check`, Docker Compose Postgres on 5433, `.env.example`, env validation. | M |
-| 5 | `Add UI foundation and Crystal theme` | shadcn/ui primitives, oklch tokens for light and dark, theme cookie + switcher without flash, Ski Flake logo component and favicons, next-intl with `messages/en.json`, error and not-found boundaries. | M |
+| #   | Commit                                      | Contents                                                                                                                                                                                                                                                                                                                                                 | Size |
+| --- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 1   | `Initial commit from Create T3 App` ✅      | Scaffold.                                                                                                                                                                                                                                                                                                                                                | —    |
+| 2   | `Add requirements and implementation plan`  | `docs/REQUIREMENTS.md`, `docs/PLAN.md`.                                                                                                                                                                                                                                                                                                                  | S    |
+| 3   | `Upgrade to Next.js 16, Prisma 7 and Zod 4` | Dependency upgrades (TypeScript 6 and ESLint 9, the newest the lint plugins support). Prisma 7 config file, `prisma-client` generator and `pg` driver adapter. ESLint flat config without `next lint`. Remove the sample post router, page and GitHub sign-in, and replace them with a `health.ping` router. Exclude local-only folders from `tsconfig`. | M    |
+| 4   | `Set up tooling`                            | Prettier (single quotes, 120 columns, Tailwind plugin) applied to the whole repo, Vitest + Testing Library (jsdom), Playwright config with its own port, build directory and `.env.test`, Docker Compose Postgres on 5433 (`pnpm db:up`), env validation for the auth URL and secret. Test specs and the e2e seed step arrive with their features.       | M    |
+| 5   | `Add UI foundation and Crystal theme`       | shadcn/ui primitives, oklch tokens for light and dark, theme cookie + switcher without flash, Ski Flake logo component and favicons, next-intl with `messages/en.json`, error and not-found boundaries.                                                                                                                                                  | M    |
 
 ### Part B — Domain and API
 
-| # | Commit | Contents | Size |
-| --- | --- | --- | --- |
-| 6 | `Add database schema` | §3 schema, init migration, hand-written `reservation_no_overlap` migration. | M |
-| 7 | `Add authentication and roles` | Better Auth e-mail/password with `role` (`input: false`) and `deletedAt`, page guards, procedure levels, role helpers + unit tests (FR-1…5, NFR-5). | M |
-| 8 | `Add date and pricing rules` | `date.ts`, `pricing.ts` (BR-1…5) with unit tests on every tier boundary, rounding and decimal strings. | M |
-| 9 | `Add reservation lifecycle and rating rules` | `reservation-lifecycle.ts` (BR-10…15), `rating-rules.ts` (BR-40…41) with table-driven unit tests, including the 59/60-minute edges. | M |
-| 10 | `Add catalogue API` | `brand`, `skiModel`, `store` routers + shared schemas, and the in-use delete refusals (FR-10…14). | M |
-| 11 | `Add ski API` | `ski.list` (staff), `ski.search` (customer, filters, sort, quote), `byId`, `create`, `update` (store-move rule), `delete` (soft/hard) (FR-20…24, FR-30…34, BR-22, BR-30…32). | L |
-| 12 | `Add reservation API` | `create` with snapshot, `cancel` (user or store), `pickUp`, `markReturned`, `frontDesk`, `listMine`, `bySki`, `byUser` (FR-40…41, FR-50…51, FR-60, BR-11…15, BR-20). | L |
-| 13 | `Add ratings API` | `reservationRating.upsert`, `modelRating.upsert`/`mine`, staff `skiModel.ratings`, average recomputation (FR-42…44, FR-14, BR-40…42). | M |
-| 14 | `Add account management API` | `user` router: list, create, update, delete, restore, and profile update/password change (FR-4, FR-61…63, BR-33). | M |
-| 15 | `Add demo seed` | Deterministic seed with 4 stores, ~8 brands, ~15 models, ~40 skis, demo accounts per role, reservations in every status (including overdue ones), and ratings including one inside its edit window. Asserts the invariants before writing. | M |
+| #   | Commit                                       | Contents                                                                                                                                                                                                                                   | Size |
+| --- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
+| 6   | `Add database schema`                        | §3 schema, init migration, hand-written `reservation_no_overlap` migration.                                                                                                                                                                | M    |
+| 7   | `Add authentication and roles`               | Better Auth e-mail/password with `role` (`input: false`) and `deletedAt`, page guards, procedure levels, role helpers + unit tests (FR-1…5, NFR-5).                                                                                        | M    |
+| 8   | `Add date and pricing rules`                 | `date.ts`, `pricing.ts` (BR-1…5) with unit tests on every tier boundary, rounding and decimal strings.                                                                                                                                     | M    |
+| 9   | `Add reservation lifecycle and rating rules` | `reservation-lifecycle.ts` (BR-10…15), `rating-rules.ts` (BR-40…41) with table-driven unit tests, including the 59/60-minute edges.                                                                                                        | M    |
+| 10  | `Add catalogue API`                          | `brand`, `skiModel`, `store` routers + shared schemas, and the in-use delete refusals (FR-10…14).                                                                                                                                          | M    |
+| 11  | `Add ski API`                                | `ski.list` (staff), `ski.search` (customer, filters, sort, quote), `byId`, `create`, `update` (store-move rule), `delete` (soft/hard) (FR-20…24, FR-30…34, BR-22, BR-30…32).                                                               | L    |
+| 12  | `Add reservation API`                        | `create` with snapshot, `cancel` (user or store), `pickUp`, `markReturned`, `frontDesk`, `listMine`, `bySki`, `byUser` (FR-40…41, FR-50…51, FR-60, BR-11…15, BR-20).                                                                       | L    |
+| 13  | `Add ratings API`                            | `reservationRating.upsert`, `modelRating.upsert`/`mine`, staff `skiModel.ratings`, average recomputation (FR-42…44, FR-14, BR-40…42).                                                                                                      | M    |
+| 14  | `Add account management API`                 | `user` router: list, create, update, delete, restore, and profile update/password change (FR-4, FR-61…63, BR-33).                                                                                                                          | M    |
+| 15  | `Add demo seed`                              | Deterministic seed with 4 stores, ~8 brands, ~15 models, ~40 skis, demo accounts per role, reservations in every status (including overdue ones), and ratings including one inside its edit window. Asserts the invariants before writing. | M    |
 
 ### Part C — Screens
 
-| # | Commit | Contents | Size |
-| --- | --- | --- | --- |
-| 16 | `Add landing page and sign-in` | Day/dusk hero by theme, sign-in / sign-up panel, header with logo and theme switcher, mobile nav. | M |
-| 17 | `Add ski search and booking` | Filters + sort in the URL, ski cards with discounted quote, reserve dialog with breakdown and store info, load-more grid (FR-30…35). | L |
-| 18 | `Add my reservations and ratings` | Reservations table with status and price, cancel, rate-rental and rate-model dialogs with edit-window state (FR-40…44). | M |
-| 19 | `Add front desk` | Store tabs, due and overdue lists, pick-up / return / cancel actions (FR-50…51). | M |
-| 20 | `Add fleet management` | Fleet grid with filters and code search, add/edit ski, ski detail with reservations and out-of-rental notice, delete dialog (FR-20…24, FR-60). | L |
-| 21 | `Add catalogue management` | Admin tabs for brands, models (price, attributes, ratings with mail-to) and stores (address, contacts, 7 hours fields) (FR-10…14). | M |
-| 22 | `Add accounts and profile` | Account list with filters and removed view, detail with reservation history, create/edit/delete/restore dialogs, profile page (FR-4, FR-60…63). | M |
+| #   | Commit                            | Contents                                                                                                                                        | Size |
+| --- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 16  | `Add landing page and sign-in`    | Day/dusk hero by theme, sign-in / sign-up panel, header with logo and theme switcher, mobile nav.                                               | M    |
+| 17  | `Add ski search and booking`      | Filters + sort in the URL, ski cards with discounted quote, reserve dialog with breakdown and store info, load-more grid (FR-30…35).            | L    |
+| 18  | `Add my reservations and ratings` | Reservations table with status and price, cancel, rate-rental and rate-model dialogs with edit-window state (FR-40…44).                         | M    |
+| 19  | `Add front desk`                  | Store tabs, due and overdue lists, pick-up / return / cancel actions (FR-50…51).                                                                | M    |
+| 20  | `Add fleet management`            | Fleet grid with filters and code search, add/edit ski, ski detail with reservations and out-of-rental notice, delete dialog (FR-20…24, FR-60).  | L    |
+| 21  | `Add catalogue management`        | Admin tabs for brands, models (price, attributes, ratings with mail-to) and stores (address, contacts, 7 hours fields) (FR-10…14).              | M    |
+| 22  | `Add accounts and profile`        | Account list with filters and removed view, detail with reservation history, create/edit/delete/restore dialogs, profile page (FR-4, FR-60…63). | M    |
 
 ### Part D — Quality
 
-| # | Commit | Contents | Size |
-| --- | --- | --- | --- |
-| 23 | `Add end-to-end tests` | One spec per role on its own test database: auth and redirects; customer search → book → cancel; staff pick up → return → customer rates; admin catalogue and accounts. | L |
-| 24 | `Add CI workflow` | GitHub Actions: lint, typecheck, format, unit, e2e against a `postgres:17` service, build. Required status checks on `main`. | M |
-| 25 | `Write README` | Setup, scripts, demo accounts, project layout, and Decisions (§2 in prose). | M |
+| #   | Commit                 | Contents                                                                                                                                                                | Size |
+| --- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 23  | `Add end-to-end tests` | One spec per role on its own test database: auth and redirects; customer search → book → cancel; staff pick up → return → customer rates; admin catalogue and accounts. | L    |
+| 24  | `Add CI workflow`      | GitHub Actions: lint, typecheck, format, unit, e2e against a `postgres:17` service, build. Required status checks on `main`.                                            | M    |
+| 25  | `Write README`         | Setup, scripts, demo accounts, project layout, and Decisions (§2 in prose).                                                                                             | M    |
 
 ### Part E — Deployment (last)
 
-| # | Commit | Contents | Size |
-| --- | --- | --- | --- |
-| 26 | `Prepare for Vercel and Neon` | Prisma pooled URL at runtime and direct URL for migrations. Build command `prisma migrate deploy && next build`. `vercel.json` with region `fra1`. Better Auth trusted origins for preview URLs. Env schema for `VERCEL_URL`. | S |
-| 27 | `Add demo mode` | Demo accounts shown on the landing page with one-click sign-in, a "demo data resets daily" banner, Better Auth rate limits on sign-in and sign-up, and text length limits (NFR-9). | M |
-| 28 | `Add scheduled demo reset` | GitHub Actions workflow on a nightly cron plus a manual trigger that migrates and re-seeds production. The seed refuses production unless `ALLOW_PRODUCTION_SEED=true`. | S |
+| #   | Commit                        | Contents                                                                                                                                                                                                                      | Size |
+| --- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 26  | `Prepare for Vercel and Neon` | Prisma pooled URL at runtime and direct URL for migrations. Build command `prisma migrate deploy && next build`. `vercel.json` with region `fra1`. Better Auth trusted origins for preview URLs. Env schema for `VERCEL_URL`. | S    |
+| 27  | `Add demo mode`               | Demo accounts shown on the landing page with one-click sign-in, a "demo data resets daily" banner, Better Auth rate limits on sign-in and sign-up, and text length limits (NFR-9).                                            | M    |
+| 28  | `Add scheduled demo reset`    | GitHub Actions workflow on a nightly cron plus a manual trigger that migrates and re-seeds production. The seed refuses production unless `ALLOW_PRODUCTION_SEED=true`.                                                       | S    |
 
 **Manual steps, done by the owner in the dashboards and documented in the README:**
 
@@ -201,11 +202,11 @@ owner's manual deployment steps (§4 Part E).
 
 ## 5. Testing strategy
 
-| Layer | What | Where |
-| --- | --- | --- |
-| Unit | Pricing tiers and rounding, UTC dates and half-open ranges, lifecycle transitions, rating windows, role checks, pagination edges, URL filter parsing, the public ski select having no inventory code | `src/**/*.test.ts` |
-| End-to-end | The main flow of each role against a real, freshly seeded database. This is where the overlap constraint, sessions and cascades are exercised. | `e2e/*.spec.ts` |
-| Manual | Accessibility pass on each screen (keyboard, focus, contrast) in light and dark themes, and at 375 px | before commit 25 |
+| Layer      | What                                                                                                                                                                                                 | Where              |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| Unit       | Pricing tiers and rounding, UTC dates and half-open ranges, lifecycle transitions, rating windows, role checks, pagination edges, URL filter parsing, the public ski select having no inventory code | `src/**/*.test.ts` |
+| End-to-end | The main flow of each role against a real, freshly seeded database. This is where the overlap constraint, sessions and cascades are exercised.                                                       | `e2e/*.spec.ts`    |
+| Manual     | Accessibility pass on each screen (keyboard, focus, contrast) in light and dark themes, and at 375 px                                                                                                | before commit 25   |
 
 The e2e suite uses its own database (`crystal_ski_rental_test`) and port (3100), and re-seeds before
 every run, so it never touches development data.
@@ -220,18 +221,19 @@ every run, so it never touches development data.
 
 ## 7. Risks
 
-| Risk | Mitigation |
-| --- | --- |
-| Decimal values leak into floating-point math | All arithmetic lives in `pricing.ts`, money crosses the API as strings, and unit tests include classic float traps (`19.99 × 7 × 0.85`). |
-| Edge cases in the rating-window rules | A pure function with table-driven tests. The server clock is the only clock. |
-| Late returns clash with the next booking | Accepted by design (REQUIREMENTS §8). The front desk surfaces overdue returns. |
-| Flaky e2e runs in CI | Deterministic seed, one worker, test IDs and role-based selectors, and traces uploaded on failure. |
-| Neon cold start on the demo | Acceptable for a demo. The first request after idle takes about a second. |
-| Free-tier limits (Neon branches, Vercel usage) | Automatic preview-branch cleanup and a low-traffic demo. |
+| Risk                                           | Mitigation                                                                                                                               |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Decimal values leak into floating-point math   | All arithmetic lives in `pricing.ts`, money crosses the API as strings, and unit tests include classic float traps (`19.99 × 7 × 0.85`). |
+| Edge cases in the rating-window rules          | A pure function with table-driven tests. The server clock is the only clock.                                                             |
+| Late returns clash with the next booking       | Accepted by design (REQUIREMENTS §8). The front desk surfaces overdue returns.                                                           |
+| Flaky e2e runs in CI                           | Deterministic seed, one worker, test IDs and role-based selectors, and traces uploaded on failure.                                       |
+| Neon cold start on the demo                    | Acceptable for a demo. The first request after idle takes about a second.                                                                |
+| Free-tier limits (Neon branches, Vercel usage) | Automatic preview-branch cleanup and a low-traffic demo.                                                                                 |
 
 ## 8. After release 1
 
 In rough priority order:
+
 1. Slovak language: `sk.json`, a locale cookie and switcher, and server error messages as translation keys.
 2. Model photos, stored in Vercel Blob.
 3. Blocking bookings of skis that are overdue for return.

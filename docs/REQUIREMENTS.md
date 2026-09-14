@@ -54,22 +54,22 @@
 
 ## 2. Business context
 
-| Topic | Detail |
-| --- | --- |
-| Business | Ski rental with 4 stores, all in Slovakia (time zone Europe/Bratislava), prices in EUR. |
-| Product | Skis only. Each physical pair is one **ski** with its own inventory code and length, belonging to a **model** of a **brand**. |
-| Rental unit | Whole days. A customer takes the skis on the first day and brings them back by the end of the last day. |
-| Today | Phone and walk-in reservations tracked in a spreadsheet. |
-| Goal | Customers can book online, staff get a clear daily view, and double bookings stop happening. |
+| Topic       | Detail                                                                                                                        |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Business    | Ski rental with 4 stores, all in Slovakia (time zone Europe/Bratislava), prices in EUR.                                       |
+| Product     | Skis only. Each physical pair is one **ski** with its own inventory code and length, belonging to a **model** of a **brand**. |
+| Rental unit | Whole days. A customer takes the skis on the first day and brings them back by the end of the last day.                       |
+| Today       | Phone and walk-in reservations tracked in a spreadsheet.                                                                      |
+| Goal        | Customers can book online, staff get a clear daily view, and double bookings stop happening.                                  |
 
 ## 3. Users and roles
 
-| Role | Who | Can |
-| --- | --- | --- |
-| **Visitor** | Anyone not signed in | See the landing page, sign up, sign in. |
-| **Customer** (`USER`) | Registered renters | Search and book skis, see and cancel their own reservations, rate rentals and models, manage their profile. |
-| **Manager** (`MANAGER`) | Store staff | Everything on the shop floor: front desk, the fleet (skis), all reservations, and customer accounts. |
-| **Admin** (`ADMIN`) | Head office | Everything a manager can do, plus the catalogue (brands, models, prices, stores) and staff accounts. |
+| Role                    | Who                  | Can                                                                                                         |
+| ----------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Visitor**             | Anyone not signed in | See the landing page, sign up, sign in.                                                                     |
+| **Customer** (`USER`)   | Registered renters   | Search and book skis, see and cancel their own reservations, rate rentals and models, manage their profile. |
+| **Manager** (`MANAGER`) | Store staff          | Everything on the shop floor: front desk, the fleet (skis), all reservations, and customer accounts.        |
+| **Admin** (`ADMIN`)     | Head office          | Everything a manager can do, plus the catalogue (brands, models, prices, stores) and staff accounts.        |
 
 Staff (managers and admins) do not rent. A staff member who wants to rent uses a separate
 customer account.
@@ -163,13 +163,13 @@ customer account.
   maximum **30** days. A reservation cannot start in the past.
 - **BR-3** Discount by rental length, applied to the **whole** rental:
 
-  | Days | Discount |
-  | --- | --- |
-  | 1–3 | 0 % |
-  | 4–6 | 10 % |
-  | 7–10 | 15 % |
-  | 11–19 | 20 % |
-  | 20–30 | 25 % |
+  | Days  | Discount |
+  | ----- | -------- |
+  | 1–3   | 0 %      |
+  | 4–6   | 10 %     |
+  | 7–10  | 15 %     |
+  | 11–19 | 20 %     |
+  | 20–30 | 25 %     |
 
 - **BR-4** `total = price per day × days × (1 − discount)`, rounded half-up to the cent.
 - **BR-5** The price per day, number of days, discount and total are **saved on the reservation** when it
@@ -181,12 +181,12 @@ customer account.
   `CANCELLED_BY_STORE`.
 - **BR-11** Allowed transitions, and nothing else:
 
-  | From | To | Who | When |
-  | --- | --- | --- | --- |
-  | `CREATED` | `CANCELLED_BY_USER` | the customer | before the first day |
-  | `CREATED` | `CANCELLED_BY_STORE` | staff | any time before pickup (this is how a no-show is recorded) |
-  | `CREATED` | `ACTIVE` | staff | on a day within the rental period |
-  | `ACTIVE` | `RETURNED` | staff | any day |
+  | From      | To                   | Who          | When                                                       |
+  | --------- | -------------------- | ------------ | ---------------------------------------------------------- |
+  | `CREATED` | `CANCELLED_BY_USER`  | the customer | before the first day                                       |
+  | `CREATED` | `CANCELLED_BY_STORE` | staff        | any time before pickup (this is how a no-show is recorded) |
+  | `CREATED` | `ACTIVE`             | staff        | on a day within the rental period                          |
+  | `ACTIVE`  | `RETURNED`           | staff        | any day                                                    |
 
 - **BR-12** Active and returned reservations cannot be cancelled.
 - **BR-13** Each transition records when it happened and which user performed it.
@@ -237,7 +237,7 @@ customer account.
   container, never the whole page.
 - **NFR-3 Visual identity.** "Crystal" palette with glacier blue, snow and ink neutrals, and an alpenglow
   accent for prices, discounts and ratings. Light, dark and system themes, with no flash of the wrong
-  theme on load. Logo: *Ski Flake*.
+  theme on load. Logo: _Ski Flake_.
 - **NFR-4 Internationalisation-ready.** English in release 1. Every user-facing string lives in a message
   catalogue, so adding Slovak needs no component changes.
 - **NFR-5 Security.**
@@ -257,17 +257,17 @@ customer account.
 
 ## 7. Release plan
 
-| | Release 1 | Later |
-| --- | --- | --- |
-| Catalogue, stores, fleet | ✓ | Ski **photos** |
-| Search, booking, pricing tiers | ✓ | Online payment, deposits |
-| Lifecycle, front desk | ✓ | Automatic no-show handling |
-| Ratings | ✓ | Public comments with moderation |
-| Accounts and roles | ✓ | |
-| English | ✓ | **Slovak** |
-| Light and dark theme | ✓ | |
-| Public demo deployment | ✓ | |
-| | | Boots, poles, helmets, snowboards |
+|                                | Release 1 | Later                             |
+| ------------------------------ | --------- | --------------------------------- |
+| Catalogue, stores, fleet       | ✓         | Ski **photos**                    |
+| Search, booking, pricing tiers | ✓         | Online payment, deposits          |
+| Lifecycle, front desk          | ✓         | Automatic no-show handling        |
+| Ratings                        | ✓         | Public comments with moderation   |
+| Accounts and roles             | ✓         |                                   |
+| English                        | ✓         | **Slovak**                        |
+| Light and dark theme           | ✓         |                                   |
+| Public demo deployment         | ✓         |                                   |
+|                                |           | Boots, poles, helmets, snowboards |
 
 ## 8. Out of scope
 
@@ -280,13 +280,13 @@ customer account.
 
 ## 9. Glossary
 
-| Term | Meaning |
-| --- | --- |
-| **Brand** | Ski manufacturer, e.g. Atomic. |
-| **Model** | A product line of a brand, e.g. Atomic Redster G9. It carries price, type, gender and level. |
-| **Ski** | One physical pair: a model in a specific length, at a specific store, with an inventory code. |
-| **Inventory code** | Staff-only identifier printed on the ski, e.g. `SK-0142`. |
-| **Store** | A rental location with address, contacts and opening hours. |
-| **Front desk** | The staff page for today's pickups and returns and the overdue ones. |
-| **Rental rating** | Feedback on the rental experience, attached to one reservation. |
-| **Model rating** | Feedback on a ski model, one per customer per model. |
+| Term               | Meaning                                                                                       |
+| ------------------ | --------------------------------------------------------------------------------------------- |
+| **Brand**          | Ski manufacturer, e.g. Atomic.                                                                |
+| **Model**          | A product line of a brand, e.g. Atomic Redster G9. It carries price, type, gender and level.  |
+| **Ski**            | One physical pair: a model in a specific length, at a specific store, with an inventory code. |
+| **Inventory code** | Staff-only identifier printed on the ski, e.g. `SK-0142`.                                     |
+| **Store**          | A rental location with address, contacts and opening hours.                                   |
+| **Front desk**     | The staff page for today's pickups and returns and the overdue ones.                          |
+| **Rental rating**  | Feedback on the rental experience, attached to one reservation.                               |
+| **Model rating**   | Feedback on a ski model, one per customer per model.                                          |

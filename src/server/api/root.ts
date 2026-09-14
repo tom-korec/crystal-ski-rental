@@ -1,5 +1,5 @@
-import { healthRouter } from "~/server/api/routers/health";
-import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
+import { healthRouter } from '~/server/api/routers/health';
+import { createCallerFactory, createTRPCRouter } from '~/server/api/trpc';
 
 /**
  * This is the primary router for your server.

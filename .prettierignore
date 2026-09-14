@@ -1,0 +1,7 @@
+pnpm-lock.yaml
+generated
+old
+.next
+.next-e2e
+playwright-report
+test-results

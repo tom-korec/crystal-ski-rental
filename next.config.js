@@ -1,10 +1,9 @@
-/**
- * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially useful
- * for Docker builds.
- */
-import "./src/env.js";
+import './src/env.js';
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+  // The end-to-end suite builds into its own directory so it does not overwrite a running dev server's.
+  distDir: process.env.NEXT_DIST_DIR ?? '.next',
+};
 
 export default config;

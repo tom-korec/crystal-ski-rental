@@ -7,6 +7,10 @@
 
 # testing
 /coverage
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
 
 # database
 /prisma/db.sqlite
@@ -15,6 +19,7 @@ db.sqlite
 
 # next.js
 /.next/
+/.next-e2e/
 /out/
 next-env.d.ts
 
