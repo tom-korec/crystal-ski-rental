@@ -10,33 +10,43 @@ import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import type { DateRange } from '~/lib/rental-range';
+import type { SkiSearchFilters } from '~/lib/ski-schema';
 import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
+
+import { SearchFilters } from './search-filters';
+
+export interface CustomerSearchValue {
+  storeId: string;
+  range: DateRange;
+  filters: SkiSearchFilters;
+}
 
 interface CustomerSearchProps {
   storeId: string | undefined;
   range: DateRange | undefined;
-  onSearch: (search: { storeId: string; range: DateRange }) => void;
+  filters: SkiSearchFilters;
+  onSearch: (search: CustomerSearchValue) => void;
   /** Before a search, a large step of its own; afterwards, a compact bar above the results. */
   variant: 'start' | 'bar';
 }
 
-/** Where and when: the question a customer answers before any skis are shown. */
-export function CustomerSearch({ storeId, range, onSearch, variant }: CustomerSearchProps) {
-  return variant === 'start' ? (
-    <StartSearch storeId={storeId} range={range} onSearch={onSearch} />
-  ) : (
-    <SearchBar storeId={storeId} range={range} onSearch={onSearch} />
-  );
+/**
+ * Where, when and what: the store and dates a customer must pick before any skis are shown, and every
+ * other filter, collapsed until opened.
+ */
+export function CustomerSearch({ variant, ...props }: CustomerSearchProps) {
+  return variant === 'start' ? <StartSearch {...props} /> : <SearchBar {...props} />;
 }
 
 type StepProps = Omit<CustomerSearchProps, 'variant'>;
 
-function StartSearch({ storeId: initialStore, range: initialRange, onSearch }: StepProps) {
+function StartSearch({ storeId: initialStore, range: initialRange, filters: initialFilters, onSearch }: StepProps) {
   const t = useTranslations('customerSearch');
   const stores = api.store.list.useQuery();
   const [storeId, setStoreId] = useState(initialStore);
   const [range, setRange] = useState(initialRange);
+  const [filters, setFilters] = useState(initialFilters);
 
   return (
     <Card
@@ -54,7 +64,7 @@ function StartSearch({ storeId: initialStore, range: initialRange, onSearch }: S
           className="flex flex-col gap-6"
           onSubmit={(event) => {
             event.preventDefault();
-            if (storeId && range) onSearch({ storeId, range });
+            if (storeId && range) onSearch({ storeId, range, filters });
           }}
         >
           <fieldset className="flex flex-col gap-3">
@@ -106,6 +116,8 @@ function StartSearch({ storeId: initialStore, range: initialRange, onSearch }: S
             onChange={setRange}
           />
 
+          <SearchFilters filters={filters} onChange={setFilters} />
+
           <Button
             type="submit"
             size="lg"
@@ -127,7 +139,7 @@ function StartSearch({ storeId: initialStore, range: initialRange, onSearch }: S
   );
 }
 
-function SearchBar({ storeId, range, onSearch }: StepProps) {
+function SearchBar({ storeId, range, filters, onSearch }: StepProps) {
   const t = useTranslations('customerSearch');
   const stores = api.store.list.useQuery();
 
@@ -136,25 +148,28 @@ function SearchBar({ storeId, range, onSearch }: StepProps) {
   return (
     <section
       aria-label={t('title')}
-      className="bg-card ring-foreground/10 grid gap-4 rounded-xl p-4 shadow-sm ring-1 sm:grid-cols-2"
+      className="bg-card ring-foreground/10 flex flex-col gap-4 rounded-xl p-4 shadow-sm ring-1"
       data-testid="customer-search-bar"
     >
-      <SelectField
-        id="search-store"
-        label={t('store')}
-        placeholder={t('store')}
-        options={(stores.data ?? []).map((store) => ({ value: store.id, label: `${store.name}, ${store.city}` }))}
-        disabled={stores.isPending}
-        value={storeId}
-        onChange={(next) => onSearch({ storeId: next, range })}
-      />
-      <DateRangeFilter
-        id="search-dates"
-        label={t('dates')}
-        placeholder={t('pickDates')}
-        value={range}
-        onChange={(next) => onSearch({ storeId, range: next })}
-      />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <SelectField
+          id="search-store"
+          label={t('store')}
+          placeholder={t('store')}
+          options={(stores.data ?? []).map((store) => ({ value: store.id, label: `${store.name}, ${store.city}` }))}
+          disabled={stores.isPending}
+          value={storeId}
+          onChange={(next) => onSearch({ storeId: next, range, filters })}
+        />
+        <DateRangeFilter
+          id="search-dates"
+          label={t('dates')}
+          placeholder={t('pickDates')}
+          value={range}
+          onChange={(next) => onSearch({ storeId, range: next, filters })}
+        />
+      </div>
+      <SearchFilters filters={filters} onChange={(next) => onSearch({ storeId, range, filters: next })} />
     </section>
   );
 }
