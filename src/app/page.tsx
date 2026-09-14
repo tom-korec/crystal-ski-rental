@@ -20,7 +20,7 @@ export default async function Landing() {
 
       <header className="flex items-center justify-between gap-4 px-4 py-5 sm:px-10">
         <Logo />
-        <ThemeSwitcher className="bg-card/70 backdrop-blur" />
+        <ThemeSwitcher className="bg-card" />
       </header>
 
       <main className="flex flex-1 flex-col items-center gap-10 px-4 pt-8 pb-20 sm:pt-16">

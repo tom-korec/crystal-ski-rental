@@ -18,7 +18,7 @@ test.describe('customer', () => {
     const days = page.getByTestId('search-dates-calendar').locator('[role="grid"] button:not([disabled])');
     await page.getByTestId('search-dates').click();
     await days.nth(2).click();
-    await expect(page.getByTestId('search-dates-hint')).toContainText('last day');
+    await expect(page.getByTestId('search-dates-hint')).toContainText('other day');
     await days.nth(4).click();
     const firstPick = await page.getByTestId('search-dates').textContent();
 
@@ -26,7 +26,16 @@ test.describe('customer', () => {
     await page.getByTestId('search-dates').click();
     await days.nth(6).click();
     await days.nth(9).click();
-    await expect(page.getByTestId('search-dates')).not.toHaveText(firstPick ?? '');
+    await expect(page.getByTestId('search-dates-calendar')).toBeHidden();
+    const laterPick = await page.getByTestId('search-dates').textContent();
+    expect(laterPick).not.toBe(firstPick);
+
+    // The second click always finishes the range, even on a day before the first click.
+    await page.getByTestId('search-dates').click();
+    await days.nth(9).click();
+    await days.nth(6).click();
+    await expect(page.getByTestId('search-dates-calendar')).toBeHidden();
+    await expect(page.getByTestId('search-dates')).toHaveText(laterPick ?? '');
 
     await page.getByTestId('show-skis').click();
     await expect(page).toHaveURL(/store=.+from=.+to=/);

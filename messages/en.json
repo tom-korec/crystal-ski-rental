@@ -100,8 +100,8 @@
     },
     "clear": "Clear filters",
     "moreFilters": "{count, plural, =0 {More filters} other {More filters (#)}}",
-    "pickFirstDay": "Pick the first day of your rental.",
-    "pickLastDay": "Now pick the last day. Rentals last up to {max} days."
+    "pickFirstDay": "Pick the first or last day of your rental.",
+    "pickLastDay": "Now pick the other day. Rentals last up to {max} days."
   },
   "catalog": {
     "type": {

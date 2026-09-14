@@ -28,9 +28,9 @@ function addCalendarDays(date: Date, days: number): Date {
 }
 
 /**
- * Rental dates in two clicks: the first click always picks the first day, the second the last one. A
- * second click before the first day starts over from there. (The calendar's own range mode only ever
- * extends a range, which made it impossible to move the first day later.)
+ * Rental dates in two clicks: the first click picks one end of the range, the second click the other and
+ * closes the calendar, whichever order the days were clicked in. Closing always resets it, so the next
+ * click is a first day again.
  *
  * The two conversions the UI needs happen here and nowhere else: the inclusive last day becomes the
  * exclusive stored end, and local calendar dates become UTC date strings (see `~/lib/date`).
@@ -39,7 +39,8 @@ export function DateRangeFilter({ id, label, value, onChange, placeholder, class
   const t = useTranslations('filters');
   const formatDateRange = useFormatDateRange();
   const [open, setOpen] = useState(false);
-  const [firstDay, setFirstDay] = useState<Date | null>(null);
+  // The one piece of picking state: empty while waiting for the first click, the clicked day while waiting for the second.
+  const [firstDay, setFirstDay] = useState<Date>();
   const contentRef = useRef<HTMLDivElement>(null);
 
   const committed = value
@@ -50,19 +51,19 @@ export function DateRangeFilter({ id, label, value, onChange, placeholder, class
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
-    // Closing halfway through keeps the dates that were there before.
-    setFirstDay(null);
+    setFirstDay(undefined);
   }
 
   function handleDayClick(day: Date, modifiers: { disabled?: boolean }) {
     if (modifiers.disabled) return;
 
-    if (!firstDay || day < firstDay) {
+    if (!firstDay) {
       setFirstDay(day);
       return;
     }
 
-    onChange({ startDate: fromCalendarDate(firstDay), endDate: addDays(fromCalendarDate(day), 1) });
+    const [start, last] = day < firstDay ? [day, firstDay] : [firstDay, day];
+    onChange({ startDate: fromCalendarDate(start), endDate: addDays(fromCalendarDate(last), 1) });
     handleOpenChange(false);
   }
 
@@ -104,10 +105,16 @@ export function DateRangeFilter({ id, label, value, onChange, placeholder, class
             onDayClick={handleDayClick}
             defaultMonth={selected?.from ?? today}
             numberOfMonths={1}
-            // Mirrors the rental window, so the control cannot produce a range the server refuses.
+            // Mirrors the rental window, so the control cannot produce a range the server refuses: not in the
+            // past, and while picking the second day, at most 30 days from the first in either direction.
             disabled={[
               { before: today },
-              ...(firstDay ? [{ after: addCalendarDays(firstDay, MAX_RENTAL_DAYS - 1) }] : []),
+              ...(firstDay
+                ? [
+                    { before: addCalendarDays(firstDay, -(MAX_RENTAL_DAYS - 1)) },
+                    { after: addCalendarDays(firstDay, MAX_RENTAL_DAYS - 1) },
+                  ]
+                : []),
             ]}
             footer={
               <p
