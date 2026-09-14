@@ -30,7 +30,7 @@ export function AppShell({ name, role, children }: AppShellProps) {
       {/* The landing illustration behind the top of every page, fading into the page ground. */}
       <HeroArt anchor="top" className="h-[40rem] [mask-image:linear-gradient(to_bottom,black_60%,transparent)]" />
       <DemoBanner />
-      <header className="border-border/60 border-b">
+      <header className="border-border/60 bg-card/60 sticky top-0 z-20 border-b backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center gap-6 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <MobileNav links={links} name={name} />
