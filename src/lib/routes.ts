@@ -5,6 +5,7 @@ export const APP_HOME = '/app';
 export const APP_RESERVATIONS = '/app/reservations';
 export const STAFF_HOME = '/staff';
 export const STAFF_SKIS = '/staff/skis';
+export const STAFF_CATALOG = '/staff/catalog';
 
 export function staffSkiRoute(id: string): string {
   return `${STAFF_SKIS}/${id}`;

@@ -14,6 +14,7 @@ const WEEK = [
   { field: 'openingHoursSaturday', day: 'saturday' },
   { field: 'openingHoursSunday', day: 'sunday' },
 ] as const satisfies readonly { field: OpeningHoursField; day: string }[];
+import { formatPhone, formatZipCode } from '~/lib/format';
 import { cn } from '~/lib/utils';
 
 export type StoreDetailsData = {
@@ -28,18 +29,6 @@ export type StoreDetailsData = {
 
 interface StoreDetailsProps {
   store: StoreDetailsData;
-}
-
-/** "031 01", as Slovak zip codes are written. */
-function formatZip(zipCode: string): string {
-  return `${zipCode.slice(0, 3)} ${zipCode.slice(3)}`;
-}
-
-/** "+421 903 123 456": the country code, then groups of three. */
-function formatPhone(phone: string): string {
-  const match = /^\+(421|420)(\d+)$/.exec(phone);
-  if (!match) return phone;
-  return `+${match[1]} ${match[2]?.replace(/(\d{3})(?=\d)/g, '$1 ')}`;
 }
 
 /** Monday is 0, following the store's week. The stores are in Slovakia, so "today" is judged there. */
@@ -62,7 +51,7 @@ export function StoreDetails({ store }: StoreDetailsProps) {
           <span>
             {store.street} {store.houseNumber}
             <br />
-            {formatZip(store.zipCode)} {store.city}
+            {formatZipCode(store.zipCode)} {store.city}
           </span>
         </address>
         <a
