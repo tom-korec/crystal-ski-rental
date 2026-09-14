@@ -1,19 +1,13 @@
+import { authRouter } from '~/server/api/routers/auth';
 import { healthRouter } from '~/server/api/routers/health';
 import { createCallerFactory, createTRPCRouter } from '~/server/api/trpc';
 
-/**
- * This is the primary router for your server.
- *
- * All routers added in /api/routers should be manually added here.
- */
+/** Every router in `api/routers` is registered here, in alphabetical order. */
 export const appRouter = createTRPCRouter({
+  auth: authRouter,
   health: healthRouter,
 });
 
-// export type definition of API
 export type AppRouter = typeof appRouter;
 
-/**
- * Create a server-side caller for the tRPC API.
- */
 export const createCaller = createCallerFactory(appRouter);
