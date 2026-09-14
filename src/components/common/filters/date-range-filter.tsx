@@ -99,6 +99,10 @@ export function DateRangeFilter({ id, label, value, onChange, placeholder, class
           data-testid={`${id}-calendar`}
         >
           <Calendar
+            // A fixed width: the calendar otherwise sizes itself to its widest content, the hint below the days,
+            // so every day grew when the hint changed after the first click.
+            className="w-68"
+            classNames={{ root: 'w-68' }}
             mode="range"
             weekStartsOn={1}
             selected={selected}
@@ -118,7 +122,7 @@ export function DateRangeFilter({ id, label, value, onChange, placeholder, class
             ]}
             footer={
               <p
-                className="text-muted-foreground max-w-64 px-2 pt-2 text-xs"
+                className="text-muted-foreground min-h-10 px-2 pt-2 text-xs"
                 aria-live="polite"
                 data-testid={`${id}-hint`}
               >
