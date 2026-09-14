@@ -54,7 +54,10 @@ export function DateRangeFilter({ id, label, value, onChange, placeholder, class
     setFirstDay(undefined);
   }
 
-  function handleDayClick(day: Date, modifiers: { disabled?: boolean }) {
+  // Handled in `onSelect` rather than `onDayClick`: react-day-picker only displays the `selected` it is given
+  // when `onSelect` is set, and otherwise keeps its own range, extending the previous selection on click. The
+  // range it proposes is ignored; the clicked day is all that matters.
+  function handleSelect(_proposed: unknown, day: Date, modifiers: { disabled?: boolean }) {
     if (modifiers.disabled) return;
 
     if (!firstDay) {
@@ -106,7 +109,7 @@ export function DateRangeFilter({ id, label, value, onChange, placeholder, class
             mode="range"
             weekStartsOn={1}
             selected={selected}
-            onDayClick={handleDayClick}
+            onSelect={handleSelect}
             defaultMonth={selected?.from ?? today}
             numberOfMonths={1}
             // Mirrors the rental window, so the control cannot produce a range the server refuses: not in the

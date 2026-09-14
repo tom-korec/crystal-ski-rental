@@ -22,9 +22,13 @@ test.describe('customer', () => {
     await days.nth(4).click();
     const firstPick = await page.getByTestId('search-dates').textContent();
 
-    // Picking again starts from the first day, even when it is later than the current range.
+    // Picking again starts a new range at once: the calendar shows only the newly clicked day, not the
+    // previous range extended to it.
     await page.getByTestId('search-dates').click();
+    const drawn = page.getByTestId('search-dates-calendar').locator('td[data-selected="true"]');
+    await expect(drawn).toHaveCount(3);
     await days.nth(6).click();
+    await expect(drawn).toHaveCount(1);
     await days.nth(9).click();
     await expect(page.getByTestId('search-dates-calendar')).toBeHidden();
     const laterPick = await page.getByTestId('search-dates').textContent();
