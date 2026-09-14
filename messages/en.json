@@ -230,7 +230,35 @@
   },
   "frontDesk": {
     "title": "Front desk",
-    "description": "Today's pickups and returns, and anything overdue."
+    "description": "Today's pickups and returns, and anything overdue.",
+    "stores": "Stores",
+    "length": "{length} cm",
+    "pickUp": "Mark picked up",
+    "markReturned": "Mark returned",
+    "cancel": "Cancel booking",
+    "working": "Saving…",
+    "cancelTitle": "Cancel this booking?",
+    "cancelDescription": "{customer}'s booking of {skis} for {period} will be cancelled by the store. Use this for a no-show; the customer sees that the store cancelled it.",
+    "cancelConfirm": "Cancel booking",
+    "keep": "Keep it",
+    "sections": {
+      "pickupsDueToday": {
+        "title": "Pickups today",
+        "empty": "No pickups due today."
+      },
+      "returnsDueToday": {
+        "title": "Returns today",
+        "empty": "No returns due today."
+      },
+      "overduePickups": {
+        "title": "Overdue pickups",
+        "empty": "No overdue pickups."
+      },
+      "overdueReturns": {
+        "title": "Overdue returns",
+        "empty": "No overdue returns."
+      }
+    }
   },
   "errors": {
     "title": "Something went wrong",
