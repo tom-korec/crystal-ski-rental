@@ -49,10 +49,7 @@ function StartSearch({ storeId: initialStore, range: initialRange, filters: init
   const [filters, setFilters] = useState(initialFilters);
 
   return (
-    <Card
-      className="w-full shadow-xl shadow-black/10 dark:shadow-black/40"
-      data-testid="customer-search"
-    >
+    <Card className="w-full shadow-xl shadow-black/10 dark:shadow-black/40" data-testid="customer-search">
       <CardHeader>
         <CardTitle>
           <h2 className="text-xl">{t('title')}</h2>
@@ -70,7 +67,11 @@ function StartSearch({ storeId: initialStore, range: initialRange, filters: init
           <fieldset className="flex flex-col gap-3">
             <legend className="mb-3 text-sm font-medium">{t('store')}</legend>
             {stores.data ? (
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(13rem,1fr))] gap-2" role="radiogroup" aria-label={t('store')}>
+              <div
+                className="grid grid-cols-[repeat(auto-fit,minmax(13rem,1fr))] gap-2"
+                role="radiogroup"
+                aria-label={t('store')}
+              >
                 {stores.data.map((store) => {
                   const selected = store.id === storeId;
                   return (

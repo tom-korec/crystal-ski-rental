@@ -4,6 +4,7 @@ import { ChevronDownIcon, SlidersHorizontalIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
+import { LengthRangeFilter } from '~/components/common/filters/length-range-filter';
 import { type FilterOption, SelectFilter } from '~/components/common/filters/select-filter';
 import { Button } from '~/components/ui/button';
 import { useFormatMoney } from '~/hooks/use-format-money';
@@ -12,7 +13,6 @@ import type { SkiSearchFilters } from '~/lib/ski-schema';
 import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
 
-const LENGTH_STEPS = [100, 120, 140, 150, 160, 170, 180, 190];
 const PRICE_STEPS = ['20', '25', '30', '35', '40', '45'];
 const RATING_STEPS = [3, 4, 5];
 
@@ -24,8 +24,8 @@ export function activeFilterCount(filters: SkiSearchFilters): number {
     filters.type,
     filters.gender,
     filters.skillLevel,
-    filters.minLengthCm,
-    filters.maxLengthCm,
+    // One slider, one filter.
+    filters.minLengthCm ?? filters.maxLengthCm,
     filters.maxPricePerDay,
     filters.minRating,
   ].filter((value) => value !== undefined).length;
@@ -126,24 +126,12 @@ export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
           value={filters.skillLevel}
           onChange={(skillLevel) => set({ skillLevel: skillLevel as SkiSearchFilters['skillLevel'] })}
         />
-        <div className="grid grid-cols-2 gap-2">
-          <SelectFilter
-            id="filter-min-length"
-            label={t('minLength')}
-            anyLabel={t('any')}
-            options={LENGTH_STEPS.map((length) => ({ value: String(length), label: t('cm', { length }) }))}
-            value={filters.minLengthCm?.toString()}
-            onChange={(value) => set({ minLengthCm: value ? Number(value) : undefined })}
-          />
-          <SelectFilter
-            id="filter-max-length"
-            label={t('maxLength')}
-            anyLabel={t('any')}
-            options={LENGTH_STEPS.map((length) => ({ value: String(length), label: t('cm', { length }) }))}
-            value={filters.maxLengthCm?.toString()}
-            onChange={(value) => set({ maxLengthCm: value ? Number(value) : undefined })}
-          />
-        </div>
+        <LengthRangeFilter
+          id="filter-length"
+          label={t('length')}
+          value={{ minLengthCm: filters.minLengthCm, maxLengthCm: filters.maxLengthCm }}
+          onChange={set}
+        />
         <SelectFilter
           id="filter-max-price"
           label={t('maxPrice')}

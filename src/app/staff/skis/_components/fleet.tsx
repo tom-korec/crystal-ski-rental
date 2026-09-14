@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
+import { LengthRangeFilter } from '~/components/common/filters/length-range-filter';
 import { type FilterOption, SelectFilter } from '~/components/common/filters/select-filter';
 import { SearchFilter } from '~/components/common/filters/search-filter';
 import { LoadMore } from '~/components/common/load-more';
@@ -18,8 +19,6 @@ import { api } from '~/trpc/react';
 
 import { AddSkiDialog } from './add-ski-dialog';
 import { type FleetFilters, parseFleet, serialiseFleet } from './fleet-params';
-
-const LENGTH_STEPS = [100, 120, 140, 150, 160, 170, 180, 190];
 
 /** The whole fleet for staff, including skis out of rental (FR-20). */
 export function Fleet() {
@@ -106,24 +105,12 @@ export function Fleet() {
           value={filters.skillLevel}
           onChange={(skillLevel) => set({ skillLevel: skillLevel as FleetFilters['skillLevel'] })}
         />
-        <div className="grid grid-cols-2 gap-2">
-          <SelectFilter
-            id="filter-min-length"
-            label={tFilters('minLength')}
-            anyLabel={tFilters('any')}
-            options={LENGTH_STEPS.map((length) => ({ value: String(length), label: tFilters('cm', { length }) }))}
-            value={filters.minLengthCm?.toString()}
-            onChange={(value) => set({ minLengthCm: value ? Number(value) : undefined })}
-          />
-          <SelectFilter
-            id="filter-max-length"
-            label={tFilters('maxLength')}
-            anyLabel={tFilters('any')}
-            options={LENGTH_STEPS.map((length) => ({ value: String(length), label: tFilters('cm', { length }) }))}
-            value={filters.maxLengthCm?.toString()}
-            onChange={(value) => set({ maxLengthCm: value ? Number(value) : undefined })}
-          />
-        </div>
+        <LengthRangeFilter
+          id="filter-length"
+          label={tFilters('length')}
+          value={{ minLengthCm: filters.minLengthCm, maxLengthCm: filters.maxLengthCm }}
+          onChange={set}
+        />
       </section>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
