@@ -26,8 +26,10 @@ test.describe('front desk', () => {
     await expect(section(page, 'overduePickups').getByTestId('section-count')).toHaveText('0');
 
     await section(page, 'returnsDueToday').getByTestId('mark-returned').click();
+    await page.getByTestId('confirm-action').click();
     await expect(section(page, 'returnsDueToday').getByTestId('section-count')).toHaveText('0');
     await section(page, 'overdueReturns').getByTestId('mark-returned').click();
+    await page.getByTestId('confirm-action').click();
     await expect(section(page, 'overdueReturns').getByTestId('section-count')).toHaveText('0');
   });
 });

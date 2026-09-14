@@ -35,6 +35,7 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
   const formatDateRange = useFormatDateRange();
   const utils = api.useUtils();
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [confirmingReturn, setConfirmingReturn] = useState(false);
 
   // Any list this reservation appears in may change.
   const refresh = () =>
@@ -45,7 +46,12 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
       utils.reservation.blockersBySki.invalidate(),
     ]);
   const pickUp = api.reservation.pickUp.useMutation({ onSuccess: refresh });
-  const markReturned = api.reservation.markReturned.useMutation({ onSuccess: refresh });
+  const markReturned = api.reservation.markReturned.useMutation({
+    onSuccess: async () => {
+      await refresh();
+      setConfirmingReturn(false);
+    },
+  });
   const cancel = api.reservation.cancel.useMutation({
     onSuccess: async () => {
       await refresh();
@@ -57,7 +63,7 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
   const skis = `${ski.model.brand.name} ${ski.model.name}`;
   const period = formatDateRange(reservation.startDate, rentalPeriod(reservation).lastDay);
   const today = todayUtc();
-  const error = pickUp.error?.message ?? markReturned.error?.message;
+  const error = pickUp.error?.message;
 
   return (
     <li
@@ -122,14 +128,23 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
           </Button>
         ) : null}
         {canReturn(reservation) ? (
-          <Button
-            size="sm"
-            onClick={() => markReturned.mutate({ id: reservation.id })}
-            disabled={markReturned.isPending}
-            data-testid="mark-returned"
-          >
-            {markReturned.isPending ? t('working') : t('markReturned')}
-          </Button>
+          <ConfirmDialog
+            open={confirmingReturn}
+            onOpenChange={(open) => {
+              setConfirmingReturn(open);
+              if (!open) markReturned.reset();
+            }}
+            trigger={<Button size="sm" data-testid="mark-returned" />}
+            triggerLabel={t('markReturned')}
+            title={t('returnTitle')}
+            description={t('returnDescription', { customer: user.name, skis, code: ski.inventoryCode })}
+            confirmLabel={t('returnConfirm')}
+            pendingLabel={t('working')}
+            cancelLabel={t('notYet')}
+            onConfirm={() => markReturned.mutate({ id: reservation.id })}
+            isPending={markReturned.isPending}
+            error={markReturned.error?.message}
+          />
         ) : null}
         {canCancelAsStore(reservation) ? (
           <ConfirmDialog
