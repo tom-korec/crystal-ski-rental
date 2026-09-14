@@ -1,0 +1,186 @@
+import { randomUUID } from 'node:crypto';
+
+import { hashPassword } from 'better-auth/crypto';
+
+import { mayManageAccount } from '~/lib/account-rules';
+import { PAGE_SIZE, pageCount, skipForPage } from '~/lib/pagination';
+import type { Role } from '~/lib/roles';
+import { userCreateSchema, userIdSchema, userListSchema, userUpdateSchema } from '~/lib/user-schema';
+import { badRequest, conflict, forbidden, notFound, rethrowPrismaError } from '~/server/api/errors';
+import { createTRPCRouter, staffProcedure } from '~/server/api/trpc';
+
+import type { Prisma } from '../../../../generated/prisma/client';
+
+// Account management by staff (FR-61…63). Every write is gated by the target's role in
+// `~/lib/account-rules`, on top of the staff procedure.
+//
+// Accounts are written directly rather than through Better Auth's sign-up, which cannot set a role and
+// would mint a session nobody needs. The user and credential-account rows are the same ones sign-up
+// writes, so these accounts sign in normally.
+//
+// Accounts are soft-deleted: reservations must keep their customer (BR-33). The e-mail stays taken so
+// the account can be restored.
+
+const NOT_FOUND = 'Account not found.';
+const EMAIL_TAKEN = 'That e-mail address is already registered, possibly to a removed account.';
+
+const userSelect = {
+  id: true,
+  name: true,
+  email: true,
+  role: true,
+  deletedAt: true,
+  createdAt: true,
+} satisfies Prisma.UserSelect;
+
+function assertMayManage(actorRole: string | null | undefined, targetRole: Role): void {
+  if (!mayManageAccount(actorRole, targetRole)) {
+    throw forbidden('Only an administrator can manage staff accounts.');
+  }
+}
+
+/** The credential row Better Auth writes for an e-mail and password account. */
+async function credentialAccount(userId: string, password: string) {
+  return {
+    id: randomUUID(),
+    accountId: userId,
+    providerId: 'credential',
+    password: await hashPassword(password),
+  };
+}
+
+export const userRouter = createTRPCRouter({
+  /** Accounts in use, or only removed ones, which is where a restore starts. */
+  list: staffProcedure.input(userListSchema).query(async ({ ctx, input }) => {
+    const where: Prisma.UserWhereInput = {
+      deletedAt: input.onlyDeleted ? { not: null } : null,
+      role: input.role,
+      ...(input.search && {
+        OR: [
+          { name: { contains: input.search, mode: 'insensitive' } },
+          { email: { contains: input.search, mode: 'insensitive' } },
+        ],
+      }),
+    };
+
+    const total = await ctx.db.user.count({ where });
+    const page = Math.min(input.page, pageCount(total));
+
+    const items = await ctx.db.user.findMany({
+      where,
+      select: userSelect,
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+      skip: skipForPage(page),
+      take: PAGE_SIZE,
+    });
+
+    return { items, total, page };
+  }),
+
+  /** Returns removed accounts too, so a reservation history still opens after the account is gone. */
+  byId: staffProcedure.input(userIdSchema).query(async ({ ctx, input }) => {
+    const user = await ctx.db.user.findUnique({ where: { id: input.id }, select: userSelect });
+
+    if (!user) throw notFound(NOT_FOUND);
+
+    return user;
+  }),
+
+  create: staffProcedure.input(userCreateSchema).mutation(async ({ ctx, input }) => {
+    assertMayManage(ctx.session.user.role, input.role);
+
+    const id = randomUUID();
+
+    try {
+      return await ctx.db.user.create({
+        data: {
+          id,
+          name: input.name,
+          email: input.email,
+          // The app sends no e-mail, so an account created here could never verify itself.
+          emailVerified: true,
+          role: input.role,
+          accounts: { create: await credentialAccount(id, input.password) },
+        },
+        select: userSelect,
+      });
+    } catch (error) {
+      rethrowPrismaError(error, { P2002: EMAIL_TAKEN });
+    }
+  }),
+
+  update: staffProcedure.input(userUpdateSchema).mutation(async ({ ctx, input }) => {
+    const { id, password, ...data } = input;
+    const actor = ctx.session.user;
+
+    // Lockout guard: an admin demoting themselves might leave nobody able to undo it.
+    if (id === actor.id && data.role && data.role !== actor.role) {
+      throw badRequest('You cannot change your own role.');
+    }
+
+    const existing = await ctx.db.user.findFirst({ where: { id, deletedAt: null }, select: { role: true } });
+
+    if (!existing) throw notFound(NOT_FOUND);
+
+    assertMayManage(actor.role, existing.role);
+    if (data.role) assertMayManage(actor.role, data.role);
+
+    // Hashing is slow by design, so it stays outside the transaction.
+    const account = password ? await credentialAccount(id, password) : undefined;
+
+    try {
+      return await ctx.db.$transaction(async (tx) => {
+        const user = await tx.user.update({ where: { id }, data, select: userSelect });
+
+        if (account) {
+          const updated = await tx.account.updateMany({
+            where: { userId: id, providerId: 'credential' },
+            data: { password: account.password },
+          });
+
+          if (updated.count === 0) await tx.account.create({ data: { ...account, userId: id } });
+
+          // A password set by staff signs the account out everywhere.
+          await tx.session.deleteMany({ where: { userId: id } });
+        }
+
+        return user;
+      });
+    } catch (error) {
+      rethrowPrismaError(error, { P2002: EMAIL_TAKEN, P2025: NOT_FOUND });
+    }
+  }),
+
+  /** Soft delete. Sessions are dropped so the sign-out is immediate, not at cookie expiry (BR-33). */
+  delete: staffProcedure.input(userIdSchema).mutation(async ({ ctx, input }) => {
+    if (input.id === ctx.session.user.id) throw conflict('You cannot delete your own account.');
+
+    const target = await ctx.db.user.findUnique({ where: { id: input.id }, select: { role: true } });
+
+    if (!target) throw notFound(NOT_FOUND);
+
+    assertMayManage(ctx.session.user.role, target.role);
+
+    const [deleted] = await ctx.db.$transaction([
+      ctx.db.user.updateMany({ where: { id: input.id, deletedAt: null }, data: { deletedAt: new Date() } }),
+      ctx.db.session.deleteMany({ where: { userId: input.id } }),
+    ]);
+
+    if (deleted.count === 0) throw notFound(NOT_FOUND);
+
+    return { id: input.id };
+  }),
+
+  /** Undo a removal (FR-63). The e-mail cannot collide, because a removed account keeps it. */
+  restore: staffProcedure.input(userIdSchema).mutation(async ({ ctx, input }) => {
+    const user = await ctx.db.user.findUnique({ where: { id: input.id }, select: { role: true, deletedAt: true } });
+
+    if (!user) throw notFound(NOT_FOUND);
+
+    assertMayManage(ctx.session.user.role, user.role);
+
+    if (!user.deletedAt) throw conflict('That account has not been removed.');
+
+    return ctx.db.user.update({ where: { id: input.id }, data: { deletedAt: null }, select: userSelect });
+  }),
+});

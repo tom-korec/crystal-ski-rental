@@ -2,7 +2,8 @@ import { TRPCError } from '@trpc/server';
 import { APIError } from 'better-auth/api';
 
 import { signInSchema, signUpSchema } from '~/lib/auth-schema';
-import { createTRPCRouter, publicProcedure } from '~/server/api/trpc';
+import { passwordChangeSchema, profileUpdateSchema } from '~/lib/profile-schema';
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '~/server/api/trpc';
 import { auth } from '~/server/better-auth';
 
 // Sign-in and sign-up go through tRPC so the forms share one typed API and one set of Zod schemas.
@@ -73,6 +74,35 @@ export const authRouter = createTRPCRouter({
       forwardCookies(headers, ctx.resHeaders);
 
       return { id: response.user.id, role: response.user.role };
+    } catch (error) {
+      throw toTRPCError(error);
+    }
+  }),
+
+  /** Name only: the e-mail is the sign-in identifier and nothing verifies a new one (FR-4). */
+  updateProfile: protectedProcedure.input(profileUpdateSchema).mutation(({ ctx, input }) =>
+    ctx.db.user.update({
+      where: { id: ctx.session.user.id },
+      data: { name: input.name },
+      select: { id: true, name: true },
+    }),
+  ),
+
+  /**
+   * Better Auth checks the current password, revokes every other session and re-issues this one, so
+   * the new cookie has to be forwarded or the caller would be signed out (FR-4).
+   */
+  changePassword: protectedProcedure.input(passwordChangeSchema).mutation(async ({ ctx, input }) => {
+    try {
+      const { headers } = await auth.api.changePassword({
+        body: { currentPassword: input.currentPassword, newPassword: input.newPassword, revokeOtherSessions: true },
+        headers: ctx.headers,
+        returnHeaders: true,
+      });
+
+      forwardCookies(headers, ctx.resHeaders);
+
+      return { success: true };
     } catch (error) {
       throw toTRPCError(error);
     }
