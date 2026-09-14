@@ -141,7 +141,7 @@ owner's manual deployment steps (§4 Part E).
 | --- | --- | --- | --- |
 | 1 | `Initial commit from Create T3 App` ✅ | Scaffold. | — |
 | 2 | `Add requirements and implementation plan` | `docs/REQUIREMENTS.md`, `docs/PLAN.md`. | S |
-| 3 | `Upgrade to Next.js 16, Prisma 7 and Zod 4` | Dependency upgrades and codemods, remove the sample `post` router and page, Prisma client output, `tsconfig` excludes for local-only folders. | M |
+| 3 | `Upgrade to Next.js 16, Prisma 7 and Zod 4` | Dependency upgrades (TypeScript 6 and ESLint 9, the newest the lint plugins support). Prisma 7 config file, `prisma-client` generator and `pg` driver adapter. ESLint flat config without `next lint`. Remove the sample post router, page and GitHub sign-in, and replace them with a `health.ping` router. Exclude local-only folders from `tsconfig`. | M |
 | 4 | `Set up tooling` | ESLint flat config + Prettier (Tailwind plugin), Vitest + Testing Library, Playwright config, `pnpm check`, Docker Compose Postgres on 5433, `.env.example`, env validation. | M |
 | 5 | `Add UI foundation and Crystal theme` | shadcn/ui primitives, oklch tokens for light and dark, theme cookie + switcher without flash, Ski Flake logo component and favicons, next-intl with `messages/en.json`, error and not-found boundaries. | M |
 
