@@ -13,7 +13,7 @@ interface LegalCheckboxProps extends Omit<ComponentProps<'input'>, 'type'> {
   error?: string;
 }
 
-/** "I accept …" with links to the documents, as a real checkbox (FR-7, FR-37). */
+/** "I accept …" with links to the documents, as a real checkbox (FR-7, FR-36). */
 export function LegalCheckbox({ id, message, error, ...input }: LegalCheckboxProps) {
   const t = useTranslations('legal');
   const errorId = `${id}-error`;

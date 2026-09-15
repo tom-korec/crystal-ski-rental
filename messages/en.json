@@ -8,7 +8,8 @@
   "landing": {
     "eyebrow": "Crystal Ski Rental",
     "headline": "Fresh tracks start here",
-    "subtitle": "Skis waiting in Jasná, Tatranská Lomnica, Štrbské Pleso and Donovaly, booked by the day."
+    "subtitle": "Skis waiting in Jasná, Tatranská Lomnica, Štrbské Pleso and Donovaly, booked by the day.",
+    "findSkis": "Find skis"
   },
   "auth": {
     "signInTitle": "Sign in",
@@ -43,7 +44,8 @@
     "models": "Models",
     "account": "Account",
     "accountMenu": "Account menu for {name}",
-    "reservations": "Reservations"
+    "reservations": "Reservations",
+    "signIn": "Sign in"
   },
   "roles": {
     "USER": "Customer",
@@ -592,7 +594,9 @@
     "otherStoreTitle": "Your reservation is at another store",
     "otherStoreDescription": "Your reservation holds {count, plural, one {# pair} other {# pairs}} from {cartStore}. All skis in one reservation come from the same store, so this pair from {store} cannot join it.",
     "otherDatesTitle": "Your reservation is for other dates",
-    "otherDatesDescription": "Your reservation holds {count, plural, one {# pair} other {# pairs}} from {cartStore} for {cartPeriod}. All skis in one reservation are for the same dates, so this pair cannot join it."
+    "otherDatesDescription": "Your reservation holds {count, plural, one {# pair} other {# pairs}} from {cartStore} for {cartPeriod}. All skis in one reservation are for the same dates, so this pair cannot join it.",
+    "replaced": "The skis you picked before signing in replaced the reservation you had started on this account earlier.",
+    "dismissReplaced": "Dismiss"
   },
   "checkout": {
     "title": "Your reservation",
@@ -632,7 +636,9 @@
     "viewReservations": "My reservations",
     "findMore": "Find more skis",
     "perDayTimesDays": "{price} / day × {days, plural, one {# day} other {# days}}",
-    "subtotal": "{count, plural, one {# pair} other {# pairs}} before discount"
+    "subtotal": "{count, plural, one {# pair} other {# pairs}} before discount",
+    "accountTitle": "Sign in to book",
+    "accountDescription": "You need an account to book, so we know who picks the skis up. Your reservation waits here while you sign in or create one."
   },
   "storesAdmin": {
     "title": "Stores",

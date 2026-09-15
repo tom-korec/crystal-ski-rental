@@ -3,9 +3,9 @@ import { skiModelCreateSchema, skiModelListSchema, skiModelUpdateSchema } from '
 import { conflict, rethrowPrismaError } from '~/server/api/errors';
 import { countOf } from '~/server/api/plural';
 import { plainSkiModel, skiModelSelect } from '~/server/api/selects';
-import { adminProcedure, createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
+import { adminProcedure, createTRPCRouter, publicProcedure } from '~/server/api/trpc';
 
-// Readable by any signed-in account (search filters, fleet forms), writable by admins (FR-11). The model
+// Readable by anyone (the public search filters, fleet forms), writable by admins (FR-11). The model
 // carries the price, so a price change applies to every ski of the model from the next booking on;
 // existing reservations keep their snapshot (BR-5).
 
@@ -14,7 +14,7 @@ const NOT_FOUND = 'Ski model not found.';
 const BRAND_MISSING = 'The selected brand no longer exists.';
 
 export const skiModelRouter = createTRPCRouter({
-  list: protectedProcedure.input(skiModelListSchema).query(async ({ ctx, input }) => {
+  list: publicProcedure.input(skiModelListSchema).query(async ({ ctx, input }) => {
     const rows = await ctx.db.skiModel.findMany({
       where: { brandId: input.brandId },
       // Soft-deleted skis are counted too: the foreign key restricts on them as well.

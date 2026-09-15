@@ -13,6 +13,21 @@ export const STAFF_STORES = '/staff/stores';
 export const STAFF_ACCOUNTS = '/staff/accounts';
 export const PROFILE = '/profile';
 export const ACCEPT_TERMS = '/accept-terms';
+export const SEARCH = '/search';
+export const STORES = '/stores';
+export const RESERVE = '/reserve';
+
+/**
+ * The pages a customer shops on, public for visitors and under /app once signed in, so a signed-in
+ * customer keeps the header and links of their own area.
+ */
+export const SHOP_ROUTES = {
+  public: { search: SEARCH, stores: STORES, reserve: RESERVE },
+  app: { search: APP_HOME, stores: APP_STORES, reserve: APP_RESERVE },
+} as const;
+
+export type ShopArea = keyof typeof SHOP_ROUTES;
+export type ShopRoutes = (typeof SHOP_ROUTES)[ShopArea];
 
 /** The public page of each legal document (FR-7). */
 export const LEGAL_ROUTES = {

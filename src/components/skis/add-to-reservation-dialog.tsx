@@ -4,6 +4,7 @@ import { CheckCircle2Icon, InfoIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
+import { useShopRoutes } from '~/components/layout/shop-routes';
 import { Button } from '~/components/ui/button';
 import {
   Dialog,
@@ -18,7 +19,7 @@ import { useFormatDateRange } from '~/hooks/use-format-date-range';
 import { rentalPeriod, toUtcDate } from '~/lib/date';
 import type { AddToCartOutcome, ReservationCart } from '~/lib/reservation-cart';
 import { MAX_SKIS_PER_RESERVATION } from '~/lib/reservation-schema';
-import { APP_HOME, APP_RESERVE, SEARCH_PARAMS } from '~/lib/routes';
+import { SEARCH_PARAMS } from '~/lib/routes';
 import { api } from '~/trpc/react';
 
 export interface AddedSki {
@@ -65,6 +66,7 @@ function AttemptContent({ attempt, onStartOver, onClose }: AttemptContentProps) 
   const t = useTranslations('cart');
   const formatDateRange = useFormatDateRange();
   const stores = api.store.list.useQuery();
+  const routes = useShopRoutes();
   const { ski, outcome, cart } = attempt;
 
   const skis = `${ski.model.brand.name} ${ski.model.name}`;
@@ -75,7 +77,7 @@ function AttemptContent({ attempt, onStartOver, onClose }: AttemptContentProps) 
   const count = cart?.skiIds.length ?? 0;
 
   const proceed = (
-    <Button nativeButton={false} render={<Link href={APP_RESERVE} />} data-testid="proceed-to-reservation">
+    <Button nativeButton={false} render={<Link href={routes.reserve} />} data-testid="proceed-to-reservation">
       {t('proceed')}
     </Button>
   );
@@ -128,7 +130,7 @@ function AttemptContent({ attempt, onStartOver, onClose }: AttemptContentProps) 
   const cartStore = stores.data?.find((store) => store.id === outcome.cart.storeId)?.name ?? '';
   const cartPeriod = periodOf(outcome.cart);
   const cartCount = outcome.cart.skiIds.length;
-  const searchCartDates = `${APP_HOME}?${new URLSearchParams({
+  const searchCartDates = `${routes.search}?${new URLSearchParams({
     [SEARCH_PARAMS.store]: outcome.cart.storeId,
     [SEARCH_PARAMS.from]: outcome.cart.startDate,
     [SEARCH_PARAMS.to]: outcome.cart.endDate,

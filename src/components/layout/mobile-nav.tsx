@@ -1,6 +1,6 @@
 'use client';
 
-import { MenuIcon } from 'lucide-react';
+import { LogInIcon, MenuIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -9,22 +9,25 @@ import { useState } from 'react';
 import { Button } from '~/components/ui/button';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '~/components/ui/sheet';
 import type { Role } from '~/lib/roles';
+import { LANDING } from '~/lib/routes';
 import { cn } from '~/lib/utils';
 
 import { AccountPanel } from './account-panel';
 import { Logo } from './logo';
 import type { NavLink } from './nav-links';
+import { ThemeSwitcher } from './theme-switcher';
 
 interface MobileNavProps {
   links: NavLink[];
-  name: string;
-  role: Role | null;
+  /** Who is signed in; a visitor gets a way to sign in instead. */
+  account: { name: string; role: Role | null } | null;
   homeHref: string;
 }
 
 /** Below `md`, a sheet: the logo, the main navigation, and the account at the bottom. */
-export function MobileNav({ links, name, role, homeHref }: MobileNavProps) {
+export function MobileNav({ links, account, homeHref }: MobileNavProps) {
   const t = useTranslations('nav');
+  const tTheme = useTranslations('theme');
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
@@ -74,7 +77,24 @@ export function MobileNav({ links, name, role, homeHref }: MobileNavProps) {
         </nav>
 
         <div className="border-border mt-auto border-t pt-4">
-          <AccountPanel name={name} role={role} onNavigate={close} />
+          {account ? (
+            <AccountPanel name={account.name} role={account.role} onNavigate={close} />
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5 px-2">
+                <span className="text-muted-foreground text-xs">{tTheme('label')}</span>
+                <ThemeSwitcher labelled className="w-full" />
+              </div>
+              <Button
+                nativeButton={false}
+                render={<Link href={LANDING} onClick={close} />}
+                data-testid="mobile-nav-sign-in"
+              >
+                <LogInIcon aria-hidden />
+                {t('signIn')}
+              </Button>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>

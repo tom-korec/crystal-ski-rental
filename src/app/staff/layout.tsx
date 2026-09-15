@@ -8,7 +8,7 @@ export default async function StaffLayout({ children }: Readonly<{ children: Rea
   const user = await requireStaff();
 
   return (
-    <AppShell name={user.name} role={user.role}>
+    <AppShell account={user}>
       <StaffActorProvider actor={{ role: user.role, storeId: user.storeId }}>{children}</StaffActorProvider>
     </AppShell>
   );

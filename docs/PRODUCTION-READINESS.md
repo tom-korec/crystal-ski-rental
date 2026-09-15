@@ -34,6 +34,7 @@
 - Rate-limited sign-in, and a deterministic demo seed.
 - Structured opening hours and special days, with no pickup or return on a closed day (BR-7).
 - Example legal documents, accepted at sign-up and booking (FR-7).
+- Public search and stores, with an account needed only to book (FR-37).
 
 **Not done yet from release 1:** the deployment itself (repository, Neon, Vercel, CI checks, the first
 demo reset; see PLAN §4 Part E) and the manual accessibility pass. `PLAN.md` also describes the data model
@@ -99,8 +100,6 @@ Sizes follow PLAN: **S** a day or less, **M** a few days, **L** a week or more.
 
 ### Sales channel
 
-- **Only signed-in customers can see skis and prices.** Most shops let people browse availability first
-  and ask for an account only when booking. **M**
 - **Staff cannot create a reservation.** A walk-in customer or a phone booking has no way in; staff would
   have to create a customer account and book as them. There should be a counter booking flow that picks
   or creates the customer, and a guest customer without a password. **L**

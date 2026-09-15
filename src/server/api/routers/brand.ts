@@ -2,9 +2,9 @@ import { brandCreateSchema, brandUpdateSchema } from '~/lib/brand-schema';
 import { idSchema } from '~/lib/id-schema';
 import { conflict, rethrowPrismaError } from '~/server/api/errors';
 import { countOf } from '~/server/api/plural';
-import { adminProcedure, createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
+import { adminProcedure, createTRPCRouter, publicProcedure } from '~/server/api/trpc';
 
-// Readable by any signed-in account (search filters), writable by admins (FR-10). Hard-deleted, and
+// Readable by anyone (the public search filters), writable by admins (FR-10). Hard-deleted, and
 // refused while a model still uses it (FR-13).
 
 const NAME_TAKEN = 'A brand with that name already exists.';
@@ -13,7 +13,7 @@ const NOT_FOUND = 'Brand not found.';
 const brandSelect = { id: true, name: true } as const;
 
 export const brandRouter = createTRPCRouter({
-  list: protectedProcedure.query(({ ctx }) =>
+  list: publicProcedure.query(({ ctx }) =>
     ctx.db.brand.findMany({
       select: { ...brandSelect, _count: { select: { models: true } } },
       orderBy: { name: 'asc' },

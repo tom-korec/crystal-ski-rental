@@ -18,7 +18,7 @@ import { overlappingItem } from '~/server/api/overlap';
 import { storeWithHours } from '~/server/api/store-hours';
 import { countOf } from '~/server/api/plural';
 import { skiPublicSelect, withPlainModel } from '~/server/api/selects';
-import { createTRPCRouter, staffProcedure, userProcedure } from '~/server/api/trpc';
+import { createTRPCRouter, publicProcedure, staffProcedure } from '~/server/api/trpc';
 
 import type { Prisma } from '../../../../generated/prisma/client';
 
@@ -99,9 +99,10 @@ export const skiRouter = createTRPCRouter({
 
   /**
    * The customer search (FR-30…34): in the fleet, offered for rental, and free on every chosen day.
-   * Each result carries the quote for the chosen dates, computed exactly as the booking will be.
+   * Each result carries the quote for the chosen dates, computed exactly as the booking will be. Public, so
+   * visitors can browse before they have an account.
    */
-  search: userProcedure.input(skiSearchSchema).query(async ({ ctx, input }) => {
+  search: publicProcedure.input(skiSearchSchema).query(async ({ ctx, input }) => {
     const startDate = toUtcDate(input.startDate);
     const endDate = toUtcDate(input.endDate);
     const rentalDays = utcDaysBetween(startDate, endDate);

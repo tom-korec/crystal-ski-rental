@@ -1,4 +1,4 @@
-// The example legal documents (FR-7, FR-37). Each has a version, the date it took effect: acceptance is
+// The example legal documents (FR-7, FR-36). Each has a version, the date it took effect: acceptance is
 // stored with the version, so a new version is asked for again.
 
 export const LEGAL_DOCUMENTS = ['terms', 'privacy', 'rentalAgreement'] as const;

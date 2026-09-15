@@ -29,7 +29,13 @@ import { accountIdsMatching } from '~/server/api/customer-search';
 import { closedMessage, storeWithHours } from '~/server/api/store-hours';
 import { overlappingItem } from '~/server/api/overlap';
 import { skiPublicSelect, withPlainModel } from '~/server/api/selects';
-import { createTRPCRouter, protectedProcedure, staffProcedure, userProcedure } from '~/server/api/trpc';
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  staffProcedure,
+  userProcedure,
+} from '~/server/api/trpc';
 
 import type { Prisma, PrismaClient } from '../../../../generated/prisma/client';
 
@@ -296,9 +302,10 @@ export const reservationRouter = createTRPCRouter({
   /**
    * The reservation a customer is putting together, priced for its dates (FR-33). Skis that can no longer
    * be booked for those dates, or are from another store than the first ski, are returned with the reason
-   * and left out of the totals, so the page can ask for them to be removed.
+   * and left out of the totals, so the page can ask for them to be removed. Public, so a visitor sees the
+   * price before creating an account.
    */
-  quote: userProcedure.input(reservationQuoteSchema).query(async ({ ctx, input }) => {
+  quote: publicProcedure.input(reservationQuoteSchema).query(async ({ ctx, input }) => {
     const startDate = toUtcDate(input.startDate);
     const endDate = toUtcDate(input.endDate);
 

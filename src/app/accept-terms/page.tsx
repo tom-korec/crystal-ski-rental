@@ -18,7 +18,7 @@ export default async function AcceptTermsPage() {
   const t = await getTranslations('legal.accept');
 
   return (
-    <AppShell name={user.name} role={user.role} navigation={false}>
+    <AppShell account={user} navigation={false}>
       <Card className="mx-auto w-full max-w-xl" data-testid="accept-terms">
         <CardHeader>
           <CardTitle>

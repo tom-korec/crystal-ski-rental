@@ -6,12 +6,14 @@ import { useTranslations } from 'next-intl';
 
 import { Button } from '~/components/ui/button';
 import { useReservationCart } from '~/hooks/use-reservation-cart';
-import { APP_RESERVE } from '~/lib/routes';
+
+import { useShopRoutes } from './shop-routes';
 
 /** The reservation being put together, once it holds a pair of skis (FR-33). */
 export function CartLink() {
   const t = useTranslations('cart');
   const { cart } = useReservationCart();
+  const routes = useShopRoutes();
 
   if (!cart) return null;
 
@@ -21,7 +23,7 @@ export function CartLink() {
     <Button
       size="sm"
       nativeButton={false}
-      render={<Link href={APP_RESERVE} />}
+      render={<Link href={routes.reserve} />}
       aria-label={t('linkLabel', { count })}
       data-testid="cart-link"
     >

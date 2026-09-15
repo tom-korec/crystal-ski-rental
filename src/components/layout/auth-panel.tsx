@@ -11,22 +11,35 @@ import { LegalCheckbox } from '~/components/legal/legal-checkbox';
 import { FormError } from '~/components/common/form-error';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { handOverGuestCart } from '~/hooks/use-reservation-cart';
 import { MIN_PASSWORD_LENGTH, type SignInInput, signInSchema, type SignUpInput, signUpSchema } from '~/lib/auth-schema';
+import { isCustomer } from '~/lib/roles';
 import { APP_HOME, homeForRole } from '~/lib/routes';
+import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
 
-/** Sign in and sign up (FR-1, FR-2). The landing page sends signed-in visitors on before this renders. */
-export function AuthPanel() {
+interface AuthPanelProps {
+  /** Where a customer goes once signed in; staff always go to their home (FR-3). */
+  customerDestination?: string;
+  className?: string;
+}
+
+/** Sign in and sign up (FR-1, FR-2). The pages showing it send signed-in visitors on before it renders. */
+export function AuthPanel({ customerDestination = APP_HOME, className }: AuthPanelProps) {
   const t = useTranslations('auth');
   const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn');
 
   return (
-    <Card className="w-full max-w-sm shadow-xl shadow-black/10 dark:shadow-black/40">
+    <Card className={cn('w-full max-w-sm shadow-xl shadow-black/10 dark:shadow-black/40', className)}>
       <CardHeader>
         <CardTitle>{mode === 'signIn' ? t('signInTitle') : t('signUpTitle')}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {mode === 'signIn' ? <SignInForm /> : <SignUpForm />}
+        {mode === 'signIn' ? (
+          <SignInForm customerDestination={customerDestination} />
+        ) : (
+          <SignUpForm customerDestination={customerDestination} />
+        )}
         <Button
           type="button"
           variant="link"
@@ -41,25 +54,31 @@ export function AuthPanel() {
   );
 }
 
-function useSignedIn() {
+interface AuthFormProps {
+  customerDestination: string;
+}
+
+/** Lands in the right area straight away (FR-3), rather than bouncing through a guard. */
+function useSignedIn(customerDestination: string) {
   const router = useRouter();
   const utils = api.useUtils();
 
-  return async (destination: string) => {
+  return async ({ id, role }: { id: string; role?: string | null }) => {
+    // Skis a visitor picked before signing in become the customer's reservation.
+    if (isCustomer(role)) handOverGuestCart(id);
     await utils.auth.session.invalidate();
-    router.replace(destination);
+    router.replace(isCustomer(role) ? customerDestination : homeForRole(role));
   };
 }
 
-function SignInForm() {
+function SignInForm({ customerDestination }: AuthFormProps) {
   const t = useTranslations('auth');
-  const goTo = useSignedIn();
+  const signedIn = useSignedIn(customerDestination);
   const form = useForm<SignInInput>({
     resolver: zodResolver(signInSchema),
     defaultValues: { email: '', password: '' },
   });
-  // Land in the right area straight away (FR-3), rather than bouncing through a guard.
-  const signIn = api.auth.signIn.useMutation({ onSuccess: ({ role }) => goTo(homeForRole(role)) });
+  const signIn = api.auth.signIn.useMutation({ onSuccess: signedIn });
   const { errors } = form.formState;
 
   return (
@@ -94,15 +113,15 @@ function SignInForm() {
   );
 }
 
-function SignUpForm() {
+function SignUpForm({ customerDestination }: AuthFormProps) {
   const t = useTranslations('auth');
   const tLegal = useTranslations('legal');
-  const goTo = useSignedIn();
+  const signedIn = useSignedIn(customerDestination);
   const form = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),
     defaultValues: { name: '', email: '', password: '', acceptLegal: false },
   });
-  const signUp = api.auth.signUp.useMutation({ onSuccess: () => goTo(APP_HOME) });
+  const signUp = api.auth.signUp.useMutation({ onSuccess: signedIn });
   const { errors } = form.formState;
 
   return (

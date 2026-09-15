@@ -12,6 +12,8 @@ import { getSession } from './server';
 // because the API is reachable without loading any page. A signed-in user in the wrong area is
 // redirected to their own rather than shown an error, so a stale bookmark is not a dead end.
 
+export type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
+
 interface RequireUserOptions {
   /** Only for the page where a customer accepts the current Terms and Privacy policy. */
   allowPendingTerms?: boolean;
@@ -54,6 +56,23 @@ export async function requireAdmin() {
   if (!isAdmin(user.role)) redirect(STAFF_HOME);
 
   return user;
+}
+
+/**
+ * For the public shop pages (search, stores, reservation): a signed-in customer continues on the same
+ * page in their own area, with the same query, and staff go to their home.
+ */
+export async function redirectSignedInShopper(appPath: string, searchParams: PageSearchParams) {
+  const user = (await getSession())?.user;
+  if (!user || user.deletedAt) return;
+
+  if (isStaff(user.role)) redirect(STAFF_HOME);
+
+  const query = new URLSearchParams();
+  for (const [name, value] of Object.entries(await searchParams)) {
+    for (const item of [value ?? []].flat()) query.append(name, item);
+  }
+  redirect(query.size > 0 ? `${appPath}?${query.toString()}` : appPath);
 }
 
 /** For the landing page: a signed-in visitor goes straight to their home. */

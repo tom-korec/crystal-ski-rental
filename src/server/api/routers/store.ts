@@ -5,7 +5,7 @@ import { specialDayRemoveSchema, specialDaySetSchema, storeCreateSchema, storeUp
 import { conflict, notFound, rethrowPrismaError } from '~/server/api/errors';
 import { countOf } from '~/server/api/plural';
 import { storeSelect, withPlainSpecialDays } from '~/server/api/selects';
-import { adminProcedure, createTRPCRouter, protectedProcedure } from '~/server/api/trpc';
+import { adminProcedure, createTRPCRouter, publicProcedure } from '~/server/api/trpc';
 
 // Readable by anyone (visitors need addresses, contacts and hours before they have an account), writable
 // by admins (FR-12, BR-7).
@@ -14,7 +14,7 @@ const NAME_TAKEN = 'A store with that name already exists.';
 const NOT_FOUND = 'Store not found.';
 
 export const storeRouter = createTRPCRouter({
-  list: protectedProcedure.query(async ({ ctx }) => {
+  list: publicProcedure.query(async ({ ctx }) => {
     const rows = await ctx.db.store.findMany({
       select: { ...storeSelect, _count: { select: { skis: true } } },
       orderBy: { name: 'asc' },
@@ -23,7 +23,7 @@ export const storeRouter = createTRPCRouter({
     return rows.map(({ _count, ...store }) => ({ ...withPlainSpecialDays(store), skiCount: _count.skis }));
   }),
 
-  byId: protectedProcedure.input(idSchema).query(async ({ ctx, input }) => {
+  byId: publicProcedure.input(idSchema).query(async ({ ctx, input }) => {
     const store = await ctx.db.store.findUnique({ where: { id: input.id }, select: storeSelect });
 
     if (!store) throw notFound(NOT_FOUND);

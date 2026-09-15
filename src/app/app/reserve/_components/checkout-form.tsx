@@ -1,7 +1,6 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertTriangleIcon, XIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -12,7 +11,8 @@ import { FormError } from '~/components/common/form-error';
 import { LoadingRegion } from '~/components/common/skeletons/loading-region';
 import { PageHeader } from '~/components/common/page-header';
 import { LegalCheckbox } from '~/components/legal/legal-checkbox';
-import { DiscountBadge } from '~/components/skis/discount-badge';
+import { CartLines } from '~/components/reservations/cart-lines';
+import { CartTotals } from '~/components/reservations/cart-totals';
 import { RentalDayNotice } from '~/components/stores/rental-day-notice';
 import { StoreDetails } from '~/components/stores/store-details';
 import { Button } from '~/components/ui/button';
@@ -194,53 +194,11 @@ function CheckoutFields({ cart, onCartChange, onBooked, defaults }: CheckoutFiel
               ) : quote.isError ? (
                 <FormError message={quote.error.message} />
               ) : (
-                <ul className="divide-border flex flex-col divide-y">
-                  {(quote.data.missing > 0 ? [null] : []).map(() => (
-                    <li key="missing" className="text-destructive flex items-center gap-2 py-3 text-sm">
-                      <AlertTriangleIcon className="size-4" aria-hidden />
-                      {t('missing', { count: quote.data.missing })}
-                    </li>
-                  ))}
-                  {lines.map(({ ski, quote: line, problem }) => (
-                    <li
-                      key={ski.id}
-                      className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3"
-                      data-testid="checkout-line"
-                      data-problem={problem ?? undefined}
-                    >
-                      <span className="flex min-w-0 flex-col">
-                        <span className="font-medium">
-                          {ski.model.brand.name} {ski.model.name}
-                        </span>
-                        <span className="text-muted-foreground text-sm">{t('length', { length: ski.lengthCm })}</span>
-                        {problem ? (
-                          <span className="text-destructive flex items-center gap-1.5 text-sm">
-                            <AlertTriangleIcon className="size-4" aria-hidden />
-                            {t(`problem.${problem}`)}
-                          </span>
-                        ) : null}
-                      </span>
-                      <span className="flex items-center gap-3">
-                        <span className="flex flex-col items-end tabular-nums">
-                          <span className="text-muted-foreground text-xs" data-testid="line-days">
-                            {t('perDayTimesDays', { price: formatMoney(ski.model.pricePerDay), days: rentalDays })}
-                          </span>
-                          {line ? <span>{formatMoney(line.subtotal)}</span> : null}
-                        </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label={t('remove', { skis: `${ski.model.brand.name} ${ski.model.name}` })}
-                          onClick={() => onCartChange(removeFromCart(cart, ski.id))}
-                          data-testid="remove-line"
-                        >
-                          <XIcon aria-hidden />
-                        </Button>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <CartLines
+                  quote={quote.data}
+                  rentalDays={rentalDays}
+                  onRemove={(skiId) => onCartChange(removeFromCart(cart, skiId))}
+                />
               )}
             </CardContent>
           </Card>
@@ -331,32 +289,7 @@ function CheckoutFields({ cart, onCartChange, onBooked, defaults }: CheckoutFiel
             <CardDescription>{period}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 text-sm">
-            {quote.data?.totals ? (
-              <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 tabular-nums">
-                <dt className="text-muted-foreground">
-                  {t('subtotal', { count: lines.filter((line) => line.quote).length })}
-                </dt>
-                <dd className="text-right">{formatMoney(quote.data.totals.subtotal)}</dd>
-                {quote.data.totals.discountPercent > 0 ? (
-                  <>
-                    <dt className="text-muted-foreground flex flex-wrap items-center gap-2">
-                      {t('discount', { days: quote.data.totals.rentalDays })}
-                      <DiscountBadge percent={quote.data.totals.discountPercent} />
-                    </dt>
-                    <dd className="text-right">−{formatMoney(quote.data.totals.discount)}</dd>
-                  </>
-                ) : null}
-                <dt className="border-border border-t pt-1.5 font-medium">{t('total')}</dt>
-                <dd
-                  className="border-border border-t pt-1.5 text-right text-base font-semibold"
-                  data-testid="checkout-total"
-                >
-                  {formatMoney(quote.data.totals.totalPrice)}
-                </dd>
-              </dl>
-            ) : (
-              <Skeleton className="h-16 w-full" />
-            )}
+            <CartTotals quote={quote.data} />
             {quote.data?.store && quote.data.days ? (
               <RentalDayNotice days={quote.data.days} store={quote.data.store.name} />
             ) : null}

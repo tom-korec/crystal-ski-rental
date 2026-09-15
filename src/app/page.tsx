@@ -1,3 +1,5 @@
+import { SearchIcon } from 'lucide-react';
+import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 
 import { AuthPanel } from '~/components/layout/auth-panel';
@@ -7,6 +9,8 @@ import { HeroArt } from '~/components/layout/hero-art';
 import { Logo } from '~/components/layout/logo';
 import { SiteFooter } from '~/components/layout/site-footer';
 import { ThemeSwitcher } from '~/components/layout/theme-switcher';
+import { Button } from '~/components/ui/button';
+import { SEARCH } from '~/lib/routes';
 import { redirectIfSignedIn } from '~/server/better-auth/guards';
 
 export default async function Landing() {
@@ -38,6 +42,16 @@ export default async function Landing() {
         </div>
 
         <div className="flex w-full flex-col items-center gap-4">
+          <Button
+            size="lg"
+            nativeButton={false}
+            render={<Link href={SEARCH} />}
+            className="-mt-4 mb-2"
+            data-testid="landing-find-skis"
+          >
+            <SearchIcon aria-hidden />
+            {t('findSkis')}
+          </Button>
           <AuthPanel />
           <DemoAccounts />
         </div>

@@ -5,7 +5,7 @@ import { PageHeader } from '~/components/common/page-header';
 import { CardGridSkeleton } from '~/components/common/skeletons/card-grid-skeleton';
 import { requireCustomer } from '~/server/better-auth/guards';
 
-import { SkiSearch } from './_components/ski-search';
+import { SkiSearch } from '~/components/skis/ski-search';
 
 export default async function FindSkisPage() {
   await requireCustomer();

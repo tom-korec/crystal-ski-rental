@@ -43,7 +43,7 @@ export const reservationCreateSchema = dateRangeSchema
   .extend({
     skiIds: skiIdsSchema,
     details: reservationDetailsSchema,
-    /** The Rental agreement version the customer accepted on the page (FR-37); it must be the current one. */
+    /** The Rental agreement version the customer accepted on the page (FR-36); it must be the current one. */
     rentalAgreementVersion: z.string(),
   })
   .superRefine(refineRentalRange);

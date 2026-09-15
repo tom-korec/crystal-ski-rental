@@ -124,7 +124,7 @@ Models and brands share the **Models** page, with a switch between their tables.
   full reservation history.
 - **FR-24** Staff can delete a ski (see BR-30 to BR-32).
 
-### 4.4 Search and booking (customer)
+### 4.4 Search and booking (customer and visitor)
 
 - **FR-30** A customer searches for skis by rental dates (required) and can narrow the results by
   store, brand, model, type, gender, skill level, length range, maximum price per day and
@@ -149,6 +149,13 @@ Models and brands share the **Models** page, with a switch between their tables.
   store. The addresses are saved to the profile and copied onto the reservation, so later edits never
   change a past booking. Staff see the note. Booking requires accepting the current rental agreement,
   whose version and acceptance time are kept on the reservation (FR-7).
+- **FR-37** Visitors without an account can search skis (FR-30…32), see the stores and put a
+  reservation together, at public pages (`/search`, `/stores`, `/reserve`) with a header of their own:
+  the logo, Find skis, Stores and Sign in. The landing page links to the search. Booking needs an
+  account, so the reservation page asks the visitor to sign in or sign up, and then continues on the
+  customer's own reservation page. The visitor's reservation replaces one the account had started
+  earlier, and the customer is told so. A signed-in customer who opens a public page continues on the
+  same page in their own area.
 
 ### 4.5 My reservations (customer)
 
