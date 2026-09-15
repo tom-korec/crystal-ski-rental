@@ -29,9 +29,11 @@ function selectTheme(theme: Theme) {
 
 interface ThemeSwitcherProps {
   className?: string;
+  /** Each option spelled out next to its icon, sharing the width equally. */
+  labelled?: boolean;
 }
 
-export function ThemeSwitcher({ className }: ThemeSwitcherProps) {
+export function ThemeSwitcher({ className, labelled = false }: ThemeSwitcherProps) {
   const t = useTranslations('theme');
   // The server cannot see the cookie, so it renders "system" and the client corrects it after hydration.
   const current = useSyncExternalStore(
@@ -50,18 +52,20 @@ export function ThemeSwitcher({ className }: ThemeSwitcherProps) {
         <button
           key={theme}
           type="button"
-          aria-label={t(theme)}
+          aria-label={labelled ? undefined : t(theme)}
           aria-pressed={current === theme}
-          title={t(theme)}
+          title={labelled ? undefined : t(theme)}
           onClick={() => selectTheme(theme)}
           className={cn(
-            'focus-visible:ring-ring/50 inline-flex size-7 items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-3',
+            'focus-visible:ring-ring/50 inline-flex items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-3',
+            labelled ? 'h-7 flex-1 gap-1.5 px-2 text-xs' : 'size-7',
             current === theme
               ? 'bg-secondary text-secondary-foreground'
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
           <Icon className="size-4" aria-hidden />
+          {labelled ? t(theme) : null}
         </button>
       ))}
     </div>

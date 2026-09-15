@@ -45,6 +45,8 @@ test.describe('signing in and access by role', () => {
 
   test('signing out ends the session', async ({ page }) => {
     await signIn(page, 'admin');
+    await page.getByTestId('account-menu').click();
+    await expect(page.getByTestId('account-panel')).toContainText('Admin');
     await page.getByTestId('sign-out').click();
     await expect(page).toHaveURL('/');
 
@@ -66,6 +68,21 @@ test.describe('signing in and access by role', () => {
     await expect(page).toHaveURL('/app');
     await expect(page.getByTestId('role-badge')).toHaveCount(0);
   });
+});
+
+test('the phone menu shows the navigation and the account', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page, 'customer');
+  await page.getByTestId('nav-menu').click();
+
+  const panel = page.getByTestId('account-panel');
+  await expect(panel).toContainText('Jan Novák');
+  await expect(panel.getByTestId('role-badge')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Close' })).toHaveCount(1);
+
+  await panel.getByTestId('account-link').click();
+  await expect(page).toHaveURL('/profile');
+  await expect(panel).toBeHidden();
 });
 
 test('the landing page fits a phone screen', async ({ page }) => {

@@ -2,8 +2,9 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { isCustomer, isStaff, type Role, roleSchema } from '~/lib/roles';
-import { homeForRole, PROFILE } from '~/lib/routes';
+import { homeForRole } from '~/lib/routes';
 
+import { AccountMenu } from './account-menu';
 import { CartLink } from './cart-link';
 import { DemoBanner } from './demo-banner';
 import { HeroArt } from './hero-art';
@@ -11,9 +12,6 @@ import { Logo } from './logo';
 import { MobileNav } from './mobile-nav';
 import { navLinksFor } from './nav-links';
 import { PrimaryNav } from './primary-nav';
-import { RoleBadge } from './role-badge';
-import { SignOutButton } from './sign-out-button';
-import { ThemeSwitcher } from './theme-switcher';
 
 interface AppShellProps {
   name: string;
@@ -25,6 +23,8 @@ interface AppShellProps {
 export function AppShell({ name, role, children }: AppShellProps) {
   const links = navLinksFor(role);
   const parsedRole: Role = roleSchema.catch('USER').parse(role);
+  // Customers all share one role, so only staff see theirs.
+  const accountRole = isStaff(role) ? parsedRole : null;
 
   return (
     <div className="relative isolate flex min-h-screen flex-col">
@@ -38,7 +38,7 @@ export function AppShell({ name, role, children }: AppShellProps) {
         */}
         <div className="relative flex items-center gap-6 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
-            <MobileNav links={links} name={name} />
+            <MobileNav links={links} name={name} role={accountRole} homeHref={homeForRole(role)} />
             <Link
               href={homeForRole(role)}
               className="focus-visible:ring-ring/50 rounded-md outline-none focus-visible:ring-3"
@@ -54,20 +54,7 @@ export function AppShell({ name, role, children }: AppShellProps) {
 
           <div className="relative ms-auto flex items-center gap-3">
             {isCustomer(role) ? <CartLink /> : null}
-            <Link
-              href={PROFILE}
-              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 hidden rounded-md text-sm transition-colors outline-none focus-visible:ring-3 lg:inline"
-              data-testid="account-name"
-            >
-              {name}
-            </Link>
-            {isStaff(role) ? (
-              <span className="hidden sm:inline-flex">
-                <RoleBadge role={parsedRole} />
-              </span>
-            ) : null}
-            <ThemeSwitcher className="hidden md:inline-flex" />
-            <SignOutButton />
+            <AccountMenu name={name} role={accountRole} />
           </div>
         </div>
       </header>

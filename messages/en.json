@@ -34,14 +34,15 @@
     "primary": "Main",
     "menu": "Menu",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu",
     "findSkis": "Find skis",
     "frontDesk": "Front desk",
     "myReservations": "My reservations",
     "stores": "Stores",
     "fleet": "Fleet",
     "accounts": "Accounts",
-    "models": "Models"
+    "models": "Models",
+    "account": "Account",
+    "accountMenu": "Account menu for {name}"
   },
   "roles": {
     "USER": "Customer",

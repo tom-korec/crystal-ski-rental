@@ -1,30 +1,36 @@
 'use client';
 
-import { MenuIcon, XIcon } from 'lucide-react';
+import { MenuIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 import { Button } from '~/components/ui/button';
-import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '~/components/ui/sheet';
-import { PROFILE } from '~/lib/routes';
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '~/components/ui/sheet';
+import type { Role } from '~/lib/roles';
 import { cn } from '~/lib/utils';
 
+import { AccountPanel } from './account-panel';
+import { Logo } from './logo';
 import type { NavLink } from './nav-links';
-import { ThemeSwitcher } from './theme-switcher';
 
 interface MobileNavProps {
   links: NavLink[];
   name: string;
+  role: Role | null;
+  homeHref: string;
 }
 
-/** The header links below `md`, in a sheet. */
-export function MobileNav({ links, name }: MobileNavProps) {
+/** Below `md`, a sheet: the logo, the main navigation, and the account at the bottom. */
+export function MobileNav({ links, name, role, homeHref }: MobileNavProps) {
   const t = useTranslations('nav');
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         render={<Button variant="ghost" size="icon-sm" className="md:hidden" data-testid="nav-menu" />}
         aria-label={t('openMenu')}
@@ -33,47 +39,43 @@ export function MobileNav({ links, name }: MobileNavProps) {
       </SheetTrigger>
 
       <SheetContent side="left" className="flex flex-col gap-6 p-5" aria-label={t('primary')}>
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col gap-1">
-            <SheetTitle>{t('menu')}</SheetTitle>
-            <SheetClose
-              render={<Link href={PROFILE} />}
-              nativeButton={false}
-              className="text-muted-foreground hover:text-foreground w-fit text-sm underline-offset-4 hover:underline"
-              data-testid="mobile-profile"
-            >
-              {name}
-            </SheetClose>
-          </div>
-          <SheetClose render={<Button variant="ghost" size="icon-sm" />} aria-label={t('closeMenu')}>
-            <XIcon />
-          </SheetClose>
-        </div>
+        <SheetTitle className="sr-only">{t('menu')}</SheetTitle>
+        {/* The sheet's own close button sits in the top corner, level with the logo. */}
+        <Link
+          href={homeHref}
+          onClick={close}
+          className="focus-visible:ring-ring/50 w-fit rounded-md outline-none focus-visible:ring-3"
+          data-testid="mobile-home-link"
+        >
+          <Logo />
+        </Link>
 
-        <nav className="flex flex-col">
+        <nav aria-label={t('primary')} className="flex flex-col">
           {links.map((link) => {
             const current =
               pathname === link.href || (link.includesSubpages === true && pathname.startsWith(`${link.href}/`));
 
             return (
-              <SheetClose
+              <Link
                 key={link.href}
-                render={<Link href={link.href} />}
-                nativeButton={false}
+                href={link.href}
+                onClick={close}
                 aria-current={current ? 'page' : undefined}
                 className={cn(
-                  'hover:bg-muted focus-visible:ring-ring/50 rounded-lg px-2 py-2.5 text-sm transition-colors outline-none focus-visible:ring-3',
-                  current ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground',
+                  'hover:bg-muted focus-visible:ring-ring/50 rounded-lg px-2 py-2.5 text-base transition-colors outline-none focus-visible:ring-3',
+                  current ? 'bg-muted text-foreground font-medium' : 'text-muted-foreground hover:text-foreground',
                 )}
                 data-testid={`mobile-${link.testId}`}
               >
                 {t(link.labelKey)}
-              </SheetClose>
+              </Link>
             );
           })}
         </nav>
 
-        <ThemeSwitcher className="self-start" />
+        <div className="border-border mt-auto border-t pt-4">
+          <AccountPanel name={name} role={role} onNavigate={close} />
+        </div>
       </SheetContent>
     </Sheet>
   );
