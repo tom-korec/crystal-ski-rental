@@ -136,7 +136,10 @@
     "discount": "−{percent} %",
     "count": "{count, plural, =0 {No skis free} one {# ski free} other {# skis free}}",
     "emptyForDates": "No skis are free for these dates. Try other dates.",
-    "emptyFiltered": "No skis match these filters for these dates. Try fewer filters."
+    "emptyFiltered": "No skis match these filters for these dates. Try fewer filters.",
+    "lengthLabel": "Length",
+    "forLabel": "For",
+    "levelLabel": "Level"
   },
   "pricing": {
     "daysTimesPrice": "{days, plural, one {# day} other {# days}} × {price}",
