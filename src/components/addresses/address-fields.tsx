@@ -12,19 +12,29 @@ export type AddressFieldName =
 /** The countries offered first. Any other saved country is still shown. */
 const COUNTRIES = ['SK', 'CZ', 'PL', 'HU', 'AT', 'DE', 'UA', 'GB', 'IT', 'FR', 'NL', 'BE', 'CH', 'US'];
 
-interface AddressFieldsProps {
+type PostalFieldName = 'street' | 'houseNumber' | 'city' | 'zipCode';
+
+interface CommonAddressFieldsProps {
   /** Prefixes every input id, so two address forms can share a page. */
   idPrefix: string;
-  /** Invoice addresses also name who the invoice is for, with optional company numbers. */
-  kind: 'MAILING' | 'INVOICE';
-  register: (field: Exclude<AddressFieldName, 'country'>) => UseFormRegisterReturn;
   errors: Partial<Record<AddressFieldName, unknown>>;
   country: string;
   onCountryChange: (country: string) => void;
 }
 
+/** Invoice addresses also name who the invoice is for, with optional company numbers. */
+type AddressFieldsProps = CommonAddressFieldsProps &
+  (
+    | { kind: 'MAILING'; register: (field: PostalFieldName) => UseFormRegisterReturn }
+    | {
+        kind: 'INVOICE';
+        register: (field: PostalFieldName | 'recipient' | 'companyId' | 'vatId') => UseFormRegisterReturn;
+      }
+  );
+
 /** The inputs of one postal address (FR-6), for a form that owns the values. */
-export function AddressFields({ idPrefix, kind, register, errors, country, onCountryChange }: AddressFieldsProps) {
+export function AddressFields(props: AddressFieldsProps) {
+  const { idPrefix, register, errors, country, onCountryChange } = props;
   const t = useTranslations('addresses');
   const locale = useLocale();
   const names = new Intl.DisplayNames([locale], { type: 'region' });
@@ -32,7 +42,7 @@ export function AddressFields({ idPrefix, kind, register, errors, country, onCou
 
   return (
     <div className="flex flex-col gap-4">
-      {kind === 'INVOICE' ? (
+      {props.kind === 'INVOICE' ? (
         <>
           <Field
             id={`${idPrefix}-recipient`}
@@ -40,7 +50,7 @@ export function AddressFields({ idPrefix, kind, register, errors, country, onCou
             hint={t('recipientHint')}
             autoComplete="organization"
             error={errors.recipient ? t('errors.recipient') : undefined}
-            {...register('recipient')}
+            {...props.register('recipient')}
           />
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
@@ -48,14 +58,14 @@ export function AddressFields({ idPrefix, kind, register, errors, country, onCou
               label={t('companyId')}
               autoComplete="off"
               error={errors.companyId ? t('errors.companyId') : undefined}
-              {...register('companyId')}
+              {...props.register('companyId')}
             />
             <Field
               id={`${idPrefix}-vat-id`}
               label={t('vatId')}
               autoComplete="off"
               error={errors.vatId ? t('errors.vatId') : undefined}
-              {...register('vatId')}
+              {...props.register('vatId')}
             />
           </div>
         </>

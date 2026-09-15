@@ -245,20 +245,22 @@ model Ski {
 }
 
 model Reservation {
-  id                String             @id @default(uuid(7))
+  id                String               @id @default(uuid(7))
   userId            String
   // Every ski of a reservation is from this store (BR-6).
   storeId           String
   // Whole days in UTC: startDate inclusive, endDate exclusive, so one rental can end on the day the
   // next begins. The overlap constraint uses the same '[)' range.
-  startDate         DateTime           @db.Date
-  endDate           DateTime           @db.Date
+  startDate         DateTime             @db.Date
+  endDate           DateTime             @db.Date
   // The skis move through the lifecycle together (BR-10).
-  status            ReservationStatus  @default(CREATED)
+  status            ReservationStatus    @default(CREATED)
   // Price snapshot at booking time, the sum of the items. Later price changes never touch these (BR-5).
   rentalDays        Int
   discountPercent   Int
-  totalPrice        Decimal            @db.Decimal(10, 2)
+  totalPrice        Decimal              @db.Decimal(10, 2)
+  // From the customer to the store, optional (FR-36).
+  note              String?
   // Who moved the reservation through its lifecycle, and when (BR-13).
   pickedUpAt        DateTime?
   pickedUpById      String?
@@ -266,14 +268,15 @@ model Reservation {
   returnedById      String?
   cancelledAt       DateTime?
   cancelledById     String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @default(now()) @updatedAt
-  user              User               @relation(fields: [userId], references: [id], onDelete: Restrict)
-  store             Store              @relation(fields: [storeId], references: [id], onDelete: Restrict)
-  pickedUpBy        User?              @relation("PickedUpBy", fields: [pickedUpById], references: [id], onDelete: SetNull)
-  returnedBy        User?              @relation("ReturnedBy", fields: [returnedById], references: [id], onDelete: SetNull)
-  cancelledBy       User?              @relation("CancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @default(now()) @updatedAt
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  store             Store                @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  pickedUpBy        User?                @relation("PickedUpBy", fields: [pickedUpById], references: [id], onDelete: SetNull)
+  returnedBy        User?                @relation("ReturnedBy", fields: [returnedById], references: [id], onDelete: SetNull)
+  cancelledBy       User?                @relation("CancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
   items             ReservationItem[]
+  addresses         ReservationAddress[]
   rating            ReservationRating?
   openedModelRating ModelRating[]
 
@@ -306,6 +309,27 @@ model ReservationItem {
   // The overlap lookup behind every booking and search.
   @@index([skiId, holdsDates, startDate])
   @@map("reservation_item")
+}
+
+// The customer's addresses as they were when booking (FR-36), so later profile edits never change a
+// past reservation. Always a mailing address; an invoice address only when it differs from it. The
+// migration adds the same check as on `customer_address`.
+model ReservationAddress {
+  id            String      @id @default(uuid(7))
+  reservationId String
+  kind          AddressKind
+  recipient     String?
+  companyId     String?
+  vatId         String?
+  street        String
+  houseNumber   String
+  city          String
+  zipCode       String
+  country       String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@unique([reservationId, kind])
+  @@map("reservation_address")
 }
 
 // Feedback on the rental experience, one per reservation (BR-40).

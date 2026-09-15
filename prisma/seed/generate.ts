@@ -125,6 +125,7 @@ export interface ReservationRow {
   endDate: Date;
   status: ReservationStatus;
   items: ReservationItemRow[];
+  note: string | null;
   rentalDays: number;
   discountPercent: number;
   totalPrice: string;
@@ -171,6 +172,8 @@ export interface CustomerAddressRow {
   createdAt: Date;
 }
 
+export type ReservationAddressRow = Omit<CustomerAddressRow, 'userId' | 'createdAt'> & { reservationId: string };
+
 export interface SeedData {
   stores: ((typeof STORES)[number] & { id: string })[];
   brands: { id: string; name: string }[];
@@ -179,6 +182,7 @@ export interface SeedData {
   addresses: CustomerAddressRow[];
   skis: SkiRow[];
   reservations: ReservationRow[];
+  reservationAddresses: ReservationAddressRow[];
   reservationRatings: ReservationRatingRow[];
   modelRatings: ModelRatingRow[];
 }
@@ -334,6 +338,7 @@ interface ReservationSpec {
   returnedOn?: number;
   /** Overrides the return moment, for scenarios that need it within the last hour. */
   returnedAt?: Date;
+  note?: string;
 }
 
 function buildReservation(spec: ReservationSpec, data: SeedData, staff: UserRow[]): ReservationRow {
@@ -361,6 +366,7 @@ function buildReservation(spec: ReservationSpec, data: SeedData, staff: UserRow[
     startDate,
     endDate,
     status: spec.status,
+    note: spec.note ?? null,
     items: quote.items.map((item) => ({
       id: randomUUID(),
       skiId: item.skiId,
@@ -437,11 +443,25 @@ function scriptedSpecs(scripted: Map<string, SkiRow>, users: UserRow[]): Reserva
       returnedAt: new Date(NOW.getTime() - 40 * MINUTE_MS),
     },
     { skis: [ski('SK-0004')], user: jan, start: -1, end: 3, status: 'ACTIVE' },
-    { skis: [ski('SK-0005'), ski('SK-0013')], user: jan, start: 7, end: 12, status: 'CREATED' },
+    {
+      skis: [ski('SK-0005'), ski('SK-0013')],
+      user: jan,
+      start: 7,
+      end: 12,
+      status: 'CREATED',
+      note: 'One pair is for my daughter, she is 150 cm tall. We arrive around 9:30.',
+    },
     { skis: [ski('SK-0006')], user: jan, start: 14, end: 16, status: 'CANCELLED_BY_USER' },
 
     // The Jasná front desk has something in every list, including a pickup of two pairs.
-    { skis: [ski('SK-0007'), ski('SK-0014')], user: zuzana, start: 0, end: 3, status: 'CREATED' },
+    {
+      skis: [ski('SK-0007'), ski('SK-0014')],
+      user: zuzana,
+      start: 0,
+      end: 3,
+      status: 'CREATED',
+      note: 'Could you check the bindings are set for a beginner?',
+    },
     { skis: [ski('SK-0008')], user: michal, start: -2, end: 2, status: 'CREATED' },
     { skis: [ski('SK-0009')], user: katarina, start: -4, end: 1, status: 'ACTIVE' },
     { skis: [ski('SK-0010')], user: martin, start: -6, end: -1, status: 'ACTIVE' },
@@ -622,6 +642,7 @@ export function generateSeedData(): SeedData {
     addresses: buildAddresses(users),
     skis: [],
     reservations: [],
+    reservationAddresses: [],
     reservationRatings: [],
     modelRatings: [],
   };
@@ -636,6 +657,16 @@ export function generateSeedData(): SeedData {
   ];
 
   data.reservations = specs.map((spec) => buildReservation(spec, data, staff));
+  // Bookings carry the addresses their customer has today, as if nothing changed since (FR-36).
+  data.reservationAddresses = data.reservations.flatMap((reservation) =>
+    data.addresses
+      .filter((address) => address.userId === reservation.userId)
+      .map(({ userId: _userId, createdAt: _createdAt, ...address }) => ({
+        ...address,
+        id: randomUUID(),
+        reservationId: reservation.id,
+      })),
+  );
 
   // Removed accounts were removed after their last booking.
   for (const user of users.filter((candidate) => candidate.deletedAt)) {

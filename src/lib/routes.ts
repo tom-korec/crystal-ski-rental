@@ -4,6 +4,7 @@ export const LANDING = '/';
 export const APP_HOME = '/app';
 export const APP_RESERVATIONS = '/app/reservations';
 export const APP_STORES = '/app/stores';
+export const APP_RESERVE = '/app/reserve';
 export const STAFF_HOME = '/staff';
 export const STAFF_SKIS = '/staff/skis';
 export const STAFF_CATALOG = '/staff/catalog';

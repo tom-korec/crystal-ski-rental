@@ -137,8 +137,7 @@
     "discount": "−{percent} %",
     "count": "{count, plural, =0 {No skis free} one {# ski free} other {# skis free}}",
     "emptyForDates": "No skis are free for these dates. Try other dates.",
-    "emptyFiltered": "No skis match these filters for these dates. Try fewer filters.",
-    "reserve": "Reserve"
+    "emptyFiltered": "No skis match these filters for these dates. Try fewer filters."
   },
   "pricing": {
     "daysTimesPrice": "{days, plural, one {# day} other {# days}} × {price}",
@@ -172,18 +171,6 @@
     "pickBoth": "Pick a store and dates to continue.",
     "pickStore": "Pick a store to continue.",
     "pickDatesHint": "Pick your dates to continue."
-  },
-  "booking": {
-    "title": "Reserve {skis}",
-    "summary": "{length} cm · {period} · {days, plural, one {# day} other {# days}}",
-    "pickupAt": "Pick up and return at",
-    "cancel": "Cancel",
-    "reserving": "Reserving…",
-    "confirm": "Reserve for {total}",
-    "bookedTitle": "Booked",
-    "bookedDescription": "{skis} are yours for {period}. Pick them up at {store} on the first day.",
-    "done": "Done",
-    "viewReservations": "My reservations"
   },
   "reservations": {
     "title": "My reservations",
@@ -226,7 +213,13 @@
     "storeDetails": "Store details",
     "perDay": "{price} / day",
     "pairsOf": "{count, plural, one {# pair} other {# pairs}}: {skis}",
-    "modelsRated": "{rated} of {total} rated"
+    "modelsRated": "{rated} of {total} rated",
+    "note": "Your note",
+    "mailingAddress": "Mailing address",
+    "invoiceAddress": "Invoice address",
+    "invoiceToMailing": "Same as mailing address, in your name",
+    "companyId": "company no. {id}",
+    "vatId": "VAT {id}"
   },
   "ratings": {
     "rate": "Rate",
@@ -516,8 +509,8 @@
     "country": "Country",
     "recipient": "Invoice to",
     "recipientHint": "Your name, or the company that pays.",
-    "companyId": "Company number (optional)",
-    "vatId": "VAT number (optional)",
+    "companyId": "Company no. (optional)",
+    "vatId": "VAT no. (optional)",
     "save": "Save address",
     "saving": "Saving…",
     "saved": "Saved.",
@@ -542,5 +535,67 @@
       "companyId": "Enter a company number like 12345678.",
       "vatId": "Enter a VAT number like SK2020123456."
     }
+  },
+  "cart": {
+    "link": "Reservation",
+    "linkLabel": "Your reservation, {count, plural, one {# pair} other {# pairs}} of skis",
+    "reserve": "Reserve",
+    "inReservation": "In your reservation",
+    "proceed": "Proceed to reservation",
+    "reserveAnother": "Reserve another pair",
+    "close": "Close",
+    "keep": "Keep my reservation",
+    "startOver": "Start a new reservation with this pair",
+    "searchCartDates": "Search my reservation's dates",
+    "addedTitle": "Added to your reservation",
+    "alreadyTitle": "Already in your reservation",
+    "addedDescription": "{skis}, {length} cm, from {store} for {period}.",
+    "holds": "Your reservation holds {count, plural, one {# pair} other {# pairs}} of skis. Add more from the same store, or go on to book.",
+    "fullTitle": "Your reservation is full",
+    "fullDescription": "One reservation holds up to {max} pairs of skis. Book this one first, then start another.",
+    "otherStoreTitle": "Your reservation is at another store",
+    "otherStoreDescription": "Your reservation holds {count, plural, one {# pair} other {# pairs}} from {cartStore}. All skis in one reservation come from the same store, so this pair from {store} cannot join it.",
+    "otherDatesTitle": "Your reservation is for other dates",
+    "otherDatesDescription": "Your reservation holds {count, plural, one {# pair} other {# pairs}} from {cartStore} for {cartPeriod}. All skis in one reservation are for the same dates, so this pair cannot join it."
+  },
+  "checkout": {
+    "title": "Your reservation",
+    "description": "{store} · {period}",
+    "emptyDescription": "Skis you reserve from the search wait here until you book them.",
+    "empty": "Your reservation is empty. Find skis for your dates and press Reserve on the ones you want.",
+    "findSkis": "Find skis",
+    "addMore": "Add more skis",
+    "skisTitle": "{count, plural, one {# pair of skis} other {# pairs of skis}}",
+    "length": "{length} cm",
+    "perDay": "{price} / day",
+    "remove": "Remove {skis}",
+    "missing": "{count, plural, one {A pair is} other {# pairs are}} no longer in the fleet. Remove {count, plural, one {it} other {them}} from the reservation.",
+    "problem": {
+      "unavailable": "No longer offered for rental. Remove it to continue.",
+      "booked": "Booked by someone else for these dates in the meantime. Remove it to continue.",
+      "otherStore": "From another store. Remove it to continue."
+    },
+    "addressesTitle": "Addresses",
+    "addressesDescription": "They are saved to your profile, so your next booking starts from them.",
+    "mailing": "Mailing address",
+    "invoice": "Invoice address",
+    "invoiceToMailing": "Send invoices to my mailing address, in my name",
+    "invoiceToMailingHint": "Untick to make invoices out to someone else, for example your company.",
+    "noteTitle": "Note for the store",
+    "noteLabel": "Note (optional)",
+    "notePlaceholder": "Anything the store should know, e.g. when you plan to arrive.",
+    "pickupAt": "Pick up and return at",
+    "summaryTitle": "Summary",
+    "pairsForDays": "{count, plural, one {# pair} other {# pairs}} × {days, plural, one {# day} other {# days}}",
+    "discount": "Longer-rental discount ({percent} %)",
+    "total": "Total",
+    "blocked": "Remove the skis marked above to book.",
+    "confirm": "Book for {total}",
+    "booking": "Booking…",
+    "payAtStore": "You pay at the store when you pick the skis up.",
+    "bookedTitle": "Booked",
+    "bookedDescription": "{count, plural, one {Your pair of skis is} other {Your # pairs of skis are}} waiting at {store} for {period}. Pick them up on the first day.",
+    "viewReservations": "My reservations",
+    "findMore": "Find more skis"
   }
 }

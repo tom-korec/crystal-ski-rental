@@ -122,12 +122,20 @@ customer account.
 - **FR-32** Each result shows brand and model, length, type, gender and level badges, store, the
   model's average rating, the price per day, and the **total for the chosen dates with the
   discount applied** and visible.
-- **FR-33** The customer can reserve a result. Before confirming they see the price breakdown
-  (days × price per day, discount, total) and the store's address, contacts and opening hours.
+- **FR-33** The customer puts a reservation together from the results: **Reserve** adds a pair to it and
+  says so, offering to reserve another pair or to proceed. A pair from another store or for other dates
+  cannot join (BR-6); the customer is told why and may start a new reservation with it instead. The
+  reservation stays in the browser until booked, and the header shows how many pairs it holds.
 - **FR-34** Results never include skis that are out of rental, deleted, or already booked for any of
   the chosen days.
 - **FR-35** The filters and page state are kept in the URL, so a search can be reloaded, shared and
   bookmarked.
+- **FR-36** The reservation page lists the pairs with their prices, the price breakdown (pairs × days,
+  discount, total) and the store's address, contacts and opening hours. Pairs can be removed, and any
+  that were booked by someone else meanwhile must be. The customer confirms their mailing address,
+  chooses whether invoices go to it or to a separate invoice address, and may leave a note for the
+  store. The addresses are saved to the profile and copied onto the reservation, so later edits never
+  change a past booking. Staff see the note.
 
 ### 4.5 My reservations (customer)
 

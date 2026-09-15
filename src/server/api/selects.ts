@@ -59,3 +59,16 @@ export const customerAddressSelect = {
   country: true,
   updatedAt: true,
 } satisfies Prisma.CustomerAddressSelect;
+
+/** A ski as customers see it: never its inventory code (BR-50). */
+export const skiPublicSelect = {
+  id: true,
+  lengthCm: true,
+  model: { select: skiModelSelect },
+  store: { select: { id: true, name: true, city: true } },
+} satisfies Prisma.SkiSelect;
+
+/** Decimal columns leave the API as plain values. */
+export function withPlainModel<T extends { model: Parameters<typeof plainSkiModel>[0] }>(row: T) {
+  return { ...row, model: plainSkiModel(row.model) };
+}

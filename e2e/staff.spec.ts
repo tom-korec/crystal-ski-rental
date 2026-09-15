@@ -17,6 +17,9 @@ test.describe('front desk', () => {
     for (const name of ['pickupsDueToday', 'overduePickups', 'returnsDueToday', 'overdueReturns']) {
       await expect(section(page, name).getByTestId('section-count')).toHaveText('1');
     }
+    // Today's pickup is two pairs with a note for the store.
+    await expect(section(page, 'pickupsDueToday').getByTestId('inventory-code')).toHaveCount(2);
+    await expect(section(page, 'pickupsDueToday').getByTestId('reservation-note')).toContainText('bindings');
 
     await section(page, 'pickupsDueToday').getByTestId('pick-up').click();
     await expect(section(page, 'pickupsDueToday').getByTestId('section-count')).toHaveText('0');

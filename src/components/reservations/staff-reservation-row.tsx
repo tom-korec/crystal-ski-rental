@@ -1,6 +1,6 @@
 'use client';
 
-import { StarIcon } from 'lucide-react';
+import { MessageSquareIcon, StarIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -111,6 +111,12 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
             ? ` · ${t('cancelledBy', { name: reservation.cancelledBy.name })}`
             : ''}
         </span>
+        {reservation.note ? (
+          <span className="flex items-start gap-1 text-xs" data-testid="reservation-note">
+            <MessageSquareIcon className="text-muted-foreground mt-px size-3.5 shrink-0" aria-hidden />
+            <span>“{reservation.note}”</span>
+          </span>
+        ) : null}
         {show.rating && reservation.rating ? (
           <span className="flex items-start gap-1 text-xs" data-testid="rental-rating">
             <StarIcon className="fill-highlight text-highlight mt-px size-3.5 shrink-0" aria-hidden />

@@ -2,7 +2,7 @@
 
 import { ChevronDownIcon, MapPinIcon } from 'lucide-react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { ConfirmDialog } from '~/components/common/confirm-dialog';
@@ -12,6 +12,7 @@ import { Card } from '~/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
 import { useFormatDateRange } from '~/hooks/use-format-date-range';
 import { useFormatMoney } from '~/hooks/use-format-money';
+import { formatPostalCode } from '~/lib/address-schema';
 import { rentalPeriod, todayUtc } from '~/lib/date';
 import { editWindowEndsAt, modelRatingAccess, ratingAction, reservationRatingAccess } from '~/lib/rating-rules';
 import { canCancelAsUser } from '~/lib/reservation-lifecycle';
@@ -179,6 +180,12 @@ export function ReservationCard({ reservation }: ReservationCardProps) {
               );
             })}
           </ul>
+          <ReservationAddresses addresses={reservation.addresses} />
+          {reservation.note ? (
+            <p data-testid="reservation-note">
+              <span className="text-muted-foreground">{t('note')}: </span>“{reservation.note}”
+            </p>
+          ) : null}
           <p className="text-muted-foreground">
             {t('priceSummary', { days: reservation.rentalDays, discount: reservation.discountPercent })}
           </p>
@@ -244,4 +251,40 @@ function statusHint(
     case 'CANCELLED_BY_STORE':
       return t('hint.cancelledByStore');
   }
+}
+
+interface ReservationAddressesProps {
+  addresses: MyReservation['addresses'];
+}
+
+/** The addresses the reservation was booked with, as they were then (FR-36). */
+function ReservationAddresses({ addresses }: ReservationAddressesProps) {
+  const t = useTranslations('reservations');
+  const locale = useLocale();
+  const countries = new Intl.DisplayNames([locale], { type: 'region' });
+  const mailing = addresses.find((address) => address.kind === 'MAILING');
+  const invoice = addresses.find((address) => address.kind === 'INVOICE');
+
+  if (!mailing) return null;
+
+  const line = (address: MyReservation['addresses'][number]) =>
+    [
+      address.recipient,
+      `${address.street} ${address.houseNumber}`,
+      `${formatPostalCode(address.zipCode, address.country)} ${address.city}`,
+      countries.of(address.country),
+      address.companyId && t('companyId', { id: address.companyId }),
+      address.vatId && t('vatId', { id: address.vatId }),
+    ]
+      .filter(Boolean)
+      .join(', ');
+
+  return (
+    <dl className="grid gap-x-4 gap-y-1 sm:grid-cols-[auto_1fr]" data-testid="reservation-addresses">
+      <dt className="text-muted-foreground">{t('mailingAddress')}</dt>
+      <dd>{line(mailing)}</dd>
+      <dt className="text-muted-foreground">{t('invoiceAddress')}</dt>
+      <dd>{invoice ? line(invoice) : t('invoiceToMailing')}</dd>
+    </dl>
+  );
 }

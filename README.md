@@ -110,15 +110,17 @@ rental end on the day the next begins. It also means the stored end is never the
 
 ### No double booking, guaranteed by the database
 
-A ski can never hold two booked or picked-up reservations that share a day (BR-20). The rule is an
-`EXCLUDE USING gist` constraint over the ski and the date range, partial on `CREATED` and `ACTIVE`,
-in its own hand-written migration because Prisma cannot express it. Checking for a clash and then
-inserting is two statements, and two customers booking the same ski at the same moment can both
-pass the check, so the router's check only exists to explain the ordinary case. The constraint is
-what is actually true.
+A ski can never hold two booked or picked-up reservations that share a day (BR-20). A reservation
+holds one or more skis from one store (BR-6), each as a reservation item, and the rule is an
+`EXCLUDE USING gist` constraint on the items over the ski and the date range, partial on items that
+still hold their dates. It lives in a hand-written migration because Prisma cannot express it, with a
+trigger that keeps every item in step with its reservation's status. Checking for a clash and then
+inserting is two statements, and two customers booking the same ski at the same moment can both pass
+the check, so the router's check only exists to explain the ordinary case. The constraint is what is
+actually true.
 
-Returned reservations hold no dates. That is what frees the rest of an early return (BR-15) without
-touching the price the customer agreed to.
+Returned and cancelled reservations hold no dates. That is what frees the rest of an early return
+(BR-15) without touching the price the customer agreed to.
 
 `prisma db push` does not create the constraint, so use migrations for any database that matters.
 
@@ -126,10 +128,11 @@ touching the price the customer agreed to.
 
 Prices are `Decimal(10,2)` in Postgres, strings like `"38.00"` in the API, and `decimal.js` for any
 arithmetic. A JavaScript number never holds a price. `quoteRental` in `src/lib/pricing.ts` computes
-the discount for the rental length and rounds half-up to the cent; the search and the booking both
-call it, so the price on the card is the price saved on the reservation. The reservation keeps that
-snapshot (price per day, days, discount, total), so a later price change never rewrites what someone
-agreed to.
+the discount for the rental length and rounds half-up to the cent; `quoteReservation` quotes every
+pair of a reservation that way and adds up the rounded lines. The search, the reservation page and the
+booking all use them, so the price on the card is the price saved. The reservation keeps that snapshot
+(each pair's price per day and total, the days, discount and total), so a later price change never
+rewrites what someone agreed to.
 
 Formatting goes from the decimal string straight to `Intl.NumberFormat`, which accepts strings.
 

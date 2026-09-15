@@ -1,5 +1,6 @@
 'use client';
 
+import { CheckIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type ComponentProps, useState } from 'react';
 
@@ -9,11 +10,13 @@ import { QueryState } from '~/components/common/query-state';
 import { CardGridSkeleton } from '~/components/common/skeletons/card-grid-skeleton';
 import { SkiCard } from '~/components/skis/ski-card';
 import { Button } from '~/components/ui/button';
+import { useReservationCart } from '~/hooks/use-reservation-cart';
 import { useUrlFilters } from '~/hooks/use-url-filters';
+import { addToCart, startCart } from '~/lib/reservation-cart';
 import { SKI_SORTS, type SkiSearchFilters, type SkiSearchInput } from '~/lib/ski-schema';
 import { api } from '~/trpc/react';
 
-import { type ReserveSelection, ReserveSkiDialog } from './reserve-ski-dialog';
+import { type AddAttempt, type AddedSki, AddToReservationDialog } from './add-to-reservation-dialog';
 import { CustomerSearch, type CustomerSearchValue } from './customer-search';
 import { activeFilterCount } from './search-filters';
 import { parseSearch, searchInput, serialiseSearch } from './search-params';
@@ -49,13 +52,30 @@ function SkiResults({ input, search }: SkiResultsProps) {
     });
   const t = useTranslations('filters');
   const tSkis = useTranslations('skis');
-  const [selection, setSelection] = useState<ReserveSelection | null>(null);
+  const tCart = useTranslations('cart');
+  const { cart, setCart } = useReservationCart();
+  const [attempt, setAttempt] = useState<AddAttempt | null>(null);
 
   const skis = api.ski.search.useInfiniteQuery(input, { getNextPageParam: (page) => page.nextCursor });
   const found = skis.data?.pages.flatMap((page) => page.items) ?? [];
   const total = skis.data?.pages[0]?.total ?? 0;
 
   const range = { startDate: input.startDate, endDate: input.endDate };
+  const inCart = (skiId: string) =>
+    cart?.startDate === range.startDate && cart.endDate === range.endDate && cart.skiIds.includes(skiId);
+
+  function reserve(ski: AddedSki) {
+    const outcome = addToCart(cart, { id: ski.id, storeId: ski.store.id }, range);
+    const next = outcome.kind === 'added' ? outcome.cart : cart;
+    if (outcome.kind === 'added') setCart(outcome.cart);
+    setAttempt({ ski, outcome, cart: next });
+  }
+
+  function startOver(ski: AddedSki) {
+    const next = startCart({ id: ski.id, storeId: ski.store.id }, range);
+    setCart(next);
+    setAttempt({ ski, outcome: { kind: 'added', cart: next }, cart: next });
+  }
   const isNarrowed = activeFilterCount(filters) > 0;
 
   return (
@@ -108,9 +128,16 @@ function SkiResults({ input, search }: SkiResultsProps) {
                     ski={ski}
                     quote={ski.quote}
                     action={
-                      <Button onClick={() => setSelection({ ski, quote: ski.quote })} data-testid="reserve">
-                        {tSkis('reserve')}
-                      </Button>
+                      inCart(ski.id) ? (
+                        <Button variant="outline" onClick={() => reserve(ski)} data-testid="in-reservation">
+                          <CheckIcon aria-hidden />
+                          {tCart('inReservation')}
+                        </Button>
+                      ) : (
+                        <Button onClick={() => reserve(ski)} data-testid="reserve">
+                          {tCart('reserve')}
+                        </Button>
+                      )
                     }
                   />
                 </li>
@@ -127,7 +154,7 @@ function SkiResults({ input, search }: SkiResultsProps) {
         )}
       </QueryState>
 
-      <ReserveSkiDialog selection={selection} range={range} onClose={() => setSelection(null)} />
+      <AddToReservationDialog attempt={attempt} onClose={() => setAttempt(null)} onStartOver={startOver} />
     </div>
   );
 }

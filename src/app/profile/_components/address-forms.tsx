@@ -85,10 +85,7 @@ function MailingAddressForm({ saved }: AddressFormProps) {
       <AddressFields
         idPrefix="mailing"
         kind="MAILING"
-        register={(field) =>
-          // Mailing addresses have no invoice fields; AddressFields only asks for them on invoices.
-          form.register(field as keyof MailingInput)
-        }
+        register={(field) => form.register(field)}
         errors={form.formState.errors}
         country={country ?? DEFAULT_COUNTRY}
         onCountryChange={(country) => form.setValue('country', country, { shouldDirty: true })}

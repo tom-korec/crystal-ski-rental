@@ -14,12 +14,14 @@ import {
   myReservationsSchema,
   reservationCreateSchema,
   reservationIdSchema,
+  reservationQuoteSchema,
   reservationsBySkiSchema,
   reservationsByUserSchema,
 } from '~/lib/reservation-schema';
 import { isStaff } from '~/lib/roles';
 import { badRequest, conflict, isOverlapViolation, notFound } from '~/server/api/errors';
 import { overlappingItem } from '~/server/api/overlap';
+import { skiPublicSelect, storeSelect, withPlainModel } from '~/server/api/selects';
 import { createTRPCRouter, protectedProcedure, staffProcedure, userProcedure } from '~/server/api/trpc';
 
 import type { Prisma, PrismaClient } from '../../../../generated/prisma/client';
@@ -40,6 +42,7 @@ const reservationFields = {
   rentalDays: true,
   discountPercent: true,
   totalPrice: true,
+  note: true,
   createdAt: true,
   pickedUpAt: true,
   returnedAt: true,
@@ -61,6 +64,20 @@ const ITEM_ORDER = [
 const customerReservationSelect = {
   ...reservationFields,
   store: { select: { id: true, name: true } },
+  addresses: {
+    select: {
+      kind: true,
+      recipient: true,
+      companyId: true,
+      vatId: true,
+      street: true,
+      houseNumber: true,
+      city: true,
+      zipCode: true,
+      country: true,
+    },
+    orderBy: { kind: 'asc' },
+  },
   items: {
     select: {
       id: true,
@@ -172,27 +189,53 @@ export const reservationRouter = createTRPCRouter({
       utcDaysBetween(startDate, endDate),
     );
 
+    const userId = ctx.session.user.id;
+    const { details } = input;
+    const mailing = { kind: 'MAILING' as const, ...details.mailing, recipient: null, companyId: null, vatId: null };
+    const invoice = details.invoiceToMailingAddress
+      ? null
+      : {
+          kind: 'INVOICE' as const,
+          ...details.invoice,
+          companyId: details.invoice.companyId ?? null,
+          vatId: details.invoice.vatId ?? null,
+        };
+
     try {
-      const reservation = await ctx.db.reservation.create({
-        data: {
-          userId: ctx.session.user.id,
-          storeId,
-          startDate,
-          endDate,
-          rentalDays: quote.rentalDays,
-          discountPercent: quote.discountPercent,
-          totalPrice: quote.totalPrice,
-          items: {
-            create: quote.items.map((item) => ({
-              skiId: item.skiId,
-              startDate,
-              endDate,
-              pricePerDay: item.quote.pricePerDay,
-              totalPrice: item.quote.totalPrice,
-            })),
+      const reservation = await ctx.db.$transaction(async (tx) => {
+        // What was entered becomes the profile's too, so the next booking starts from it (FR-6). An
+        // invoice address the customer chose not to use this time stays in the profile.
+        for (const { kind, ...address } of invoice ? [mailing, invoice] : [mailing]) {
+          await tx.customerAddress.upsert({
+            where: { userId_kind: { userId, kind } },
+            create: { userId, kind, ...address },
+            update: address,
+          });
+        }
+
+        return tx.reservation.create({
+          data: {
+            userId,
+            storeId,
+            startDate,
+            endDate,
+            rentalDays: quote.rentalDays,
+            discountPercent: quote.discountPercent,
+            totalPrice: quote.totalPrice,
+            note: details.note || null,
+            items: {
+              create: quote.items.map((item) => ({
+                skiId: item.skiId,
+                startDate,
+                endDate,
+                pricePerDay: item.quote.pricePerDay,
+                totalPrice: item.quote.totalPrice,
+              })),
+            },
+            addresses: { create: invoice ? [mailing, invoice] : [mailing] },
           },
-        },
-        select: customerReservationSelect,
+          select: customerReservationSelect,
+        });
       });
 
       return withPlainPrices(reservation);
@@ -201,6 +244,68 @@ export const reservationRouter = createTRPCRouter({
       if (isOverlapViolation(error)) throw conflict(ALREADY_BOOKED);
       throw error;
     }
+  }),
+
+  /**
+   * The reservation a customer is putting together, priced for its dates (FR-33). Skis that can no longer
+   * be booked for those dates, or are from another store than the first ski, are returned with the reason
+   * and left out of the totals, so the page can ask for them to be removed.
+   */
+  quote: userProcedure.input(reservationQuoteSchema).query(async ({ ctx, input }) => {
+    const startDate = toUtcDate(input.startDate);
+    const endDate = toUtcDate(input.endDate);
+
+    const skis = await ctx.db.ski.findMany({
+      where: { id: { in: input.skiIds } },
+      select: {
+        ...skiPublicSelect,
+        storeId: true,
+        isAvailable: true,
+        deletedAt: true,
+        reservationItems: { where: overlappingItem(startDate, endDate), select: { id: true }, take: 1 },
+      },
+    });
+    const byId = new Map(skis.map((ski) => [ski.id, ski]));
+    const found = input.skiIds.flatMap((id) => byId.get(id) ?? []);
+    const storeId = found[0]?.storeId;
+
+    const lines = found.map(({ reservationItems, storeId: skiStore, isAvailable, deletedAt, ...ski }) => {
+      const problem =
+        deletedAt || !isAvailable
+          ? ('unavailable' as const)
+          : reservationItems.length > 0
+            ? ('booked' as const)
+            : skiStore !== storeId
+              ? ('otherStore' as const)
+              : null;
+      return { ski: withPlainModel(ski), problem };
+    });
+
+    const bookable = lines.filter((line) => line.problem === null);
+    const quote =
+      bookable.length > 0
+        ? quoteReservation(
+            bookable.map((line) => ({ skiId: line.ski.id, pricePerDay: line.ski.model.pricePerDay })),
+            utcDaysBetween(startDate, endDate),
+          )
+        : null;
+    const store = storeId ? await ctx.db.store.findUnique({ where: { id: storeId }, select: storeSelect }) : null;
+
+    return {
+      store,
+      missing: input.skiIds.length - found.length,
+      lines: lines.map((line) => ({
+        ...line,
+        quote: quote?.items.find((item) => item.skiId === line.ski.id)?.quote ?? null,
+      })),
+      totals: quote && {
+        rentalDays: quote.rentalDays,
+        discountPercent: quote.discountPercent,
+        subtotal: quote.subtotal,
+        discount: quote.discount,
+        totalPrice: quote.totalPrice,
+      },
+    };
   }),
 
   /**

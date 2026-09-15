@@ -47,45 +47,113 @@ test.describe('customer', () => {
     await expect(page.getByTestId('ski-card').first()).toBeVisible();
   });
 
-  test('searches, books with the length-of-rental discount, and cancels', async ({ page }) => {
-    // Past the end of the seeded bookings, so every Donovaly ski is free; five days earns 10 %.
+  test('reserves two pairs from one store in one booking, and cancels it', async ({ page }) => {
+    // Past the end of the seeded bookings, so every ski is free; five days earns 10 %.
     const from = dayFromToday(45);
     const to = dayFromToday(50);
-    const store = await page.request
+    const stores = await page.request
       .get('/api/trpc/store.list')
       .then((response) => response.json() as Promise<{ result: { data: { json: { id: string; name: string }[] } } }>)
-      .then((body) => body.result.data.json.find((candidate) => candidate.name === 'Donovaly'));
-    expect(store).toBeDefined();
+      .then((body) => body.result.data.json);
+    const donovaly = stores.find((store) => store.name === 'Donovaly');
+    const jasna = stores.find((store) => store.name === 'Jasná');
 
-    await page.goto(`/app?from=${from}&to=${to}&store=${store?.id}&sort=priceAsc`);
-    const card = page.getByTestId('ski-card').first();
-    await expect(card).toBeVisible();
-    await expect(card.getByText('−10 %')).toBeVisible();
-    const quoted = await card.getByTestId('quote-total').textContent();
+    await page.goto(`/app?from=${from}&to=${to}&store=${donovaly?.id}&sort=priceAsc`);
+    const cards = page.getByTestId('ski-card');
+    await expect(cards.first().getByText('−10 %')).toBeVisible();
+    const quoted = await Promise.all([0, 1].map((n) => cards.nth(n).getByTestId('quote-total').textContent()));
 
-    await card.getByTestId('reserve').click();
-    const dialog = page.getByTestId('reserve-dialog');
-    await expect(dialog.getByTestId('breakdown-total')).toHaveText(quoted ?? '');
-    await expect(dialog.getByTestId('store-details')).toContainText('Donovaly');
-    await dialog.getByTestId('confirm-reservation').click();
-    await expect(dialog.getByRole('heading', { name: 'Booked' })).toBeVisible();
+    const dialog = page.getByTestId('add-to-reservation-dialog');
+    await cards.nth(0).getByTestId('reserve').click();
+    await expect(dialog.getByTestId('add-outcome')).toHaveAttribute('data-outcome', 'added');
+    await dialog.getByTestId('reserve-another').click();
+    await expect(cards.nth(0).getByTestId('in-reservation')).toBeVisible();
 
-    await dialog.getByTestId('booked-reservations').click();
+    await cards.nth(1).getByTestId('reserve').click();
+    await expect(dialog.getByTestId('cart-summary')).toContainText('2 pairs');
+    await dialog.getByTestId('reserve-another').click();
+    await expect(page.getByTestId('cart-count')).toHaveText('2');
+
+    // A pair from another store cannot join this reservation.
+    await page.goto(`/app?from=${from}&to=${to}&store=${jasna?.id}`);
+    await cards.first().getByTestId('reserve').click();
+    await expect(dialog.getByTestId('add-outcome')).toHaveAttribute('data-outcome', 'otherStore');
+    await dialog.getByRole('button', { name: 'Keep my reservation' }).click();
+    await expect(page.getByTestId('cart-count')).toHaveText('2');
+
+    await page.getByTestId('cart-link').click();
+    await expect(page).toHaveURL('/app/reserve');
+    await expect(page.getByTestId('checkout-line')).toHaveCount(2);
+    const euros = (text: string | null | undefined) => Number((text ?? '').replace(/[^\d.]/g, ''));
+    const total = euros(quoted[0]) + euros(quoted[1]);
+    await expect(page.getByTestId('checkout-total')).toHaveText(`€${total.toFixed(2)}`);
+
+    // The profile's mailing address is filled in; invoices go to it this time.
+    await expect(page.locator('#checkout-mailing-street')).not.toHaveValue('');
+    await page.getByTestId('invoice-to-mailing').check();
+    await page.getByLabel('Note (optional)').fill('Arriving on the first bus.');
+    await page.getByTestId('confirm-reservation').click();
+
+    await expect(page.getByTestId('checkout-booked')).toContainText('2 pairs of skis are waiting at Donovaly');
+    await expect(page.getByTestId('cart-link')).toHaveCount(0);
+    await page.getByTestId('booked-reservations').click();
     await expect(page).toHaveURL('/app/reservations');
 
     const booking = page
       .getByTestId('reservation-card')
-      .filter({ hasText: quoted ?? '' })
+      .filter({ hasText: `€${total.toFixed(2)}` })
       .first();
     await expect(booking).toHaveAttribute('data-status', 'CREATED');
-    await expect(booking.getByTestId('reservation-total')).toHaveText(quoted ?? '');
+    await expect(booking.getByTestId('reservation-skis')).toContainText('2 pairs');
     // Customers never see inventory codes.
     await expect(page.getByTestId('inventory-code')).toHaveCount(0);
 
     await booking.getByTestId('reservation-details').click();
+    await expect(booking.getByTestId('reservation-note')).toContainText('Arriving on the first bus.');
+    await expect(booking.getByTestId('reservation-addresses')).toContainText('Same as mailing address');
     await booking.getByTestId('cancel-reservation').click();
     await page.getByTestId('confirm-action').click();
     await expect(booking).toHaveAttribute('data-status', 'CANCELLED_BY_USER');
+  });
+
+  test('removes a pair on the reservation page, and sends invoices elsewhere', async ({ page }) => {
+    const from = dayFromToday(52);
+    const to = dayFromToday(54);
+    const stores = await page.request
+      .get('/api/trpc/store.list')
+      .then((response) => response.json() as Promise<{ result: { data: { json: { id: string; name: string }[] } } }>)
+      .then((body) => body.result.data.json);
+    const pleso = stores.find((store) => store.name === 'Štrbské Pleso');
+
+    await page.goto(`/app?from=${from}&to=${to}&store=${pleso?.id}`);
+    const cards = page.getByTestId('ski-card');
+    const dialog = page.getByTestId('add-to-reservation-dialog');
+    for (const n of [0, 1]) {
+      await cards.nth(n).getByTestId('reserve').click();
+      await dialog.getByTestId('reserve-another').click();
+    }
+    await page.getByTestId('cart-link').click();
+
+    await page.getByTestId('remove-line').first().click();
+    await expect(page.getByTestId('checkout-line')).toHaveCount(1);
+    await expect(page.getByTestId('cart-count')).toHaveText('1');
+
+    await page.getByTestId('invoice-to-mailing').uncheck();
+    await page.locator('#checkout-invoice-recipient').fill('');
+    await page.getByTestId('confirm-reservation').click();
+    await expect(page.getByText('Enter who invoices are made out to.')).toBeVisible();
+
+    await page.locator('#checkout-invoice-recipient').fill('Tatra Outdoor a.s.');
+    await page.locator('#checkout-invoice-street').fill('Hlavná');
+    await page.locator('#checkout-invoice-house-number').fill('1');
+    await page.locator('#checkout-invoice-zip-code').fill('059 85');
+    await page.locator('#checkout-invoice-city').fill('Štrbské Pleso');
+    await page.getByTestId('confirm-reservation').click();
+    await expect(page.getByTestId('checkout-booked')).toContainText('Your pair of skis is waiting');
+
+    // The invoice address went to the profile too.
+    await page.goto('/profile');
+    await expect(page.locator('#invoice-recipient')).toHaveValue('Tatra Outdoor a.s.');
   });
 
   test('rates the rental and the skis together, and can edit both within the hour', async ({ page }) => {
@@ -139,10 +207,15 @@ test.describe('customer', () => {
 
   test('sees every pair of a reservation, each with its price', async ({ page }) => {
     await page.goto('/app/reservations');
-    const family = page.locator('[data-testid="reservation-card"][data-status="CREATED"]').first();
-    await expect(family.getByTestId('reservation-skis')).toContainText('2 pairs');
+    // The seeded family booking: two pairs from Jasná, with a note.
+    const family = page
+      .locator('[data-testid="reservation-card"][data-status="CREATED"]')
+      .filter({ hasText: '2 pairs' })
+      .filter({ hasText: 'Jasná' });
+    await expect(family).toHaveCount(1);
     await family.getByTestId('reservation-details').click();
     await expect(family.getByTestId('reservation-items').locator('li')).toHaveCount(2);
+    await expect(family.getByTestId('reservation-note')).toContainText('my daughter');
   });
 
   test('cannot cancel a rental that has started', async ({ page }) => {
