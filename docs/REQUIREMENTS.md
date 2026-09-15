@@ -126,8 +126,9 @@ customer account.
 
 ### 4.5 My reservations (customer)
 
-- **FR-40** A customer sees their reservations, newest first, with ski, store (with address and
-  contacts), dates, status and the price they agreed to.
+- **FR-40** A customer sees their reservations, newest first, with ski, store, dates, status and the
+  price they agreed to. The store links to a stores page that shows each store's address, contacts and
+  opening hours on its own tab.
 - **FR-41** A customer can cancel a reservation that has not started yet (BR-12).
 - **FR-42** For a returned reservation, the customer can **rate the rental**: score 1–5 and an optional note.
 - **FR-43** For a returned reservation, the customer can **rate the ski model**: score 1–5 and an

@@ -20,7 +20,6 @@ import {
 import { isStaff } from '~/lib/roles';
 import { badRequest, conflict, isOverlapViolation, notFound } from '~/server/api/errors';
 import { overlappingReservation } from '~/server/api/overlap';
-import { storeSelect } from '~/server/api/selects';
 import { createTRPCRouter, protectedProcedure, staffProcedure, userProcedure } from '~/server/api/trpc';
 
 import type { Prisma, PrismaClient } from '../../../../generated/prisma/client';
@@ -55,7 +54,7 @@ const rentalRatingSelect = { select: { score: true, note: true, createdAt: true 
 /** A customer's own reservation: the store's full details, never the inventory code (FR-40, BR-50). */
 const customerReservationSelect = {
   ...reservationFields,
-  ski: { select: { id: true, lengthCm: true, model: skiModelSummary, store: { select: storeSelect } } },
+  ski: { select: { id: true, lengthCm: true, model: skiModelSummary, store: { select: { id: true, name: true } } } },
   rating: rentalRatingSelect,
 } satisfies Prisma.ReservationSelect;
 

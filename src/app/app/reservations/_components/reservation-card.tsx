@@ -1,12 +1,12 @@
 'use client';
 
-import { ChevronDownIcon } from 'lucide-react';
+import { ChevronDownIcon, MapPinIcon } from 'lucide-react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { ConfirmDialog } from '~/components/common/confirm-dialog';
 import { StatusBadge } from '~/components/reservations/status-badge';
-import { StoreDetails } from '~/components/stores/store-details';
 import { Button } from '~/components/ui/button';
 import { Card } from '~/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
@@ -15,6 +15,7 @@ import { useFormatMoney } from '~/hooks/use-format-money';
 import { rentalPeriod, todayUtc } from '~/lib/date';
 import { editWindowEndsAt, modelRatingAccess, ratingAction, reservationRatingAccess } from '~/lib/rating-rules';
 import { canCancelAsUser } from '~/lib/reservation-lifecycle';
+import { appStoreRoute } from '~/lib/routes';
 import { cn } from '~/lib/utils';
 import type { RouterOutputs } from '~/trpc/react';
 import { api } from '~/trpc/react';
@@ -28,7 +29,7 @@ interface ReservationCardProps {
   reservation: MyReservation;
 }
 
-/** One reservation: the essentials in a single row, the store and the price breakdown folded away. */
+/** One reservation: the essentials in a single row, the rest folded away. */
 export function ReservationCard({ reservation }: ReservationCardProps) {
   const t = useTranslations('reservations');
   const formatMoney = useFormatMoney();
@@ -133,16 +134,26 @@ export function ReservationCard({ reservation }: ReservationCardProps) {
           </div>
         </div>
 
-        <CollapsibleContent className="border-border grid gap-6 border-t px-4 py-4 text-sm lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-          <div className="flex flex-col gap-3">
-            <p>{statusHint(t, reservation, period)}</p>
-            <p className="text-muted-foreground">
-              {t('priceSummary', {
-                days: reservation.rentalDays,
-                price: formatMoney(reservation.pricePerDay),
-                discount: reservation.discountPercent,
-              })}
-            </p>
+        <CollapsibleContent className="border-border flex flex-col gap-3 border-t px-4 py-4 text-sm">
+          <p>{statusHint(t, reservation, period)}</p>
+          <p className="text-muted-foreground">
+            {t('priceSummary', {
+              days: reservation.rentalDays,
+              price: formatMoney(reservation.pricePerDay),
+              discount: reservation.discountPercent,
+            })}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<Link href={appStoreRoute(ski.store.id)} />}
+              data-testid="store-details-link"
+            >
+              <MapPinIcon aria-hidden />
+              {t('storeDetails')}
+            </Button>
             {canCancelAsUser(reservation, todayUtc()) ? (
               <ConfirmDialog
                 open={confirming}
@@ -171,7 +182,6 @@ export function ReservationCard({ reservation }: ReservationCardProps) {
               />
             ) : null}
           </div>
-          <StoreDetails store={ski.store} />
         </CollapsibleContent>
       </Collapsible>
     </Card>

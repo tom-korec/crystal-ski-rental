@@ -3,6 +3,7 @@ import { isStaff } from '~/lib/roles';
 export const LANDING = '/';
 export const APP_HOME = '/app';
 export const APP_RESERVATIONS = '/app/reservations';
+export const APP_STORES = '/app/stores';
 export const STAFF_HOME = '/staff';
 export const STAFF_SKIS = '/staff/skis';
 export const STAFF_CATALOG = '/staff/catalog';
@@ -11,6 +12,11 @@ export const PROFILE = '/profile';
 
 export function staffSkiRoute(id: string): string {
   return `${STAFF_SKIS}/${id}`;
+}
+
+/** The stores page with one store's tab open. */
+export function appStoreRoute(id: string): string {
+  return `${APP_STORES}?${SEARCH_PARAMS.store}=${id}`;
 }
 
 export function staffAccountRoute(id: string): string {

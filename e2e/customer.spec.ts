@@ -137,7 +137,26 @@ test.describe('customer', () => {
     const active = page.locator('[data-testid="reservation-card"][data-status="ACTIVE"]');
     await expect(active).toHaveCount(1);
     await active.getByTestId('reservation-details').click();
-    await expect(active.getByTestId('store-details')).toBeVisible();
     await expect(active.getByTestId('cancel-reservation')).toHaveCount(0);
+  });
+
+  test("opens the store page on the tab of the reservation's store", async ({ page }) => {
+    await page.goto('/app/reservations');
+    const booked = page.locator('[data-testid="reservation-card"][data-status="CREATED"]').first();
+    await booked.getByTestId('reservation-details').click();
+    await booked.getByTestId('store-details-link').click();
+
+    await expect(page).toHaveURL(/\/app\/stores\?store=/);
+    const selected = page.locator('[data-testid="store-tab"][aria-selected="true"]');
+    await expect(selected).toHaveCount(1);
+    const store = await selected.textContent();
+    await expect(page.getByTestId('store-details')).toContainText(store ?? '');
+
+    await page
+      .getByTestId('store-tab')
+      .filter({ hasNotText: store ?? '' })
+      .first()
+      .click();
+    await expect(page.getByTestId('store-details')).not.toContainText(store ?? '');
   });
 });

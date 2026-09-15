@@ -38,6 +38,7 @@
     "findSkis": "Find skis",
     "frontDesk": "Front desk",
     "myReservations": "My reservations",
+    "stores": "Stores",
     "fleet": "Fleet",
     "catalog": "Catalogue",
     "accounts": "Accounts"
@@ -221,7 +222,8 @@
       "RETURNED": "Returned",
       "CANCELLED_BY_USER": "Cancelled by customer",
       "CANCELLED_BY_STORE": "Cancelled by store"
-    }
+    },
+    "storeDetails": "Store details"
   },
   "ratings": {
     "rate": "Rate",
@@ -493,5 +495,11 @@
     "banner": "Demo site: data resets every night and no real bookings are made.",
     "title": "Try the demo",
     "description": "Sign in as one of the demo accounts to see each role."
+  },
+  "storeDirectory": {
+    "title": "Our stores",
+    "description": "Where to pick up and return your skis, and when we are open.",
+    "stores": "Stores",
+    "findSkis": "Find skis here"
   }
 }
