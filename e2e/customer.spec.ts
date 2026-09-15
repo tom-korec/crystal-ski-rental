@@ -80,7 +80,7 @@ test.describe('customer', () => {
   });
 
   test('reserves two pairs from one store in one booking, and cancels it', async ({ page }) => {
-    // Past the end of the seeded bookings, so every ski is free; five days earns 10 %.
+    // Five days earns 10 %. The search offers only pairs free for these dates, whatever the seed booked.
     const from = dayFromToday(45);
     const to = dayFromToday(50);
     const stores = await page.request
