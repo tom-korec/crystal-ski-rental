@@ -12,16 +12,19 @@ import { Logo } from './logo';
 import { MobileNav } from './mobile-nav';
 import { navLinksFor } from './nav-links';
 import { PrimaryNav } from './primary-nav';
+import { SiteFooter } from './site-footer';
 
 interface AppShellProps {
   name: string;
   role?: string | null;
+  /** Off where the pages it links to are not reachable yet, such as before accepting the terms. */
+  navigation?: boolean;
   children: ReactNode;
 }
 
 /** The signed-in frame: header with navigation for the role, and the page below it. */
-export function AppShell({ name, role, children }: AppShellProps) {
-  const links = navLinksFor(role);
+export function AppShell({ name, role, navigation = true, children }: AppShellProps) {
+  const links = navigation ? navLinksFor(role) : [];
   const parsedRole: Role = roleSchema.catch('USER').parse(role);
   // Customers all share one role, so only staff see theirs.
   const accountRole = isStaff(role) ? parsedRole : null;
@@ -50,7 +53,7 @@ export function AppShell({ name, role, children }: AppShellProps) {
           </div>
 
           <div className="relative ms-auto flex items-center gap-3">
-            {isCustomer(role) ? <CartLink /> : null}
+            {navigation && isCustomer(role) ? <CartLink /> : null}
             <AccountMenu name={name} role={accountRole} />
             {/* On phones the menu button closes the header on the right, where a thumb reaches it. */}
             <MobileNav links={links} name={name} role={accountRole} homeHref={homeForRole(role)} />
@@ -61,6 +64,7 @@ export function AppShell({ name, role, children }: AppShellProps) {
       <main id="main" className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
         {children}
       </main>
+      <SiteFooter />
     </div>
   );
 }

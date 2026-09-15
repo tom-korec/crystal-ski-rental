@@ -36,6 +36,9 @@ const userSelect = {
   store: { select: { id: true, name: true } },
   deletedAt: true,
   createdAt: true,
+  termsAcceptedVersion: true,
+  termsAcceptedAt: true,
+  privacyAcceptedVersion: true,
 } satisfies Prisma.UserSelect;
 
 function assertMayManage(actorRole: string | null | undefined, targetRole: Role): void {

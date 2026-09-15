@@ -2,8 +2,9 @@ import 'server-only';
 
 import { redirect } from 'next/navigation';
 
-import { isAdmin, isStaff } from '~/lib/roles';
-import { APP_HOME, homeForRole, LANDING, STAFF_HOME } from '~/lib/routes';
+import { hasAcceptedCurrentTerms } from '~/lib/legal';
+import { isAdmin, isCustomer, isStaff } from '~/lib/roles';
+import { ACCEPT_TERMS, APP_HOME, homeForRole, LANDING, STAFF_HOME } from '~/lib/routes';
 
 import { getSession } from './server';
 
@@ -11,12 +12,22 @@ import { getSession } from './server';
 // because the API is reachable without loading any page. A signed-in user in the wrong area is
 // redirected to their own rather than shown an error, so a stale bookmark is not a dead end.
 
-/** The signed-in user, or a redirect to the landing page, which has the sign-in form. */
-export async function requireUser() {
+interface RequireUserOptions {
+  /** Only for the page where a customer accepts the current Terms and Privacy policy. */
+  allowPendingTerms?: boolean;
+}
+
+/**
+ * The signed-in user, or a redirect to the landing page, which has the sign-in form. A customer who has
+ * not accepted the current Terms and Privacy policy is sent to accept them first (FR-7).
+ */
+export async function requireUser({ allowPendingTerms = false }: RequireUserOptions = {}) {
   const user = (await getSession())?.user;
 
   // A deleted account's cookie stays valid until it expires or its sessions are removed.
   if (!user || user.deletedAt) redirect(LANDING);
+
+  if (!allowPendingTerms && isCustomer(user.role) && !hasAcceptedCurrentTerms(user)) redirect(ACCEPT_TERMS);
 
   return user;
 }

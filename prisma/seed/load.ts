@@ -6,6 +6,7 @@ import type { z } from 'zod';
 
 import { invoiceAddressSchema, mailingAddressSchema } from '../../src/lib/address-schema';
 import { toUtcDate, utcDaysBetween } from '../../src/lib/date';
+import { LEGAL_VERSIONS } from '../../src/lib/legal';
 import { quoteReservation } from '../../src/lib/pricing';
 import type {
   CustomerAddressRow,
@@ -103,6 +104,11 @@ export function loadSeedData(): SeedData {
       storeId: member.store ? lookup(storeBySlug, member.store, 'store').id : null,
       createdAt: moment(member.createdAt),
       deletedAt: null,
+      // Staff do not rent, so the customer terms are not theirs to accept.
+      termsAcceptedVersion: null,
+      termsAcceptedAt: null,
+      privacyAcceptedVersion: null,
+      privacyAcceptedAt: null,
     });
   }
 
@@ -116,6 +122,11 @@ export function loadSeedData(): SeedData {
       storeId: null,
       createdAt: moment(customer.createdAt),
       deletedAt: customer.removedAt ? moment(customer.removedAt) : null,
+      // Every seeded customer accepted the current documents when they signed up (FR-7).
+      termsAcceptedVersion: LEGAL_VERSIONS.terms,
+      termsAcceptedAt: moment(customer.createdAt),
+      privacyAcceptedVersion: LEGAL_VERSIONS.privacy,
+      privacyAcceptedAt: moment(customer.createdAt),
     };
     users.push(user);
 
@@ -197,6 +208,9 @@ export function loadSeedData(): SeedData {
           totalPrice: item.quote.totalPrice,
         })),
         note: entry.note ?? null,
+        // Accepted when booking (FR-37).
+        rentalAgreementVersion: LEGAL_VERSIONS.rentalAgreement,
+        rentalAgreementAcceptedAt: moment(entry.createdAt),
         rentalDays: quote.rentalDays,
         discountPercent: quote.discountPercent,
         totalPrice: quote.totalPrice,

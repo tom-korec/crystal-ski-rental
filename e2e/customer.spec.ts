@@ -134,6 +134,9 @@ test.describe('customer', () => {
     await page.getByTestId('invoice-to-mailing').check();
     await page.getByLabel('Note (optional)').fill('Arriving on the first bus.');
     await page.getByTestId('confirm-reservation').click();
+    await expect(page.getByText('Accept the rental agreement to book.')).toBeVisible();
+    await page.getByTestId('accept-rental-agreement').check();
+    await page.getByTestId('confirm-reservation').click();
 
     await expect(page.getByTestId('checkout-booked')).toContainText('2 pairs of skis are waiting at Donovaly');
     await expect(page.getByTestId('cart-link')).toHaveCount(0);
@@ -183,6 +186,7 @@ test.describe('customer', () => {
     await page.locator('#checkout-invoice-house-number').fill('1');
     await page.locator('#checkout-invoice-zip-code').fill('059 85');
     await page.locator('#checkout-invoice-city').fill('Štrbské Pleso');
+    await page.getByTestId('accept-rental-agreement').check();
     await page.getByTestId('confirm-reservation').click();
     await expect(page.getByTestId('checkout-booked')).toContainText('Your pair of skis is waiting');
 

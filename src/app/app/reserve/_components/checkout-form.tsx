@@ -4,12 +4,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertTriangleIcon, XIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { type Resolver, useForm, useWatch } from 'react-hook-form';
 
 import { AddressFields } from '~/components/addresses/address-fields';
 import { FormError } from '~/components/common/form-error';
 import { LoadingRegion } from '~/components/common/skeletons/loading-region';
 import { PageHeader } from '~/components/common/page-header';
+import { LegalCheckbox } from '~/components/legal/legal-checkbox';
 import { DiscountBadge } from '~/components/skis/discount-badge';
 import { RentalDayNotice } from '~/components/stores/rental-day-notice';
 import { StoreDetails } from '~/components/stores/store-details';
@@ -21,6 +23,7 @@ import { Textarea } from '~/components/ui/textarea';
 import { useFormatDateRange } from '~/hooks/use-format-date-range';
 import { useFormatMoney } from '~/hooks/use-format-money';
 import { DEFAULT_COUNTRY, formatPostalCode } from '~/lib/address-schema';
+import { LEGAL_VERSIONS } from '~/lib/legal';
 import { rentalPeriod, toUtcDate, utcDaysBetween } from '~/lib/date';
 import { removeFromCart, type ReservationCart } from '~/lib/reservation-cart';
 import {
@@ -110,6 +113,7 @@ interface CheckoutFieldsProps extends CheckoutFormProps {
 
 function CheckoutFields({ cart, onCartChange, onBooked, defaults }: CheckoutFieldsProps) {
   const t = useTranslations('checkout');
+  const tLegal = useTranslations('legal');
   const formatMoney = useFormatMoney();
   const formatDateRange = useFormatDateRange();
   const utils = api.useUtils();
@@ -137,6 +141,8 @@ function CheckoutFields({ cart, onCartChange, onBooked, defaults }: CheckoutFiel
   });
 
   const { errors } = form.formState;
+  const [agreementAccepted, setAgreementAccepted] = useState(false);
+  const [agreementSubmitted, setAgreementSubmitted] = useState(false);
   const lines = quote.data?.lines ?? [];
   const closed = (quote.data?.closedDays.length ?? 0) > 0;
   const blocked = closed || lines.some((line) => line.problem !== null) || (quote.data?.missing ?? 0) > 0;
@@ -150,7 +156,19 @@ function CheckoutFields({ cart, onCartChange, onBooked, defaults }: CheckoutFiel
     <form
       noValidate
       className="flex flex-col gap-6"
-      onSubmit={form.handleSubmit((details) => create.mutate({ skiIds: cart.skiIds, ...range, details }))}
+      onSubmit={(event) => {
+        // Both the details and the agreement are checked at once, so every missing answer shows together.
+        setAgreementSubmitted(true);
+        void form.handleSubmit((details) => {
+          if (!agreementAccepted) return;
+          create.mutate({
+            skiIds: cart.skiIds,
+            ...range,
+            details,
+            rentalAgreementVersion: LEGAL_VERSIONS.rentalAgreement,
+          });
+        })(event);
+      }}
     >
       <PageHeader
         title={t('title')}
@@ -344,6 +362,13 @@ function CheckoutFields({ cart, onCartChange, onBooked, defaults }: CheckoutFiel
             ) : null}
             {blocked && !closed ? <p className="text-destructive">{t('blocked')}</p> : null}
             <FormError message={create.error?.message} data-testid="checkout-error" />
+            <LegalCheckbox
+              id="accept-rental-agreement"
+              message="bookingAgree"
+              checked={agreementAccepted}
+              onChange={(event) => setAgreementAccepted(event.target.checked)}
+              error={agreementSubmitted && !agreementAccepted ? tLegal('bookingRequired') : undefined}
+            />
             <Button
               type="submit"
               size="lg"

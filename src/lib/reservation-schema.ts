@@ -40,7 +40,12 @@ export const reservationDetailsSchema = z.discriminatedUnion('invoiceToMailingAd
  * addresses and a note (FR-36). The store is checked by the server.
  */
 export const reservationCreateSchema = dateRangeSchema
-  .extend({ skiIds: skiIdsSchema, details: reservationDetailsSchema })
+  .extend({
+    skiIds: skiIdsSchema,
+    details: reservationDetailsSchema,
+    /** The Rental agreement version the customer accepted on the page (FR-37); it must be the current one. */
+    rentalAgreementVersion: z.string(),
+  })
   .superRefine(refineRentalRange);
 
 export type ReservationDetailsInput = z.input<typeof reservationDetailsSchema>;

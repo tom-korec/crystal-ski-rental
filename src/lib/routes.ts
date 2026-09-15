@@ -12,6 +12,14 @@ export const STAFF_MODELS = '/staff/models';
 export const STAFF_STORES = '/staff/stores';
 export const STAFF_ACCOUNTS = '/staff/accounts';
 export const PROFILE = '/profile';
+export const ACCEPT_TERMS = '/accept-terms';
+
+/** The public page of each legal document (FR-7). */
+export const LEGAL_ROUTES = {
+  terms: '/terms',
+  privacy: '/privacy',
+  rentalAgreement: '/rental-agreement',
+} as const;
 
 export function staffSkiRoute(id: string): string {
   return `${STAFF_SKIS}/${id}`;

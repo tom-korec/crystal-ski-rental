@@ -16,6 +16,8 @@ export const signUpSchema = z.object({
   name: z.string().trim().min(1).max(NAME_MAX_LENGTH),
   email: z.email(),
   password: z.string().min(MIN_PASSWORD_LENGTH).max(MAX_PASSWORD_LENGTH),
+  /** The Terms and Privacy policy must be accepted to create an account (FR-7). */
+  acceptLegal: z.boolean().refine((accepted) => accepted, 'Accept the terms and the privacy policy.'),
 });
 
 export type SignInInput = z.infer<typeof signInSchema>;

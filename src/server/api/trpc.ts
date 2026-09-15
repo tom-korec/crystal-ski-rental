@@ -3,6 +3,7 @@ import superjson from 'superjson';
 import { ZodError, z } from 'zod';
 
 import { env } from '~/env';
+import { hasAcceptedCurrentTerms } from '~/lib/legal';
 import { isAdmin, isCustomer, isStaff } from '~/lib/roles';
 import { clientErrorMessage } from '~/server/api/errors';
 import { auth } from '~/server/better-auth';
@@ -70,6 +71,9 @@ export const protectedProcedure = baseProcedure.use(({ ctx, next }) => {
 export const userProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (!isCustomer(ctx.session.user.role)) {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'Only customer accounts can rent and rate skis.' });
+  }
+  if (!hasAcceptedCurrentTerms(ctx.session.user)) {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Accept the current terms and privacy policy first.' });
   }
 
   return next();

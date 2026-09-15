@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server';
 import { APIError } from 'better-auth/api';
 
 import { signInSchema, signUpSchema } from '~/lib/auth-schema';
+import { LEGAL_VERSIONS } from '~/lib/legal';
 import { passwordChangeSchema, profileUpdateSchema } from '~/lib/profile-schema';
 import { clientKey, isRateLimited, RATE_LIMITS, recordAttempt } from '~/server/api/rate-limit';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '~/server/api/trpc';
@@ -67,6 +68,18 @@ export const authRouter = createTRPCRouter({
 
       forwardCookies(headers, ctx.resHeaders);
 
+      // The checkbox said yes; what was accepted is always the current version, whatever the client sent.
+      const now = new Date();
+      await ctx.db.user.update({
+        where: { id: response.user.id },
+        data: {
+          termsAcceptedVersion: LEGAL_VERSIONS.terms,
+          termsAcceptedAt: now,
+          privacyAcceptedVersion: LEGAL_VERSIONS.privacy,
+          privacyAcceptedAt: now,
+        },
+      });
+
       return { id: response.user.id, role: response.user.role };
     } catch (error) {
       throw toTRPCError(error);
@@ -106,6 +119,20 @@ export const authRouter = createTRPCRouter({
 
       throw failure;
     }
+  }),
+
+  /** A customer accepts the current Terms and Privacy policy, e.g. after they changed (FR-7). */
+  acceptLegal: protectedProcedure.mutation(async ({ ctx }) => {
+    const now = new Date();
+    await ctx.db.user.update({
+      where: { id: ctx.session.user.id },
+      data: {
+        termsAcceptedVersion: LEGAL_VERSIONS.terms,
+        termsAcceptedAt: now,
+        privacyAcceptedVersion: LEGAL_VERSIONS.privacy,
+        privacyAcceptedAt: now,
+      },
+    });
   }),
 
   /** Name only: the e-mail is the sign-in identifier and nothing verifies a new one (FR-4). */

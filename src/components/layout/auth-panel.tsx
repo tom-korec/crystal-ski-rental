@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { Field } from '~/components/common/field';
+import { LegalCheckbox } from '~/components/legal/legal-checkbox';
 import { FormError } from '~/components/common/form-error';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
@@ -95,10 +96,11 @@ function SignInForm() {
 
 function SignUpForm() {
   const t = useTranslations('auth');
+  const tLegal = useTranslations('legal');
   const goTo = useSignedIn();
   const form = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),
-    defaultValues: { name: '', email: '', password: '' },
+    defaultValues: { name: '', email: '', password: '', acceptLegal: false },
   });
   const signUp = api.auth.signUp.useMutation({ onSuccess: () => goTo(APP_HOME) });
   const { errors } = form.formState;
@@ -133,6 +135,12 @@ function SignUpForm() {
         hint={t('passwordHint', { min: MIN_PASSWORD_LENGTH })}
         error={errors.password && t('errors.password', { min: MIN_PASSWORD_LENGTH })}
         {...form.register('password')}
+      />
+      <LegalCheckbox
+        id="signup-accept"
+        message="signUpAgree"
+        error={errors.acceptLegal ? tLegal('signUpRequired') : undefined}
+        {...form.register('acceptLegal')}
       />
       <FormError message={signUp.error?.message} data-testid="auth-error" />
       <Button type="submit" className="w-full" disabled={signUp.isPending} data-testid="signup-submit">

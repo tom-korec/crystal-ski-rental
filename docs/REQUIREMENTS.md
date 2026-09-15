@@ -89,6 +89,12 @@ customer account.
   address also names who invoices are made out to (the customer or a company), with an optional company
   number and VAT number. Customers manage them on their profile page. Staff can see a customer's
   addresses.
+- **FR-7** Anyone can read example **Terms and conditions**, a **Privacy policy** and a **Rental
+  agreement**, linked from the footer of every page. Each has a version date. Signing up requires
+  accepting the Terms and the Privacy policy. A customer who has not accepted the current versions (an
+  account created by staff, or after a new version) is asked right after signing in and can use nothing
+  else until they accept or sign out. The accepted versions and times are kept on the account, and staff
+  see them. Data export and erasure are not part of release 1.
 
 ### 4.2 Catalogue (admin)
 
@@ -141,7 +147,8 @@ Models and brands share the **Models** page, with a switch between their tables.
   that were booked by someone else meanwhile must be. The customer confirms their mailing address,
   chooses whether invoices go to it or to a separate invoice address, and may leave a note for the
   store. The addresses are saved to the profile and copied onto the reservation, so later edits never
-  change a past booking. Staff see the note.
+  change a past booking. Staff see the note. Booking requires accepting the current rental agreement,
+  whose version and acceptance time are kept on the reservation (FR-7).
 
 ### 4.5 My reservations (customer)
 

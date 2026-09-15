@@ -27,6 +27,8 @@ export const auth = betterAuth({
       role: { type: 'string', required: false, input: false },
       deletedAt: { type: 'date', required: false, input: false },
       storeId: { type: 'string', required: false, input: false },
+      termsAcceptedVersion: { type: 'string', required: false, input: false },
+      privacyAcceptedVersion: { type: 'string', required: false, input: false },
     },
   },
   databaseHooks: {

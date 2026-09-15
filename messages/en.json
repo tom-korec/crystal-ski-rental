@@ -487,7 +487,9 @@
     "store": "Store",
     "selectStore": "Select a store",
     "storeHint": "The manager changes skis and runs the front desk only at this store.",
-    "roleAtStore": "{role} · {store}"
+    "roleAtStore": "{role} · {store}",
+    "termsAccepted": "Accepted the terms of {version} on {date}",
+    "termsPending": "Has not accepted the current terms yet; asked at their next sign-in"
   },
   "profile": {
     "title": "Profile",
@@ -684,7 +686,8 @@
     "booked": "Booked",
     "pickedUp": "Picked up",
     "returned": "Returned",
-    "cancelled": "Cancelled"
+    "cancelled": "Cancelled",
+    "agreementAccepted": "Rental agreement of {version} accepted"
   },
   "specialDays": {
     "title": "Special days",
@@ -716,5 +719,209 @@
   "rentalDays": {
     "closed": "{store} is closed on {date}{name, select, none {} other { ({name})}}, so skis cannot be {role, select, pickup {picked up} return {returned} other {picked up or returned}} then. Pick other dates.",
     "special": "{role, select, pickup {Pickup} return {Return} other {Pickup and return}} on {date}{name, select, none {} other { ({name})}}: {store} is open only {hours} that day."
+  },
+  "legal": {
+    "exampleNotice": "Example document for a fictional company, written for a portfolio demo. It is not legal advice and binds no one.",
+    "effective": "Version of {date}",
+    "footer": "Legal",
+    "contents": "Contents",
+    "links": {
+      "terms": "Terms and conditions",
+      "privacy": "Privacy policy",
+      "rentalAgreement": "Rental agreement"
+    },
+    "terms": {
+      "title": "Terms and conditions",
+      "summary": "The rules for using Crystal Ski Rental and booking skis with us.",
+      "sections": [
+        {
+          "heading": "1. Who we are",
+          "paragraphs": [
+            "These terms apply between you and Crystal Ski Rental s.r.o., Demänovská dolina 72, 031 01 Liptovský Mikuláš, Slovakia (\"we\", \"us\"), company number 00 000 000, registered in the Commercial Register of the District Court Žilina.",
+            "You can reach us at hello@crystalskirental.test or at any of our stores."
+          ]
+        },
+        {
+          "heading": "2. Your account",
+          "paragraphs": [
+            "To book skis you need an account. Give us your real name and an e-mail address you read, and keep your password to yourself.",
+            "You must be at least 18 years old to hold an account. Parents and guardians book for children.",
+            "We may suspend an account that is used to make bookings that are never picked up, or to harm other customers or our staff."
+          ]
+        },
+        {
+          "heading": "3. Booking",
+          "paragraphs": [
+            "A booking is made when you confirm it on the reservation page and we show you its reservation code. It holds the skis you chose, at one store, for the dates you chose.",
+            "You pick the skis up at the store on the first day of the rental and return them by closing time on the last day. Neither day may fall on a day the store is closed. A store may keep shorter hours on public holidays; we tell you when you book.",
+            "When you pick up, you sign the rental agreement for the skis you take. The version you accepted when booking is kept with the booking."
+          ]
+        },
+        {
+          "heading": "4. Prices and payment",
+          "paragraphs": [
+            "Prices are per pair per day, in euros, including VAT. Rentals of four days or more are discounted by length, as shown before you book.",
+            "The price you see when you book is the price you pay, even if our prices change later. You pay at the store when you pick the skis up."
+          ]
+        },
+        {
+          "heading": "5. Cancellations and no-shows",
+          "paragraphs": [
+            "You can cancel a booking free of charge on \"My reservations\" until the day before the rental starts.",
+            "If you do not pick the skis up, the store may cancel the booking as a no-show and offer the skis to other customers."
+          ]
+        },
+        {
+          "heading": "6. Ratings",
+          "paragraphs": [
+            "After a rental you can rate the rental and the skis. Scores are shown to other customers as averages; notes and comments are read only by our staff.",
+            "Keep them honest and polite. We may remove comments that are offensive or unrelated to the rental."
+          ]
+        },
+        {
+          "heading": "7. Liability",
+          "paragraphs": [
+            "Skiing carries risks. We keep our equipment in good condition and set bindings for the details you give us, but we are not liable for injuries caused by the way you ski, by conditions on the slopes, or by details you gave us that were not correct.",
+            "Nothing in these terms limits your rights as a consumer under Slovak and EU law."
+          ]
+        },
+        {
+          "heading": "8. Changes to these terms",
+          "paragraphs": [
+            "We may update these terms. When we do, we ask you to accept the new version the next time you sign in. Bookings you already made keep the terms that applied when you made them."
+          ]
+        },
+        {
+          "heading": "9. Law and disputes",
+          "paragraphs": [
+            "These terms are governed by Slovak law. If we cannot resolve a complaint together, you can turn to the Slovak Trade Inspection (SOI) for alternative dispute resolution, or to the courts of Slovakia."
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "summary": "What personal data we keep about you, why, for how long, and your rights.",
+      "sections": [
+        {
+          "heading": "1. Controller",
+          "paragraphs": [
+            "The controller of your personal data is Crystal Ski Rental s.r.o., Demänovská dolina 72, 031 01 Liptovský Mikuláš, Slovakia. For anything about your data, write to privacy@crystalskirental.test."
+          ]
+        },
+        {
+          "heading": "2. What we keep",
+          "paragraphs": [
+            "Account: your name, e-mail address and a scrambled form of your password that cannot be turned back into it.",
+            "Addresses: your mailing address and, if you give one, an invoice address with a company number and VAT number.",
+            "Bookings: the stores, skis, dates, prices, notes you write to the store, the addresses at the time of booking, and who handled the pickup and return.",
+            "Ratings: your scores, notes and comments.",
+            "Technical data: a session cookie that keeps you signed in, a cookie with your colour theme, and short-lived records of sign-in attempts used to stop password guessing."
+          ]
+        },
+        {
+          "heading": "3. Why, and on what basis",
+          "paragraphs": [
+            "To take and manage your bookings, and to run your account (performance of a contract, Art. 6(1)(b) GDPR).",
+            "To issue invoices and keep accounting records (legal obligation, Art. 6(1)(c) GDPR).",
+            "To keep the service secure and prevent abuse, and to improve our fleet from ratings (legitimate interests, Art. 6(1)(f) GDPR).",
+            "We do not sell your data, and we do not use it for advertising."
+          ]
+        },
+        {
+          "heading": "4. Who sees it",
+          "paragraphs": [
+            "Our store staff and managers, who need it to serve you. Our hosting and database providers, who process it on our behalf in the European Union under data processing agreements. Authorities, only when the law requires it."
+          ]
+        },
+        {
+          "heading": "5. How long we keep it",
+          "paragraphs": [
+            "Account data while your account exists. Bookings and invoices for ten years, as Slovak accounting law requires. Records of sign-in attempts for up to a day. Ratings until you ask us to remove them, or your account is closed."
+          ]
+        },
+        {
+          "heading": "6. Your rights",
+          "paragraphs": [
+            "You can ask us for a copy of your data, to correct it, to erase it where the law allows, to restrict or object to its use, and to receive it in a portable form.",
+            "You can also complain to the Office for Personal Data Protection of the Slovak Republic (Úrad na ochranu osobných údajov SR)."
+          ]
+        },
+        {
+          "heading": "7. Cookies",
+          "paragraphs": [
+            "We use only the cookies the service needs to work: the session cookie and the colour theme cookie. There are no analytics or advertising cookies."
+          ]
+        }
+      ]
+    },
+    "rentalAgreement": {
+      "title": "Rental agreement",
+      "summary": "The terms under which you rent and use our skis, accepted when you book and signed at pickup.",
+      "sections": [
+        {
+          "heading": "1. Parties and equipment",
+          "paragraphs": [
+            "This agreement is between Crystal Ski Rental s.r.o., Demänovská dolina 72, 031 01 Liptovský Mikuláš, Slovakia (\"the rental\") and the customer named on the reservation (\"you\"). It covers the skis listed on the reservation, identified by their inventory codes at pickup, and their bindings."
+          ]
+        },
+        {
+          "heading": "2. Rental period",
+          "paragraphs": [
+            "The rental runs from the first day to the last day of the reservation. You pick the skis up during the store's opening hours on the first day and return them by closing time on the last day.",
+            "Returning early does not reduce the price. Returning late is charged at the daily price of the skis for each day started."
+          ]
+        },
+        {
+          "heading": "3. Handover",
+          "paragraphs": [
+            "At pickup we check the skis with you and note any existing damage. By taking the skis you confirm they were handed over in that condition.",
+            "We set the bindings for the height, weight, age and skill level you give us. Tell us the truth: bindings set for wrong details may not release when they should."
+          ]
+        },
+        {
+          "heading": "4. Your obligations",
+          "paragraphs": [
+            "Use the skis with care, only on marked slopes and routes suited to them, and only yourself or the person they were set for.",
+            "Do not adjust the bindings yourself, lend the skis to anyone else, or take them outside Slovakia.",
+            "Keep the skis secured when you are not using them."
+          ]
+        },
+        {
+          "heading": "5. Damage, loss and theft",
+          "paragraphs": [
+            "You are responsible for the skis from pickup until return. Normal wear is on us.",
+            "Damage beyond normal wear is charged at the cost of repair, up to the replacement value in our price list. A lost or stolen pair is charged at its replacement value.",
+            "Report a theft to the police and to the store the same day, and bring us the police report."
+          ]
+        },
+        {
+          "heading": "6. Safety and liability",
+          "paragraphs": [
+            "Skiing is a sport with a risk of injury. We recommend wearing a helmet and having insurance that covers skiing.",
+            "The rental is liable for faults of the equipment it handed over. It is not liable for injuries caused by the way you ski, by conditions on the slopes, or by incorrect details you gave for the binding settings."
+          ]
+        },
+        {
+          "heading": "7. Final provisions",
+          "paragraphs": [
+            "This agreement is governed by Slovak law. The terms and conditions apply to anything this agreement does not cover."
+          ]
+        }
+      ]
+    },
+    "accept": {
+      "title": "Before you continue",
+      "description": "Please read and accept our Terms and conditions and Privacy policy. We have updated them, or you have not accepted them yet.",
+      "agree": "I have read and accept the <terms>Terms and conditions</terms> and the <privacy>Privacy policy</privacy>.",
+      "required": "Accept both documents to continue.",
+      "continue": "Accept and continue",
+      "saving": "Saving…",
+      "signOut": "Sign out instead"
+    },
+    "signUpAgree": "I accept the <terms>Terms and conditions</terms> and the <privacy>Privacy policy</privacy>.",
+    "signUpRequired": "Accept the terms and the privacy policy to create an account.",
+    "bookingAgree": "I accept the <agreement>Rental agreement</agreement> for these skis.",
+    "bookingRequired": "Accept the rental agreement to book."
   }
 }

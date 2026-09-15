@@ -1,6 +1,7 @@
 import { addUtcDays, todayUtc, toUtcDate, utcDaysBetween } from '~/lib/date';
 import { toMoneyString } from '~/lib/money';
 import { PAGE_SIZE, pageCount, skipForPage } from '~/lib/pagination';
+import { LEGAL_VERSIONS } from '~/lib/legal';
 import { closedRentalDays, rentalDays } from '~/lib/opening-hours';
 import { quoteReservation } from '~/lib/pricing';
 import { generateReservationCode } from '~/lib/reservation-code';
@@ -128,6 +129,8 @@ type PlainItem<I extends PricedItem> = Omit<I, 'pricePerDay' | 'totalPrice'> & {
 /** Everything staff need about one reservation: who, what, where, how much, and who did what when (FR-66). */
 const staffReservationDetailSelect = {
   ...staffReservationSelect,
+  rentalAgreementVersion: true,
+  rentalAgreementAcceptedAt: true,
   addresses: {
     select: {
       kind: true,
@@ -189,6 +192,10 @@ export const reservationRouter = createTRPCRouter({
   create: userProcedure.input(reservationCreateSchema).mutation(async ({ ctx, input }) => {
     const startDate = toUtcDate(input.startDate);
     const endDate = toUtcDate(input.endDate);
+
+    if (input.rentalAgreementVersion !== LEGAL_VERSIONS.rentalAgreement) {
+      throw badRequest('The rental agreement has changed. Reload the page and accept the new version.');
+    }
 
     const skis = await ctx.db.ski.findMany({
       where: { id: { in: input.skiIds }, deletedAt: null },
@@ -259,6 +266,8 @@ export const reservationRouter = createTRPCRouter({
               discountPercent: quote.discountPercent,
               totalPrice: quote.totalPrice,
               note: details.note || null,
+              rentalAgreementVersion: LEGAL_VERSIONS.rentalAgreement,
+              rentalAgreementAcceptedAt: new Date(),
               items: {
                 create: quote.items.map((item) => ({
                   skiId: item.skiId,

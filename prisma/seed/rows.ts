@@ -53,6 +53,10 @@ export interface UserRow {
   storeId: string | null;
   createdAt: Date;
   deletedAt: Date | null;
+  termsAcceptedVersion: string | null;
+  termsAcceptedAt: Date | null;
+  privacyAcceptedVersion: string | null;
+  privacyAcceptedAt: Date | null;
 }
 
 export interface CustomerAddressRow {
@@ -98,6 +102,8 @@ export interface ReservationRow {
   status: ReservationStatus;
   items: ReservationItemRow[];
   note: string | null;
+  rentalAgreementVersion: string;
+  rentalAgreementAcceptedAt: Date;
   rentalDays: number;
   discountPercent: number;
   totalPrice: string;

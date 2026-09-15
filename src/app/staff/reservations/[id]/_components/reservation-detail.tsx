@@ -262,6 +262,13 @@ function History({ reservation }: HistoryProps) {
   const steps: { key: string; label: string; at: Date; by?: string }[] = [
     { key: 'booked', label: t('booked'), at: reservation.createdAt, by: reservation.user.name },
   ];
+  if (reservation.rentalAgreementAcceptedAt && reservation.rentalAgreementVersion) {
+    steps.push({
+      key: 'agreement',
+      label: t('agreementAccepted', { version: reservation.rentalAgreementVersion }),
+      at: reservation.rentalAgreementAcceptedAt,
+    });
+  }
   if (reservation.pickedUpAt) {
     steps.push({ key: 'pickedUp', label: t('pickedUp'), at: reservation.pickedUpAt, by: reservation.pickedUpBy?.name });
   }

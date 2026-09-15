@@ -64,10 +64,54 @@ test.describe('signing in and access by role', () => {
     await page.getByLabel('E-mail').fill(`nina.${Date.now()}@example.test`);
     await page.getByLabel('Password').fill('Nina12345!');
     await page.getByTestId('signup-submit').click();
+    await expect(page.getByText('Accept the terms and the privacy policy to create an account.')).toBeVisible();
+    await page.getByTestId('signup-accept').check();
+    await page.getByTestId('signup-submit').click();
 
     await expect(page).toHaveURL('/app');
     await expect(page.getByTestId('role-badge')).toHaveCount(0);
   });
+});
+
+test('a customer created by staff accepts the terms after signing in', async ({ page, browser }) => {
+  await signIn(page, 'manager');
+  await page.goto('/staff/accounts');
+  await page.getByTestId('add-account').click();
+  const dialog = page.getByTestId('account-dialog');
+  const email = `walk.in.${Date.now()}@example.test`;
+  await dialog.getByLabel('Name').fill('Walk In');
+  await dialog.getByLabel('E-mail').fill(email);
+  await dialog.getByLabel('Password').fill('Customer123!');
+  await dialog.getByTestId('save-account').click();
+  await expect(dialog).toBeHidden();
+
+  const customer = await browser.newPage();
+  await customer.goto('/');
+  await customer.getByLabel('E-mail').fill(email);
+  await customer.getByLabel('Password').fill('Customer123!');
+  await customer.getByTestId('signin-submit').click();
+  await expect(customer).toHaveURL('/accept-terms');
+
+  // Every customer page sends them back until they accept.
+  await customer.goto('/app/reservations');
+  await expect(customer).toHaveURL('/accept-terms');
+
+  await customer.getByTestId('accept-legal-submit').click();
+  await expect(customer.getByText('Accept both documents to continue.')).toBeVisible();
+  await customer.getByTestId('accept-legal').check();
+  await customer.getByTestId('accept-legal-submit').click();
+  await expect(customer).toHaveURL('/app');
+  await customer.close();
+});
+
+test('anyone can read the legal documents', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('footer-rentalAgreement').click();
+  await expect(page).toHaveURL('/rental-agreement');
+  await expect(page.getByTestId('page-title')).toHaveText('Rental agreement');
+  await expect(page.getByRole('note')).toContainText('Example document');
+  await page.getByTestId('footer-privacy').click();
+  await expect(page.getByTestId('page-title')).toHaveText('Privacy policy');
 });
 
 test('the phone menu shows the navigation and the account', async ({ page }) => {

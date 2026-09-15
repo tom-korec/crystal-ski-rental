@@ -81,6 +81,16 @@ export function AccountDetail({ id, actor }: AccountDetailProps) {
               {user.email}
             </a>{' '}
             · {t('joinedOn', { date: format.dateTime(user.createdAt, DATE_FORMAT) })}
+            {user.role === 'USER' ? (
+              <span className="block" data-testid="account-legal">
+                {user.termsAcceptedAt && user.termsAcceptedVersion
+                  ? t('termsAccepted', {
+                      version: user.termsAcceptedVersion,
+                      date: format.dateTime(user.termsAcceptedAt, DATE_FORMAT),
+                    })
+                  : t('termsPending')}
+              </span>
+            ) : null}
           </>
         }
         actions={

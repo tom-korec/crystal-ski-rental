@@ -5,6 +5,7 @@ import { DemoAccounts } from '~/components/layout/demo-accounts';
 import { DemoBanner } from '~/components/layout/demo-banner';
 import { HeroArt } from '~/components/layout/hero-art';
 import { Logo } from '~/components/layout/logo';
+import { SiteFooter } from '~/components/layout/site-footer';
 import { ThemeSwitcher } from '~/components/layout/theme-switcher';
 import { redirectIfSignedIn } from '~/server/better-auth/guards';
 
@@ -41,6 +42,7 @@ export default async function Landing() {
           <DemoAccounts />
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }
