@@ -460,7 +460,7 @@
   },
   "profile": {
     "title": "Profile",
-    "description": "Your name and password.",
+    "description": "Your name, password and addresses.",
     "detailsTitle": "Details",
     "detailsDescription": "How you appear to the store.",
     "name": "Name",
@@ -501,5 +501,42 @@
     "description": "Where to pick up and return your skis, and when we are open.",
     "stores": "Stores",
     "findSkis": "Find skis here"
+  },
+  "addresses": {
+    "title": "Addresses",
+    "description": "Where we send post and who your invoices are made out to.",
+    "street": "Street",
+    "houseNumber": "No.",
+    "city": "City",
+    "zipCode": "Postal code",
+    "country": "Country",
+    "recipient": "Invoice to",
+    "recipientHint": "Your name, or the company that pays.",
+    "companyId": "Company number (optional)",
+    "vatId": "VAT number (optional)",
+    "save": "Save address",
+    "saving": "Saving…",
+    "saved": "Saved.",
+    "remove": "Remove",
+    "removing": "Removing…",
+    "cancel": "Cancel",
+    "MAILING": {
+      "title": "Mailing address",
+      "description": "Where post for you goes."
+    },
+    "INVOICE": {
+      "title": "Invoice address",
+      "description": "Who invoices are made out to, and where they go.",
+      "none": "Invoices go to your mailing address, in your name.",
+      "add": "Add an invoice address"
+    },
+    "errors": {
+      "required": "Fill this in.",
+      "recipient": "Enter who invoices are made out to.",
+      "zipCode": "Enter a valid postal code.",
+      "country": "Choose a country.",
+      "companyId": "Enter a company number like 12345678.",
+      "vatId": "Enter a VAT number like SK2020123456."
+    }
   }
 }

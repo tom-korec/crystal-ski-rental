@@ -87,8 +87,8 @@ customer account.
 - **FR-6** A customer can keep a **mailing address** and an **invoice address**, at most one of each, and
   change or remove either. Both have street, house number, city, postal code and country. The invoice
   address also names who invoices are made out to (the customer or a company), with an optional company
-  number and VAT number. Staff can see a customer's addresses. _No screens yet: release 1 stores the
-  addresses and offers the API; the profile and account pages follow._
+  number and VAT number. Customers manage them on their profile page. Staff can see a customer's
+  addresses.
 
 ### 4.2 Catalogue (admin)
 

@@ -2,7 +2,7 @@ import { expect, type APIRequestContext, test } from '@playwright/test';
 
 import { signIn } from './helpers';
 
-// Customer addresses have no screen yet (FR-6), so this drives the API the screens will use.
+// Customer addresses (FR-6): the API, then the profile page's forms. The tests run in order and share data.
 
 interface Address {
   kind: 'MAILING' | 'INVOICE';
@@ -66,4 +66,38 @@ test('a customer keeps a mailing and an invoice address, and staff can read them
   const account = await query<{ addresses: Address[] }>(manager.request, 'user.byId', { id: jan?.id });
   expect(account.data?.addresses).toEqual([expect.objectContaining({ kind: 'MAILING', city: 'Poprad' })]);
   await manager.close();
+});
+
+test('a customer edits their addresses on the profile page', async ({ page }) => {
+  await signIn(page, 'customer');
+  await page.goto('/profile');
+
+  // The test above removed the invoice address and moved the mailing address to Poprad.
+  const invoice = page.getByTestId('INVOICE-address');
+  await expect(invoice.getByText('Invoices go to your mailing address')).toBeVisible();
+  await expect(page.locator('#mailing-city')).toHaveValue('Poprad');
+
+  await invoice.getByTestId('add-invoice-address').click();
+  await page.locator('#invoice-street').fill('Mlynské nivy');
+  await page.getByTestId('save-INVOICE-address').click();
+  await expect(page.getByText('Enter who invoices are made out to.')).toBeVisible();
+
+  await page.locator('#invoice-recipient').fill('Jan Novák');
+  await page.locator('#invoice-house-number').fill('5');
+  await page.locator('#invoice-zip-code').fill('82109');
+  await page.locator('#invoice-city').fill('Bratislava');
+  await page.getByTestId('save-INVOICE-address').click();
+  await expect(page.getByTestId('INVOICE-address').getByRole('status')).toHaveText('Saved.');
+
+  const mailing = page.getByTestId('MAILING-address');
+  await mailing.locator('#mailing-zip-code').fill('1234');
+  await mailing.getByTestId('save-MAILING-address').click();
+  await expect(mailing.getByText('Enter a valid postal code')).toBeVisible();
+
+  await page.reload();
+  await expect(page.locator('#invoice-zip-code')).toHaveValue('821 09');
+  await expect(page.locator('#invoice-recipient')).toHaveValue('Jan Novák');
+
+  await page.getByTestId('remove-INVOICE-address').click();
+  await expect(page.getByTestId('INVOICE-address').getByText('Invoices go to your mailing address')).toBeVisible();
 });

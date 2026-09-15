@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { addressSaveSchema, invoiceAddressSchema, mailingAddressSchema } from '~/lib/address-schema';
+import { addressSaveSchema, formatPostalCode, invoiceAddressSchema, mailingAddressSchema } from '~/lib/address-schema';
 
 const mailing = {
   street: 'Hlavná',
@@ -78,5 +78,16 @@ describe('addressSaveSchema', () => {
     expect(addressSaveSchema.safeParse({ kind: 'MAILING', address: mailing }).success).toBe(true);
     expect(addressSaveSchema.safeParse({ kind: 'INVOICE', address: mailing }).success).toBe(false);
     expect(addressSaveSchema.safeParse({ kind: 'OTHER', address: mailing }).success).toBe(false);
+  });
+});
+
+describe('formatPostalCode', () => {
+  it.each([
+    ['05801', 'SK', '058 01'],
+    ['11000', 'CZ', '110 00'],
+    ['80331', 'DE', '80331'],
+    ['34-500', 'PL', '34-500'],
+  ])('shows %s in %s as %s', (zipCode, country, shown) => {
+    expect(formatPostalCode(zipCode, country)).toBe(shown);
   });
 });

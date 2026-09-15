@@ -81,3 +81,10 @@ export const addressRemoveSchema = z.object({ kind: z.enum(ADDRESS_KINDS) });
 export type MailingAddressInput = z.input<typeof mailingAddressSchema>;
 export type InvoiceAddressInput = z.input<typeof invoiceAddressSchema>;
 export type AddressSaveInput = z.input<typeof addressSaveSchema>;
+
+/** Slovak and Czech postal codes are shown as "031 01"; others as stored. */
+export function formatPostalCode(zipCode: string, country: string): string {
+  return FIVE_DIGIT_POSTAL_CODE_COUNTRIES.has(country) && /^\d{5}$/.test(zipCode)
+    ? `${zipCode.slice(0, 3)} ${zipCode.slice(3)}`
+    : zipCode;
+}
