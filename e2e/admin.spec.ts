@@ -8,7 +8,8 @@ test.describe('admin', () => {
   });
 
   test('manages brands and model prices, and refuses to delete a brand in use', async ({ page }) => {
-    await page.getByTestId('nav-catalog').click();
+    await page.getByTestId('nav-models').click();
+    await expect(page).toHaveURL('/staff/models');
     await page.getByTestId('tab-brands').click();
 
     await page.getByTestId('add-brand').click();
@@ -34,7 +35,8 @@ test.describe('admin', () => {
   });
 
   test('keeps store addresses, contacts and opening hours', async ({ page }) => {
-    await page.goto('/staff/catalog?tab=stores');
+    await page.getByTestId('nav-stores').click();
+    await expect(page).toHaveURL('/staff/stores');
     await page.getByTestId('add-store').click();
     const dialog = page.getByTestId('store-dialog');
     await dialog.getByLabel('Name').fill('Kubínska hoľa');
@@ -52,9 +54,17 @@ test.describe('admin', () => {
     await dialog.getByTestId('copy-monday').click();
     await dialog.getByTestId('save-entry').click();
 
-    const store = page.getByTestId('store-row').filter({ hasText: 'Kubínska hoľa' });
+    // The new store opens on its own tab.
+    await expect(dialog).toBeHidden();
+    await expect(page.locator('[data-testid="store-tab"][aria-selected="true"]')).toHaveText('Kubínska hoľa');
+    const store = page.getByTestId('store-details');
     await expect(store).toContainText('026 01 Dolný Kubín');
     await expect(store).toContainText('+421 000 000 105');
+    await expect(page.getByTestId('store-ski-count')).toHaveText('No skis in the fleet');
+
+    await page.getByTestId('delete-entry').click();
+    await page.getByTestId('confirm-action').click();
+    await expect(page.getByTestId('store-tab').filter({ hasText: 'Kubínska hoľa' })).toHaveCount(0);
   });
 
   test('creates a staff account, which a manager then cannot edit', async ({ page, browser }) => {

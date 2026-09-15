@@ -2,14 +2,14 @@ import { Suspense } from 'react';
 
 import { requireAdmin } from '~/server/better-auth/guards';
 
-import { Catalog } from './_components/catalog';
+import { ModelsPage } from './_components/models-page';
 
-export default async function CatalogPage() {
+export default async function StaffModelsPage() {
   await requireAdmin();
 
   return (
     <Suspense>
-      <Catalog />
+      <ModelsPage />
     </Suspense>
   );
 }

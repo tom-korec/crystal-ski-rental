@@ -40,8 +40,8 @@
     "myReservations": "My reservations",
     "stores": "Stores",
     "fleet": "Fleet",
-    "catalog": "Catalogue",
-    "accounts": "Accounts"
+    "accounts": "Accounts",
+    "models": "Models"
   },
   "roles": {
     "USER": "Customer",
@@ -357,18 +357,16 @@
     "noReservations": "This ski has not been reserved yet."
   },
   "catalogAdmin": {
-    "title": "Catalogue",
-    "description": "Brands, ski models with their prices, and stores.",
+    "title": "Models",
+    "description": "Ski models with their prices and ratings, and the brands they belong to.",
     "tabs": {
       "models": "Models",
-      "brands": "Brands",
-      "stores": "Stores"
+      "brands": "Brands"
     },
     "name": "Name",
     "models": "Models",
     "model": "Model",
     "skis": "Skis",
-    "attributes": "Type · for · level",
     "pricePerDay": "Price / day",
     "pricePerDayEur": "Price per day (€)",
     "priceChangeHint": "A new price applies to new bookings. Existing reservations keep the price they were booked at.",
@@ -377,7 +375,7 @@
     "brand": "Brand",
     "type": "Type",
     "gender": "For",
-    "level": "Skill level",
+    "level": "Level",
     "choose": "Choose…",
     "address": "Address",
     "street": "Street",
@@ -419,7 +417,8 @@
       "phone": "Enter a phone number with the country code, like +421 903 123 456.",
       "email": "Enter a valid e-mail address.",
       "hours": "Keep it under {max} characters."
-    }
+    },
+    "for": "For"
   },
   "accounts": {
     "title": "Accounts",
@@ -605,5 +604,12 @@
     "findMore": "Find more skis",
     "perDayTimesDays": "{price} / day × {days, plural, one {# day} other {# days}}",
     "subtotal": "{count, plural, one {# pair} other {# pairs}} before discount"
+  },
+  "storesAdmin": {
+    "title": "Stores",
+    "description": "Where customers pick up and return skis, and when each store is open.",
+    "descriptionAdmin": "Where customers pick up and return skis. Edit a store's address, contacts and opening hours here.",
+    "stores": "Stores",
+    "skiCount": "{count, plural, =0 {No skis in the fleet} one {# ski in the fleet} other {# skis in the fleet}}"
   }
 }

@@ -12,7 +12,6 @@ import { FormError } from '~/components/common/form-error';
 import { QueryState } from '~/components/common/query-state';
 import { SelectField } from '~/components/common/select-field';
 import { RatingSummary } from '~/components/skis/rating-summary';
-import { SkiBadges } from '~/components/skis/ski-badges';
 import { Button } from '~/components/ui/button';
 import {
   Dialog,
@@ -30,7 +29,7 @@ import { SKI_GENDERS, SKI_TYPES, SKILL_LEVELS } from '~/lib/catalog';
 import { SKI_MODEL_NAME_MAX_LENGTH, skiModelCreateSchema } from '~/lib/ski-model-schema';
 import { api, type RouterOutputs } from '~/trpc/react';
 
-import { DeleteEntryButton } from './delete-entry-button';
+import { DeleteEntryButton } from '~/components/common/delete-entry-button';
 import { ModelRatingsDialog } from './model-ratings-dialog';
 
 type SkiModel = RouterOutputs['skiModel']['list'][number];
@@ -42,41 +41,42 @@ export function ModelsTab() {
   const models = api.skiModel.list.useQuery({});
 
   return (
-    <div className="flex flex-col gap-4">
-      <QueryState query={models} skeleton={<Skeleton className="h-64 w-full" />}>
-        {(rows) => (
-          <div className="bg-card ring-foreground/10 overflow-x-auto rounded-xl ring-1">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead scope="col">{t('model')}</TableHead>
-                  <TableHead scope="col">{t('attributes')}</TableHead>
-                  <TableHead scope="col" className="text-right">
-                    {t('pricePerDay')}
-                  </TableHead>
-                  <TableHead scope="col">{t('rating')}</TableHead>
-                  <TableHead scope="col" className="text-right">
-                    {t('skis')}
-                  </TableHead>
-                  <TableHead scope="col">
-                    <span className="sr-only">{t('actions')}</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((model) => (
-                  <ModelRow key={model.id} model={model} />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </QueryState>
-    </div>
+    <QueryState query={models} skeleton={<Skeleton className="h-64 w-full" />}>
+      {(rows) => (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead scope="col">{t('model')}</TableHead>
+                <TableHead scope="col">{t('type')}</TableHead>
+                <TableHead scope="col">{t('for')}</TableHead>
+                <TableHead scope="col">{t('level')}</TableHead>
+                <TableHead scope="col" className="text-right">
+                  {t('pricePerDay')}
+                </TableHead>
+                <TableHead scope="col">{t('rating')}</TableHead>
+                <TableHead scope="col" className="text-right">
+                  {t('skis')}
+                </TableHead>
+                <TableHead scope="col">
+                  <span className="sr-only">{t('actions')}</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((model) => (
+                <ModelRow key={model.id} model={model} />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </QueryState>
   );
 }
 
 function ModelRow({ model }: { model: SkiModel }) {
+  const tCatalog = useTranslations('catalog');
   const formatMoney = useFormatMoney();
   const utils = api.useUtils();
   const remove = api.skiModel.delete.useMutation();
@@ -85,9 +85,9 @@ function ModelRow({ model }: { model: SkiModel }) {
   return (
     <TableRow data-testid="model-row">
       <TableCell className="font-medium whitespace-nowrap">{name}</TableCell>
-      <TableCell>
-        <SkiBadges type={model.type} gender={model.gender} skillLevel={model.skillLevel} />
-      </TableCell>
+      <TableCell className="whitespace-nowrap">{tCatalog(`type.${model.type}`)}</TableCell>
+      <TableCell className="whitespace-nowrap">{tCatalog(`gender.${model.gender}`)}</TableCell>
+      <TableCell className="whitespace-nowrap">{tCatalog(`level.${model.skillLevel}`)}</TableCell>
       <TableCell className="text-right tabular-nums">{formatMoney(model.pricePerDay)}</TableCell>
       <TableCell className="whitespace-nowrap">
         <ModelRatingsDialog modelId={model.id} name={name} ratingCount={model.ratingCount}>

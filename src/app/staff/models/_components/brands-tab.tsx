@@ -24,7 +24,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~
 import { BRAND_NAME_MAX_LENGTH, type BrandCreateInput, brandCreateSchema } from '~/lib/brand-schema';
 import { api, type RouterOutputs } from '~/trpc/react';
 
-import { DeleteEntryButton } from './delete-entry-button';
+import { DeleteEntryButton } from '~/components/common/delete-entry-button';
 
 type Brand = RouterOutputs['brand']['list'][number];
 
@@ -33,32 +33,30 @@ export function BrandsTab() {
   const brands = api.brand.list.useQuery();
 
   return (
-    <div className="flex flex-col gap-4">
-      <QueryState query={brands} skeleton={<Skeleton className="h-48 w-full" />}>
-        {(rows) => (
-          <div className="bg-card ring-foreground/10 overflow-x-auto rounded-xl ring-1">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead scope="col">{t('name')}</TableHead>
-                  <TableHead scope="col" className="text-right">
-                    {t('models')}
-                  </TableHead>
-                  <TableHead scope="col" className="w-24">
-                    <span className="sr-only">{t('actions')}</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((brand) => (
-                  <BrandRow key={brand.id} brand={brand} />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </QueryState>
-    </div>
+    <QueryState query={brands} skeleton={<Skeleton className="h-48 w-full" />}>
+      {(rows) => (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead scope="col">{t('name')}</TableHead>
+                <TableHead scope="col" className="text-right">
+                  {t('models')}
+                </TableHead>
+                <TableHead scope="col" className="w-24">
+                  <span className="sr-only">{t('actions')}</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((brand) => (
+                <BrandRow key={brand.id} brand={brand} />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </QueryState>
   );
 }
 
@@ -114,7 +112,7 @@ export function BrandDialog({ brand }: { brand?: Brand }) {
           <PencilIcon aria-hidden />
         </DialogTrigger>
       ) : (
-        <DialogTrigger render={<Button data-testid="add-brand" />}>
+        <DialogTrigger render={<Button variant="outline" data-testid="add-brand" />}>
           <PlusIcon aria-hidden />
           {t('addBrand')}
         </DialogTrigger>

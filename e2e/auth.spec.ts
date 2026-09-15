@@ -24,12 +24,19 @@ test.describe('signing in and access by role', () => {
     await expect(page).toHaveURL('/app');
   });
 
-  test('a manager lands on the front desk and cannot open the catalogue', async ({ page }) => {
+  test('a manager lands on the front desk, sees stores without editing them, and cannot open models', async ({
+    page,
+  }) => {
     await signIn(page, 'manager');
     await expect(page.getByTestId('page-title')).toHaveText('Front desk');
-    await expect(page.getByTestId('nav-catalog')).toHaveCount(0);
+    await expect(page.getByTestId('nav-models')).toHaveCount(0);
 
-    await page.goto('/staff/catalog');
+    await page.getByTestId('nav-stores').click();
+    await expect(page.getByTestId('store-details')).toBeVisible();
+    await expect(page.getByTestId('edit-entry')).toHaveCount(0);
+    await expect(page.getByTestId('add-store')).toHaveCount(0);
+
+    await page.goto('/staff/models');
     await expect(page).toHaveURL('/staff');
 
     await page.goto('/app');

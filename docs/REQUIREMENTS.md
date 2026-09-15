@@ -92,12 +92,15 @@ customer account.
 
 ### 4.2 Catalogue (admin)
 
+Models and brands share the **Models** page, with a switch between their tables.
+
 - **FR-10** An admin can create, rename and delete **brands**.
 - **FR-11** An admin can create, edit and delete **models**. A model has a brand, name, ski type,
   gender, skill level and price per day. A model name is unique within its brand.
 - **FR-12** An admin can create, edit and delete **stores**. A store has a name, an address (street,
   house number, city, zip code), a phone, an e-mail and opening hours as free text for each
-  day of the week (empty means closed).
+  day of the week (empty means closed). Stores have a page of their own with a tab per store; managers
+  can look them up there, only admins change them.
 - **FR-13** A brand, model or store that is still in use cannot be deleted, and the admin is told why.
 - **FR-14** An admin can see all ratings of a model, including comments, with the customer's name
   and a link to reply by e-mail.

@@ -170,7 +170,7 @@ customer expects it where they booked it, and deleting it is refused while it is
 
 ### View state lives in the URL
 
-Search filters, sort, pages, the front desk's store and the catalogue's tab are query parameters.
+Search filters, sort, pages, the front desk's and stores page's store, and the models page's tab are query parameters.
 A view can be reloaded, shared and bookmarked, and Back returns to it. The URL is untrusted input, so
 it is parsed with the same Zod schema the router uses, and a parameter that does not survive is
 dropped on its own instead of failing the whole page.

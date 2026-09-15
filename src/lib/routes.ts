@@ -7,7 +7,8 @@ export const APP_STORES = '/app/stores';
 export const APP_RESERVE = '/app/reserve';
 export const STAFF_HOME = '/staff';
 export const STAFF_SKIS = '/staff/skis';
-export const STAFF_CATALOG = '/staff/catalog';
+export const STAFF_MODELS = '/staff/models';
+export const STAFF_STORES = '/staff/stores';
 export const STAFF_ACCOUNTS = '/staff/accounts';
 export const PROFILE = '/profile';
 

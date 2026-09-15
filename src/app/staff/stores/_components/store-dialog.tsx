@@ -9,7 +9,6 @@ import type { z } from 'zod';
 
 import { Field } from '~/components/common/field';
 import { FormError } from '~/components/common/form-error';
-import { QueryState } from '~/components/common/query-state';
 import { Button } from '~/components/ui/button';
 import {
   Dialog,
@@ -20,8 +19,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '~/components/ui/dialog';
-import { Skeleton } from '~/components/ui/skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table';
 import { formatPhone, formatZipCode } from '~/lib/format';
 import {
   OPENING_HOURS_FIELDS,
@@ -30,8 +27,6 @@ import {
   storeCreateSchema,
 } from '~/lib/store-schema';
 import { api, type RouterOutputs } from '~/trpc/react';
-
-import { DeleteEntryButton } from './delete-entry-button';
 
 type Store = RouterOutputs['store']['list'][number];
 type StoreInput = z.input<typeof storeCreateSchema>;
@@ -50,100 +45,23 @@ const WEEKDAY: Record<
   openingHoursSunday: 'sunday',
 };
 
-export function StoresTab() {
-  const t = useTranslations('catalogAdmin');
-  const stores = api.store.list.useQuery();
-
-  return (
-    <div className="flex flex-col gap-4">
-      <QueryState query={stores} skeleton={<Skeleton className="h-48 w-full" />}>
-        {(rows) => (
-          <div className="bg-card ring-foreground/10 overflow-x-auto rounded-xl ring-1">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead scope="col">{t('name')}</TableHead>
-                  <TableHead scope="col">{t('address')}</TableHead>
-                  <TableHead scope="col">{t('contact')}</TableHead>
-                  <TableHead scope="col" className="text-right">
-                    {t('skis')}
-                  </TableHead>
-                  <TableHead scope="col">
-                    <span className="sr-only">{t('actions')}</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((store) => (
-                  <StoreRow key={store.id} store={store} />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </QueryState>
-    </div>
-  );
+interface StoreDialogProps {
+  /** Edits this store; without one, adds a store. */
+  store?: Store;
+  onSaved?: (store: { id: string }) => void;
 }
 
-function StoreRow({ store }: { store: Store }) {
-  const utils = api.useUtils();
-  const remove = api.store.delete.useMutation();
-
-  return (
-    <TableRow data-testid="store-row">
-      <TableCell className="font-medium">{store.name}</TableCell>
-      <TableCell className="whitespace-nowrap">
-        {store.street} {store.houseNumber}, {formatZipCode(store.zipCode)} {store.city}
-      </TableCell>
-      <TableCell className="text-muted-foreground whitespace-nowrap">
-        {formatPhone(store.phone)} · {store.email}
-      </TableCell>
-      <TableCell className="text-right tabular-nums">{store.skiCount}</TableCell>
-      <TableCell>
-        <span className="flex justify-end gap-1">
-          <StoreDialog store={store} />
-          <DeleteEntryButton
-            name={store.name}
-            isPending={remove.isPending}
-            error={remove.error?.message}
-            onReset={() => remove.reset()}
-            onDelete={(done) =>
-              remove.mutate(
-                { id: store.id },
-                {
-                  onSuccess: () => {
-                    void utils.store.list.invalidate();
-                    done();
-                  },
-                },
-              )
-            }
-          />
-        </span>
-      </TableCell>
-    </TableRow>
-  );
-}
-
-export function StoreDialog({ store }: { store?: Store }) {
+/** Add a store or edit one: address, contacts and opening hours (FR-12). */
+export function StoreDialog({ store, onSaved }: StoreDialogProps) {
   const t = useTranslations('catalogAdmin');
   const [open, setOpen] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {store ? (
-        <DialogTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={t('editNamed', { name: store.name })}
-              data-testid="edit-entry"
-            />
-          }
-        >
+        <DialogTrigger render={<Button variant="outline" data-testid="edit-entry" />}>
           <PencilIcon aria-hidden />
+          {t('editNamed', { name: store.name })}
         </DialogTrigger>
       ) : (
         <DialogTrigger render={<Button data-testid="add-store" />}>
@@ -152,13 +70,26 @@ export function StoreDialog({ store }: { store?: Store }) {
         </DialogTrigger>
       )}
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl" data-testid="store-dialog">
-        {open ? <StoreForm store={store} onDone={() => setOpen(false)} /> : null}
+        {open ? (
+          <StoreForm
+            store={store}
+            onDone={(saved) => {
+              setOpen(false);
+              onSaved?.(saved);
+            }}
+          />
+        ) : null}
       </DialogContent>
     </Dialog>
   );
 }
 
-function StoreForm({ store, onDone }: { store?: Store; onDone: () => void }) {
+interface StoreFormProps {
+  store?: Store;
+  onDone: (saved: { id: string }) => void;
+}
+
+function StoreForm({ store, onDone }: StoreFormProps) {
   const t = useTranslations('catalogAdmin');
   const tStores = useTranslations('stores');
   const utils = api.useUtils();
@@ -180,9 +111,9 @@ function StoreForm({ store, onDone }: { store?: Store; onDone: () => void }) {
   });
   const { errors } = form.formState;
 
-  const onSuccess = async () => {
+  const onSuccess = async (saved: { id: string }) => {
     await utils.store.invalidate();
-    onDone();
+    onDone(saved);
   };
   const create = api.store.create.useMutation({ onSuccess });
   const update = api.store.update.useMutation({ onSuccess });

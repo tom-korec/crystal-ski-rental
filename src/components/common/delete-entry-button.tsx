@@ -13,10 +13,19 @@ interface DeleteEntryButtonProps {
   isPending: boolean;
   error?: string;
   onReset: () => void;
+  /** Spelled out next to the icon, where the button stands on its own rather than in a table row. */
+  labelled?: boolean;
 }
 
-/** Deleting a catalogue entry; the server refuses one that is still in use and says why (FR-13). */
-export function DeleteEntryButton({ name, onDelete, isPending, error, onReset }: DeleteEntryButtonProps) {
+/** Deleting a brand, model or store; the server refuses one that is still in use and says why (FR-13). */
+export function DeleteEntryButton({
+  name,
+  onDelete,
+  isPending,
+  error,
+  onReset,
+  labelled = false,
+}: DeleteEntryButtonProps) {
   const t = useTranslations('catalogAdmin');
   const [open, setOpen] = useState(false);
 
@@ -28,9 +37,22 @@ export function DeleteEntryButton({ name, onDelete, isPending, error, onReset }:
         if (!next) onReset();
       }}
       trigger={
-        <Button variant="ghost" size="icon-sm" aria-label={t('deleteNamed', { name })} data-testid="delete-entry" />
+        labelled ? (
+          <Button variant="outline" className="text-destructive" data-testid="delete-entry" />
+        ) : (
+          <Button variant="ghost" size="icon-sm" aria-label={t('deleteNamed', { name })} data-testid="delete-entry" />
+        )
       }
-      triggerLabel={<Trash2Icon aria-hidden />}
+      triggerLabel={
+        labelled ? (
+          <>
+            <Trash2Icon aria-hidden />
+            {t('deleteNamed', { name })}
+          </>
+        ) : (
+          <Trash2Icon aria-hidden />
+        )
+      }
       title={t('deleteTitle', { name })}
       description={t('deleteDescription')}
       confirmLabel={t('delete')}

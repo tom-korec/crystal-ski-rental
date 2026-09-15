@@ -2,14 +2,14 @@ import { Suspense } from 'react';
 
 import { requireCustomer } from '~/server/better-auth/guards';
 
-import { StoreDirectory } from './_components/store-directory';
+import { CustomerStores } from './_components/customer-stores';
 
 export default async function StoresPage() {
   await requireCustomer();
 
   return (
     <Suspense>
-      <StoreDirectory />
+      <CustomerStores />
     </Suspense>
   );
 }
