@@ -72,11 +72,17 @@ test.describe('fleet', () => {
     await page.getByTestId('confirm-delete').click();
     await expect(page).toHaveURL('/staff/skis');
     await page.getByTestId('filter-code').fill('E2E1');
+    // A draft until applied; Enter in the code field applies it.
+    await expect(page).not.toHaveURL(/code=/);
+    await page.getByTestId('filter-code').press('Enter');
     await expect(page.getByTestId('fleet-count')).toHaveText('No skis');
   });
 
   test('refuses to move or delete a ski a customer has booked', async ({ page }) => {
     await page.getByTestId('filter-code').fill('SK-0005');
+    await expect(page.getByTestId('discard-filters')).toBeVisible();
+    await page.getByTestId('apply-filters').click();
+    await expect(page).toHaveURL(/code=SK-0005/);
     await expect(page.getByTestId('ski-card')).toHaveCount(1);
     await page.getByTestId('open-ski').click();
 

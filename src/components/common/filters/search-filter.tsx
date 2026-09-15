@@ -14,10 +14,12 @@ interface SearchFilterProps {
   placeholder: string;
   value: string | undefined;
   onChange: (value: string | undefined) => void;
+  /** Wait this long after typing stops before reporting; 0 reports every change, for draft forms. */
+  debounceMs?: number;
 }
 
-/** Free text, reported once typing pauses, so each keystroke does not become a request. */
-export function SearchFilter({ id, label, placeholder, value, onChange }: SearchFilterProps) {
+/** Free text, reported once typing pauses by default, so each keystroke does not become a request. */
+export function SearchFilter({ id, label, placeholder, value, onChange, debounceMs = DEBOUNCE_MS }: SearchFilterProps) {
   const [draft, setDraft] = useState(value ?? '');
   const [syncedValue, setSyncedValue] = useState(value);
   const latest = useRef({ onChange, value });
@@ -36,9 +38,9 @@ export function SearchFilter({ id, label, placeholder, value, onChange }: Search
     const next = draft.trim() || undefined;
     if (next === latest.current.value) return;
 
-    const timer = setTimeout(() => latest.current.onChange(next), DEBOUNCE_MS);
+    const timer = setTimeout(() => latest.current.onChange(next), debounceMs);
     return () => clearTimeout(timer);
-  }, [draft]);
+  }, [draft, debounceMs]);
 
   return (
     <div className="flex flex-col gap-2">

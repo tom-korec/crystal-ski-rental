@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 import { LengthRangeFilter } from '~/components/common/filters/length-range-filter';
 import { type FilterOption, SelectFilter } from '~/components/common/filters/select-filter';
@@ -24,22 +25,13 @@ import { type FleetFilters, parseFleet, serialiseFleet } from './fleet-params';
 export function Fleet() {
   const t = useTranslations('fleet');
   const tFilters = useTranslations('filters');
-  const tCatalog = useTranslations('catalog');
   const { filters, apply } = useUrlFilters({ parse: parseFleet, serialise: serialiseFleet });
 
-  const stores = api.store.list.useQuery();
-  const brands = api.brand.list.useQuery();
-  const models = api.skiModel.list.useQuery({});
   const skis = api.ski.list.useInfiniteQuery(filters, { getNextPageParam: (page) => page.nextCursor });
 
   const found = skis.data?.pages.flatMap((page) => page.items) ?? [];
   const total = skis.data?.pages[0]?.total ?? 0;
-  const set = (patch: Partial<FleetFilters>) => apply({ ...filters, ...patch });
   const isFiltered = Object.values(filters).some((value) => value !== undefined);
-
-  const modelOptions: FilterOption[] = (models.data ?? [])
-    .filter((model) => !filters.brandId || model.brand.id === filters.brandId)
-    .map((model) => ({ value: model.id, label: `${model.brand.name} ${model.name}` }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -47,72 +39,8 @@ export function Fleet() {
         aria-label={tFilters('title')}
         className="bg-card ring-foreground/10 flex flex-col gap-4 rounded-xl p-4 shadow-sm ring-1"
       >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SearchFilter
-            id="filter-code"
-            label={t('inventoryCode')}
-            placeholder={t('inventoryCodePlaceholder')}
-            value={filters.inventoryCode}
-            onChange={(inventoryCode) => set({ inventoryCode })}
-          />
-          <SelectFilter
-            id="filter-store"
-            label={tFilters('store')}
-            anyLabel={tFilters('anyStore')}
-            options={(stores.data ?? []).map((store) => ({ value: store.id, label: store.name }))}
-            disabled={stores.isPending}
-            value={filters.storeId}
-            onChange={(storeId) => set({ storeId })}
-          />
-          <SelectFilter
-            id="filter-brand"
-            label={tFilters('brand')}
-            anyLabel={tFilters('anyBrand')}
-            options={(brands.data ?? []).map((brand) => ({ value: brand.id, label: brand.name }))}
-            disabled={brands.isPending}
-            value={filters.brandId}
-            onChange={(brandId) => set({ brandId, modelId: undefined })}
-          />
-          <SelectFilter
-            id="filter-model"
-            label={tFilters('model')}
-            anyLabel={tFilters('anyModel')}
-            options={modelOptions}
-            disabled={models.isPending}
-            value={filters.modelId}
-            onChange={(modelId) => set({ modelId })}
-          />
-          <SelectFilter
-            id="filter-type"
-            label={tFilters('type')}
-            anyLabel={tFilters('anyType')}
-            options={SKI_TYPES.map((type) => ({ value: type, label: tCatalog(`type.${type}`) }))}
-            value={filters.type}
-            onChange={(type) => set({ type: type as FleetFilters['type'] })}
-          />
-          <SelectFilter
-            id="filter-gender"
-            label={tFilters('gender')}
-            anyLabel={tFilters('anyGender')}
-            options={GENDER_FILTERS.map((gender) => ({ value: gender, label: tCatalog(`gender.${gender}`) }))}
-            value={filters.gender}
-            onChange={(gender) => set({ gender: gender as FleetFilters['gender'] })}
-          />
-          <SelectFilter
-            id="filter-level"
-            label={tFilters('level')}
-            anyLabel={tFilters('anyLevel')}
-            options={SKILL_LEVELS.map((level) => ({ value: level, label: tCatalog(`level.${level}`) }))}
-            value={filters.skillLevel}
-            onChange={(skillLevel) => set({ skillLevel: skillLevel as FleetFilters['skillLevel'] })}
-          />
-          <LengthRangeFilter
-            id="filter-length"
-            label={tFilters('length')}
-            value={{ minLengthCm: filters.minLengthCm, maxLengthCm: filters.maxLengthCm }}
-            onChange={set}
-          />
-        </div>
+        {/* Keyed by the applied filters, so the draft starts over whenever the list changes under it. */}
+        <FleetFilterForm key={serialiseFleet(filters).toString()} applied={filters} onApply={apply} />
         <div className="border-border flex flex-wrap items-center justify-between gap-3 border-t pt-4">
           <p className="text-muted-foreground text-sm" aria-live="polite" data-testid="fleet-count">
             {skis.data ? t('count', { count: total }) : null}
@@ -176,5 +104,123 @@ export function Fleet() {
         )}
       </QueryState>
     </div>
+  );
+}
+
+interface FleetFilterFormProps {
+  applied: FleetFilters;
+  onApply: (filters: FleetFilters) => void;
+}
+
+/** The fleet filters, edited as a draft and applied together, so the list does not reload on every change. */
+function FleetFilterForm({ applied, onApply }: FleetFilterFormProps) {
+  const t = useTranslations('fleet');
+  const tFilters = useTranslations('filters');
+  const tCatalog = useTranslations('catalog');
+  const [draft, setDraft] = useState(applied);
+
+  const stores = api.store.list.useQuery();
+  const brands = api.brand.list.useQuery();
+  const models = api.skiModel.list.useQuery({});
+
+  const set = (patch: Partial<FleetFilters>) => setDraft((current) => ({ ...current, ...patch }));
+  const isDraft = serialiseFleet(draft).toString() !== serialiseFleet(applied).toString();
+
+  const modelOptions: FilterOption[] = (models.data ?? [])
+    .filter((model) => !draft.brandId || model.brand.id === draft.brandId)
+    .map((model) => ({ value: model.id, label: `${model.brand.name} ${model.name}` }));
+
+  return (
+    <form
+      className="flex flex-col gap-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        onApply(draft);
+      }}
+    >
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <SearchFilter
+          id="filter-code"
+          label={t('inventoryCode')}
+          placeholder={t('inventoryCodePlaceholder')}
+          value={draft.inventoryCode}
+          onChange={(inventoryCode) => set({ inventoryCode })}
+          debounceMs={0}
+        />
+        <SelectFilter
+          id="filter-store"
+          label={tFilters('store')}
+          anyLabel={tFilters('anyStore')}
+          options={(stores.data ?? []).map((store) => ({ value: store.id, label: store.name }))}
+          disabled={stores.isPending}
+          value={draft.storeId}
+          onChange={(storeId) => set({ storeId })}
+        />
+        <SelectFilter
+          id="filter-brand"
+          label={tFilters('brand')}
+          anyLabel={tFilters('anyBrand')}
+          options={(brands.data ?? []).map((brand) => ({ value: brand.id, label: brand.name }))}
+          disabled={brands.isPending}
+          value={draft.brandId}
+          onChange={(brandId) => set({ brandId, modelId: undefined })}
+        />
+        <SelectFilter
+          id="filter-model"
+          label={tFilters('model')}
+          anyLabel={tFilters('anyModel')}
+          options={modelOptions}
+          disabled={models.isPending}
+          value={draft.modelId}
+          onChange={(modelId) => set({ modelId })}
+        />
+        <SelectFilter
+          id="filter-type"
+          label={tFilters('type')}
+          anyLabel={tFilters('anyType')}
+          options={SKI_TYPES.map((type) => ({ value: type, label: tCatalog(`type.${type}`) }))}
+          value={draft.type}
+          onChange={(type) => set({ type: type as FleetFilters['type'] })}
+        />
+        <SelectFilter
+          id="filter-gender"
+          label={tFilters('gender')}
+          anyLabel={tFilters('anyGender')}
+          options={GENDER_FILTERS.map((gender) => ({ value: gender, label: tCatalog(`gender.${gender}`) }))}
+          value={draft.gender}
+          onChange={(gender) => set({ gender: gender as FleetFilters['gender'] })}
+        />
+        <SelectFilter
+          id="filter-level"
+          label={tFilters('level')}
+          anyLabel={tFilters('anyLevel')}
+          options={SKILL_LEVELS.map((level) => ({ value: level, label: tCatalog(`level.${level}`) }))}
+          value={draft.skillLevel}
+          onChange={(skillLevel) => set({ skillLevel: skillLevel as FleetFilters['skillLevel'] })}
+        />
+        <LengthRangeFilter
+          id="filter-length"
+          label={tFilters('length')}
+          value={{ minLengthCm: draft.minLengthCm, maxLengthCm: draft.maxLengthCm }}
+          onChange={set}
+        />
+      </div>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {isDraft ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setDraft(applied)}
+            data-testid="discard-filters"
+          >
+            {tFilters('discard')}
+          </Button>
+        ) : null}
+        <Button type="submit" disabled={!isDraft} data-testid="apply-filters">
+          {tFilters('apply')}
+        </Button>
+      </div>
+    </form>
   );
 }
