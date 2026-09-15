@@ -37,16 +37,13 @@ export function AppShell({ name, role, children }: AppShellProps) {
           is wide enough, the navigation lines up with the page content below; otherwise it follows the logo.
         */}
         <div className="relative flex items-center gap-6 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2">
-            <MobileNav links={links} name={name} role={accountRole} homeHref={homeForRole(role)} />
-            <Link
-              href={homeForRole(role)}
-              className="focus-visible:ring-ring/50 rounded-md outline-none focus-visible:ring-3"
-              data-testid="home-link"
-            >
-              <Logo />
-            </Link>
-          </div>
+          <Link
+            href={homeForRole(role)}
+            className="focus-visible:ring-ring/50 rounded-md outline-none focus-visible:ring-3"
+            data-testid="home-link"
+          >
+            <Logo />
+          </Link>
 
           <div className="2xl:pointer-events-none 2xl:absolute 2xl:inset-x-0 2xl:top-1/2 2xl:mx-auto 2xl:w-full 2xl:max-w-6xl 2xl:-translate-y-1/2 2xl:px-6 2xl:[&_a]:pointer-events-auto">
             <PrimaryNav links={links} />
@@ -55,6 +52,8 @@ export function AppShell({ name, role, children }: AppShellProps) {
           <div className="relative ms-auto flex items-center gap-3">
             {isCustomer(role) ? <CartLink /> : null}
             <AccountMenu name={name} role={accountRole} />
+            {/* On phones the menu button closes the header on the right, where a thumb reaches it. */}
+            <MobileNav links={links} name={name} role={accountRole} homeHref={homeForRole(role)} />
           </div>
         </div>
       </header>

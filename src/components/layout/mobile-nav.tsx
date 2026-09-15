@@ -38,7 +38,7 @@ export function MobileNav({ links, name, role, homeHref }: MobileNavProps) {
         <MenuIcon />
       </SheetTrigger>
 
-      <SheetContent side="left" className="flex flex-col gap-6 p-5" aria-label={t('primary')}>
+      <SheetContent side="right" className="flex flex-col gap-6 p-5" aria-label={t('primary')}>
         <SheetTitle className="sr-only">{t('menu')}</SheetTitle>
         {/* The sheet's own close button sits in the top corner, level with the logo. */}
         <Link
