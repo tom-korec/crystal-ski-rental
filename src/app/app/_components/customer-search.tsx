@@ -6,9 +6,12 @@ import { type ReactNode, useState } from 'react';
 
 import { DateRangeFilter } from '~/components/common/filters/date-range-filter';
 import { SelectField } from '~/components/common/select-field';
+import { DiscountBadge } from '~/components/skis/discount-badge';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
+import { toUtcDate, utcDaysBetween } from '~/lib/date';
+import { discountPercentFor, MAX_RENTAL_DAYS, MIN_RENTAL_DAYS } from '~/lib/pricing';
 import type { DateRange } from '~/lib/rental-range';
 import type { SkiSearchFilters } from '~/lib/ski-schema';
 import { cn } from '~/lib/utils';
@@ -117,6 +120,7 @@ function StartSearch({ storeId: initialStore, range: initialRange, filters: init
             placeholder={t('pickDates')}
             value={range}
             onChange={setRange}
+            adornment={range ? <RentalLength range={range} /> : null}
           />
 
           <SearchFilters filters={filters} onChange={setFilters} />
@@ -170,6 +174,7 @@ function SearchBar({ storeId, range, filters, onSearch, footer }: StepProps & { 
           placeholder={t('pickDates')}
           value={range}
           onChange={(next) => onSearch({ storeId, range: next, filters })}
+          adornment={<RentalLength range={range} />}
         />
       </div>
       <SearchFilters filters={filters} onChange={(next) => onSearch({ storeId, range, filters: next })} />
@@ -177,5 +182,24 @@ function SearchBar({ storeId, range, filters, onSearch, footer }: StepProps & { 
         <div className="border-border flex flex-wrap items-center justify-between gap-3 border-t pt-4">{footer}</div>
       ) : null}
     </section>
+  );
+}
+
+interface RentalLengthProps {
+  range: DateRange;
+}
+
+/** How many days the dates are, and the discount that length earns (BR-3). */
+function RentalLength({ range }: RentalLengthProps) {
+  const t = useTranslations('customerSearch');
+  const days = utcDaysBetween(toUtcDate(range.startDate), toUtcDate(range.endDate));
+
+  return (
+    <>
+      <span className="text-muted-foreground text-xs" data-testid="rental-days">
+        {t('days', { days })}
+      </span>
+      {days >= MIN_RENTAL_DAYS && days <= MAX_RENTAL_DAYS ? <DiscountBadge percent={discountPercentFor(days)} /> : null}
+    </>
   );
 }

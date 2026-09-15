@@ -119,9 +119,10 @@ customer account.
   store, brand, model, type, gender, skill level, length range, maximum price per day and
   minimum model rating.
 - **FR-31** Results can be sorted by best rated (default), price low to high, and price high to low.
-- **FR-32** Each result shows brand and model, length, type, gender and level badges, store, the
-  model's average rating, the price per day, and the **total for the chosen dates with the
-  discount applied** and visible.
+- **FR-32** Each result shows brand and model, length, type, gender and level badges, the model's
+  average rating, and the **total for the chosen dates** with the discount applied. The store is the
+  one searched, so results don't repeat it. The number of days and the discount they earn are shown
+  next to the dates.
 - **FR-33** The customer puts a reservation together from the results: **Reserve** adds a pair to it and
   says so, offering to reserve another pair or to proceed. A pair from another store or for other dates
   cannot join (BR-6); the customer is told why and may start a new reservation with it instead. The

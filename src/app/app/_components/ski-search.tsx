@@ -125,6 +125,7 @@ function SkiResults({ input, search }: SkiResultsProps) {
               {found.map((ski) => (
                 <li key={ski.id}>
                   <SkiCard
+                    showStore={false}
                     ski={ski}
                     quote={ski.quote}
                     action={

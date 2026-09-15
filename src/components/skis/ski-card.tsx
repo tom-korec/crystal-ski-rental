@@ -4,7 +4,6 @@ import { MapPinIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
-import { Badge } from '~/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { useFormatMoney } from '~/hooks/use-format-money';
 import type { SkiGender, SkillLevel, SkiType } from '~/lib/catalog';
@@ -37,9 +36,11 @@ interface SkiCardProps {
   inventoryCode?: string;
   status?: ReactNode;
   action?: ReactNode;
+  /** Off in the customer search, where every result is from the store searched. */
+  showStore?: boolean;
 }
 
-export function SkiCard({ ski, quote, inventoryCode, status, action }: SkiCardProps) {
+export function SkiCard({ ski, quote, inventoryCode, status, action, showStore = true }: SkiCardProps) {
   const t = useTranslations('skis');
   const formatMoney = useFormatMoney();
   const { model } = ski;
@@ -64,11 +65,15 @@ export function SkiCard({ ski, quote, inventoryCode, status, action }: SkiCardPr
         <SkiBadges type={model.type} gender={model.gender} skillLevel={model.skillLevel} />
 
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-          <dt className="text-muted-foreground">{t('store')}</dt>
-          <dd className="flex items-center gap-1">
-            <MapPinIcon className="text-muted-foreground size-3.5" aria-hidden />
-            {ski.store.name}
-          </dd>
+          {showStore ? (
+            <>
+              <dt className="text-muted-foreground">{t('store')}</dt>
+              <dd className="flex items-center gap-1">
+                <MapPinIcon className="text-muted-foreground size-3.5" aria-hidden />
+                {ski.store.name}
+              </dd>
+            </>
+          ) : null}
           <dt className="text-muted-foreground">{t('ratingLabel')}</dt>
           <dd>
             <RatingSummary avgRating={model.avgRating} ratingCount={model.ratingCount} />
@@ -80,26 +85,10 @@ export function SkiCard({ ski, quote, inventoryCode, status, action }: SkiCardPr
         <div className="border-border mt-auto flex flex-wrap items-end justify-between gap-3 border-t pt-3">
           <div className="flex flex-col gap-0.5">
             {quote ? (
-              <>
-                <span className="text-muted-foreground text-xs">
-                  {t('pricePerDayForDays', { price: formatMoney(model.pricePerDay), days: quote.rentalDays })}
-                </span>
-                <span className="flex flex-wrap items-baseline gap-2">
-                  <span className="text-xl font-semibold tabular-nums" data-testid="quote-total">
-                    {formatMoney(quote.totalPrice)}
-                  </span>
-                  {quote.discountPercent > 0 ? (
-                    <>
-                      <span className="text-muted-foreground tabular-nums line-through">
-                        {formatMoney(quote.subtotal)}
-                      </span>
-                      <Badge className="bg-highlight text-highlight-foreground">
-                        {t('discount', { percent: quote.discountPercent })}
-                      </Badge>
-                    </>
-                  ) : null}
-                </span>
-              </>
+              // The days and their discount are shown by the dates; the card carries only what this pair costs.
+              <span className="text-xl font-semibold tabular-nums" data-testid="quote-total">
+                {formatMoney(quote.totalPrice)}
+              </span>
             ) : (
               <span className="text-lg font-semibold tabular-nums">
                 {t('pricePerDay', { price: formatMoney(model.pricePerDay) })}

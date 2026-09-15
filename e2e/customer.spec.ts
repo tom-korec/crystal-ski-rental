@@ -60,7 +60,12 @@ test.describe('customer', () => {
 
     await page.goto(`/app?from=${from}&to=${to}&store=${donovaly?.id}&sort=priceAsc`);
     const cards = page.getByTestId('ski-card');
-    await expect(cards.first().getByText('−10 %')).toBeVisible();
+    // The dates say how long the rental is and what that earns; the cards carry only their total.
+    const bar = page.getByTestId('customer-search-bar');
+    await expect(bar.getByTestId('rental-days')).toHaveText('5 days');
+    await expect(bar.getByTestId('discount-badge')).toHaveText('−10 %');
+    await expect(cards.first()).not.toContainText('Donovaly');
+    await expect(cards.first()).not.toContainText('/ day');
     const quoted = await Promise.all([0, 1].map((n) => cards.nth(n).getByTestId('quote-total').textContent()));
 
     const dialog = page.getByTestId('add-to-reservation-dialog');
@@ -84,6 +89,8 @@ test.describe('customer', () => {
     await page.getByTestId('cart-link').click();
     await expect(page).toHaveURL('/app/reserve');
     await expect(page.getByTestId('checkout-line')).toHaveCount(2);
+    await expect(page.getByTestId('line-days').first()).toContainText('× 5 days');
+    await expect(page.getByTestId('checkout-summary').getByTestId('discount-badge')).toHaveText('−10 %');
     const euros = (text: string | null | undefined) => Number((text ?? '').replace(/[^\d.]/g, ''));
     const total = euros(quoted[0]) + euros(quoted[1]);
     await expect(page.getByTestId('checkout-total')).toHaveText(`€${total.toFixed(2)}`);

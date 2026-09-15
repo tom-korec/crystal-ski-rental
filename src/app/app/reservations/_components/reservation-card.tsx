@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 import { ConfirmDialog } from '~/components/common/confirm-dialog';
 import { StatusBadge } from '~/components/reservations/status-badge';
+import { DiscountBadge } from '~/components/skis/discount-badge';
 import { Button } from '~/components/ui/button';
 import { Card } from '~/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
@@ -14,6 +15,7 @@ import { useFormatDateRange } from '~/hooks/use-format-date-range';
 import { useFormatMoney } from '~/hooks/use-format-money';
 import { formatPostalCode } from '~/lib/address-schema';
 import { rentalPeriod, todayUtc } from '~/lib/date';
+import { Money } from '~/lib/money';
 import { editWindowEndsAt, modelRatingAccess, ratingAction, reservationRatingAccess } from '~/lib/rating-rules';
 import { canCancelAsUser } from '~/lib/reservation-lifecycle';
 import { appStoreRoute } from '~/lib/routes';
@@ -50,6 +52,11 @@ export function ReservationCard({ reservation }: ReservationCardProps) {
   const skis = names.join(', ');
   const period = formatDateRange(reservation.startDate, rentalPeriod(reservation).lastDay);
   const now = new Date();
+  // Before the discount, so each line reads as price per day × days (BR-4).
+  const subtotal = items.reduce(
+    (sum, item) => sum.plus(new Money(item.pricePerDay).times(reservation.rentalDays)),
+    new Money(0),
+  );
 
   const rental: RatingPart = {
     access: reservationRatingAccess(reservation, rating, now),
@@ -159,7 +166,7 @@ export function ReservationCard({ reservation }: ReservationCardProps) {
         <CollapsibleContent className="border-border flex flex-col gap-4 border-t px-4 py-4 text-sm">
           <p>{statusHint(t, reservation, period)}</p>
           <ul className="flex flex-col gap-2" data-testid="reservation-items">
-            {items.map(({ id, ski, pricePerDay, totalPrice }) => {
+            {items.map(({ id, ski, pricePerDay }) => {
               const modelRating = models.find((model) => model.modelId === ski.model.id)?.current;
               return (
                 <li key={id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
@@ -172,9 +179,9 @@ export function ReservationCard({ reservation }: ReservationCardProps) {
                   </span>
                   <span className="flex items-baseline gap-3 tabular-nums">
                     <span className="text-muted-foreground text-xs">
-                      {t('perDay', { price: formatMoney(pricePerDay) })}
+                      {t('perDayTimesDays', { price: formatMoney(pricePerDay), days: reservation.rentalDays })}
                     </span>
-                    <span>{formatMoney(totalPrice)}</span>
+                    <span>{formatMoney(new Money(pricePerDay).times(reservation.rentalDays).toFixed(2))}</span>
                   </span>
                 </li>
               );
@@ -186,9 +193,24 @@ export function ReservationCard({ reservation }: ReservationCardProps) {
               <span className="text-muted-foreground">{t('note')}: </span>“{reservation.note}”
             </p>
           ) : null}
-          <p className="text-muted-foreground">
-            {t('priceSummary', { days: reservation.rentalDays, discount: reservation.discountPercent })}
-          </p>
+          <dl
+            className="border-border grid w-full grid-cols-[1fr_auto] gap-x-4 gap-y-1 border-t pt-3 tabular-nums sm:max-w-sm sm:self-end"
+            data-testid="reservation-price"
+          >
+            <dt className="text-muted-foreground">{t('subtotal')}</dt>
+            <dd className="text-right">{formatMoney(subtotal.toFixed(2))}</dd>
+            {reservation.discountPercent > 0 ? (
+              <>
+                <dt className="text-muted-foreground flex flex-wrap items-center gap-2">
+                  {t('discount', { days: reservation.rentalDays })}
+                  <DiscountBadge percent={reservation.discountPercent} />
+                </dt>
+                <dd className="text-right">−{formatMoney(subtotal.minus(reservation.totalPrice).toFixed(2))}</dd>
+              </>
+            ) : null}
+            <dt className="font-medium">{t('total')}</dt>
+            <dd className="text-right font-semibold">{formatMoney(reservation.totalPrice)}</dd>
+          </dl>
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"

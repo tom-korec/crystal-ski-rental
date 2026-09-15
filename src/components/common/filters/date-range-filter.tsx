@@ -2,7 +2,7 @@
 
 import { CalendarIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useRef, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 
 import { Button } from '~/components/ui/button';
 import { Calendar } from '~/components/ui/calendar';
@@ -21,6 +21,8 @@ interface DateRangeFilterProps {
   onChange: (value: DateRange) => void;
   placeholder: string;
   className?: string;
+  /** Shown at the end of the field, e.g. how many days the range is. */
+  adornment?: ReactNode;
 }
 
 function addCalendarDays(date: Date, days: number): Date {
@@ -35,7 +37,15 @@ function addCalendarDays(date: Date, days: number): Date {
  * The two conversions the UI needs happen here and nowhere else: the inclusive last day becomes the
  * exclusive stored end, and local calendar dates become UTC date strings (see `~/lib/date`).
  */
-export function DateRangeFilter({ id, label, value, onChange, placeholder, className }: DateRangeFilterProps) {
+export function DateRangeFilter({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder,
+  className,
+  adornment,
+}: DateRangeFilterProps) {
   const t = useTranslations('filters');
   const formatDateRange = useFormatDateRange();
   const [open, setOpen] = useState(false);
@@ -89,6 +99,7 @@ export function DateRangeFilter({ id, label, value, onChange, placeholder, class
         >
           <CalendarIcon aria-hidden />
           {value ? formatDateRange(toUtcDate(value.startDate), toUtcDate(addDays(value.endDate, -1))) : placeholder}
+          {adornment ? <span className="ms-auto flex items-center gap-2">{adornment}</span> : null}
         </PopoverTrigger>
         <PopoverContent
           ref={contentRef}

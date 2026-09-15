@@ -133,7 +133,6 @@
     "notRated": "Not rated yet",
     "rating": "{score} ({count, plural, one {# rating} other {# ratings}})",
     "pricePerDay": "{price} / day",
-    "pricePerDayForDays": "{price} / day · {days, plural, one {# day} other {# days}}",
     "discount": "−{percent} %",
     "count": "{count, plural, =0 {No skis free} one {# ski free} other {# skis free}}",
     "emptyForDates": "No skis are free for these dates. Try other dates.",
@@ -170,7 +169,8 @@
     "showSkis": "Show available skis",
     "pickBoth": "Pick a store and dates to continue.",
     "pickStore": "Pick a store to continue.",
-    "pickDatesHint": "Pick your dates to continue."
+    "pickDatesHint": "Pick your dates to continue.",
+    "days": "{days, plural, one {# day} other {# days}}"
   },
   "reservations": {
     "title": "My reservations",
@@ -183,7 +183,6 @@
     "details": "Details",
     "ratingRental": "Rental",
     "ratingSkis": "Skis",
-    "priceSummary": "{days, plural, one {# day} other {# days}}{discount, select, 0 {} other { · −{discount} % for the length of the rental}}",
     "cancelTitle": "Cancel this reservation?",
     "cancelDescription": "{skis} for {period} will be released for other customers. This cannot be undone.",
     "cancelConfirm": "Cancel reservation",
@@ -211,7 +210,6 @@
       "CANCELLED_BY_STORE": "Cancelled by store"
     },
     "storeDetails": "Store details",
-    "perDay": "{price} / day",
     "pairsOf": "{count, plural, one {# pair} other {# pairs}}: {skis}",
     "modelsRated": "{rated} of {total} rated",
     "note": "Your note",
@@ -219,7 +217,11 @@
     "invoiceAddress": "Invoice address",
     "invoiceToMailing": "Same as mailing address, in your name",
     "companyId": "company no. {id}",
-    "vatId": "VAT {id}"
+    "vatId": "VAT {id}",
+    "perDayTimesDays": "{price} / day × {days, plural, one {# day} other {# days}}",
+    "subtotal": "Before discount",
+    "discount": "Discount for {days} days",
+    "total": "Total"
   },
   "ratings": {
     "rate": "Rate",
@@ -567,7 +569,6 @@
     "addMore": "Add more skis",
     "skisTitle": "{count, plural, one {# pair of skis} other {# pairs of skis}}",
     "length": "{length} cm",
-    "perDay": "{price} / day",
     "remove": "Remove {skis}",
     "missing": "{count, plural, one {A pair is} other {# pairs are}} no longer in the fleet. Remove {count, plural, one {it} other {them}} from the reservation.",
     "problem": {
@@ -586,8 +587,7 @@
     "notePlaceholder": "Anything the store should know, e.g. when you plan to arrive.",
     "pickupAt": "Pick up and return at",
     "summaryTitle": "Summary",
-    "pairsForDays": "{count, plural, one {# pair} other {# pairs}} × {days, plural, one {# day} other {# days}}",
-    "discount": "Longer-rental discount ({percent} %)",
+    "discount": "Discount for {days} days",
     "total": "Total",
     "blocked": "Remove the skis marked above to book.",
     "confirm": "Book for {total}",
@@ -596,6 +596,8 @@
     "bookedTitle": "Booked",
     "bookedDescription": "{count, plural, one {Your pair of skis is} other {Your # pairs of skis are}} waiting at {store} for {period}. Pick them up on the first day.",
     "viewReservations": "My reservations",
-    "findMore": "Find more skis"
+    "findMore": "Find more skis",
+    "perDayTimesDays": "{price} / day × {days, plural, one {# day} other {# days}}",
+    "subtotal": "{count, plural, one {# pair} other {# pairs}} before discount"
   }
 }

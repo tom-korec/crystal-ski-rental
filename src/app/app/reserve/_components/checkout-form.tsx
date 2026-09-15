@@ -10,6 +10,7 @@ import { AddressFields } from '~/components/addresses/address-fields';
 import { FormError } from '~/components/common/form-error';
 import { LoadingRegion } from '~/components/common/skeletons/loading-region';
 import { PageHeader } from '~/components/common/page-header';
+import { DiscountBadge } from '~/components/skis/discount-badge';
 import { StoreDetails } from '~/components/stores/store-details';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
@@ -19,7 +20,7 @@ import { Textarea } from '~/components/ui/textarea';
 import { useFormatDateRange } from '~/hooks/use-format-date-range';
 import { useFormatMoney } from '~/hooks/use-format-money';
 import { DEFAULT_COUNTRY, formatPostalCode } from '~/lib/address-schema';
-import { rentalPeriod, toUtcDate } from '~/lib/date';
+import { rentalPeriod, toUtcDate, utcDaysBetween } from '~/lib/date';
 import { removeFromCart, type ReservationCart } from '~/lib/reservation-cart';
 import {
   RESERVATION_NOTE_MAX_LENGTH,
@@ -120,6 +121,7 @@ function CheckoutFields({ cart, onCartChange, onBooked, defaults }: CheckoutFiel
   const invoiceCountry = useWatch({ control: form.control, name: 'invoice.country' });
 
   const start = toUtcDate(cart.startDate);
+  const rentalDays = utcDaysBetween(start, toUtcDate(cart.endDate));
   const period = formatDateRange(start, rentalPeriod({ startDate: start, endDate: toUtcDate(cart.endDate) }).lastDay);
 
   const create = api.reservation.create.useMutation({
@@ -190,10 +192,7 @@ function CheckoutFields({ cart, onCartChange, onBooked, defaults }: CheckoutFiel
                         <span className="font-medium">
                           {ski.model.brand.name} {ski.model.name}
                         </span>
-                        <span className="text-muted-foreground text-sm">
-                          {t('length', { length: ski.lengthCm })} ·{' '}
-                          {t('perDay', { price: formatMoney(ski.model.pricePerDay) })}
-                        </span>
+                        <span className="text-muted-foreground text-sm">{t('length', { length: ski.lengthCm })}</span>
                         {problem ? (
                           <span className="text-destructive flex items-center gap-1.5 text-sm">
                             <AlertTriangleIcon className="size-4" aria-hidden />
@@ -202,7 +201,12 @@ function CheckoutFields({ cart, onCartChange, onBooked, defaults }: CheckoutFiel
                         ) : null}
                       </span>
                       <span className="flex items-center gap-3">
-                        {line ? <span className="tabular-nums">{formatMoney(line.totalPrice)}</span> : null}
+                        <span className="flex flex-col items-end tabular-nums">
+                          <span className="text-muted-foreground text-xs" data-testid="line-days">
+                            {t('perDayTimesDays', { price: formatMoney(ski.model.pricePerDay), days: rentalDays })}
+                          </span>
+                          {line ? <span>{formatMoney(line.subtotal)}</span> : null}
+                        </span>
                         <Button
                           type="button"
                           variant="ghost"
@@ -310,16 +314,14 @@ function CheckoutFields({ cart, onCartChange, onBooked, defaults }: CheckoutFiel
             {quote.data?.totals ? (
               <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 tabular-nums">
                 <dt className="text-muted-foreground">
-                  {t('pairsForDays', {
-                    count: lines.filter((line) => line.quote).length,
-                    days: quote.data.totals.rentalDays,
-                  })}
+                  {t('subtotal', { count: lines.filter((line) => line.quote).length })}
                 </dt>
                 <dd className="text-right">{formatMoney(quote.data.totals.subtotal)}</dd>
                 {quote.data.totals.discountPercent > 0 ? (
                   <>
-                    <dt className="text-muted-foreground">
-                      {t('discount', { percent: quote.data.totals.discountPercent })}
+                    <dt className="text-muted-foreground flex flex-wrap items-center gap-2">
+                      {t('discount', { days: quote.data.totals.rentalDays })}
+                      <DiscountBadge percent={quote.data.totals.discountPercent} />
                     </dt>
                     <dd className="text-right">−{formatMoney(quote.data.totals.discount)}</dd>
                   </>
