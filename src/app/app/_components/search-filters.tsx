@@ -13,6 +13,8 @@ import type { SkiSearchFilters } from '~/lib/ski-schema';
 import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
 
+import { serialiseSearch } from './search-params';
+
 const PRICE_STEPS = ['20', '25', '30', '35', '40', '45'];
 const RATING_STEPS = [3, 4, 5];
 
@@ -34,10 +36,21 @@ export function activeFilterCount(filters: SkiSearchFilters): number {
 interface SearchFiltersProps {
   filters: SkiSearchFilters;
   onChange: (filters: SkiSearchFilters) => void;
+  /**
+   * The filters the results currently use. With it, changes stay a draft until the customer applies them;
+   * without it (the first search step), every change goes straight to `onChange`.
+   */
+  applied?: SkiSearchFilters;
+  onApply?: (filters: SkiSearchFilters) => void;
+}
+
+/** The filters as the URL writes them, sort aside, so a draft and the applied filters compare by value. */
+export function filtersKey(filters: SkiSearchFilters): string {
+  return serialiseSearch({ filters: { ...filters, sort: 'rating' } }).toString();
 }
 
 /** Every narrowing filter of the ski search (FR-30), collapsed until the customer opens them. */
-export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
+export function SearchFilters({ filters, onChange, applied, onApply }: SearchFiltersProps) {
   const t = useTranslations('filters');
   const tCatalog = useTranslations('catalog');
   const formatMoney = useFormatMoney();
@@ -47,7 +60,19 @@ export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
   const models = api.skiModel.list.useQuery({});
 
   const set = (patch: Partial<SkiSearchFilters>) => onChange({ ...filters, ...patch });
-  const active = activeFilterCount(filters);
+  const active = activeFilterCount(applied ?? filters);
+  const isDraft = applied !== undefined && filtersKey(filters) !== filtersKey(applied);
+
+  function apply(next: SkiSearchFilters) {
+    // The sort is not a filter: it stays whatever the results use.
+    onApply?.({ ...next, sort: applied?.sort ?? next.sort });
+  }
+
+  function clear() {
+    const cleared = { sort: filters.sort };
+    onChange(cleared);
+    apply(cleared);
+  }
 
   const modelOptions: FilterOption[] = (models.data ?? [])
     .filter((model) => !filters.brandId || model.brand.id === filters.brandId)
@@ -70,13 +95,7 @@ export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
           <ChevronDownIcon className={cn('transition-transform', open && 'rotate-180')} aria-hidden />
         </Button>
         {active > 0 ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onChange({ sort: filters.sort })}
-            data-testid="clear-filters"
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={clear} data-testid="clear-filters">
             {t('clear')}
           </Button>
         ) : null}
@@ -148,6 +167,24 @@ export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
           value={filters.minRating?.toString()}
           onChange={(value) => set({ minRating: value ? Number(value) : undefined })}
         />
+        {onApply && applied ? (
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:col-span-2 lg:col-span-4">
+            {isDraft ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => onChange(applied)}
+                data-testid="discard-filters"
+              >
+                {t('discard')}
+              </Button>
+            ) : null}
+            <Button type="button" disabled={!isDraft} onClick={() => apply(filters)} data-testid="apply-filters">
+              {t('apply')}
+            </Button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

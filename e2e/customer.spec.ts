@@ -47,6 +47,38 @@ test.describe('customer', () => {
     await expect(page.getByTestId('ski-card').first()).toBeVisible();
   });
 
+  test('changes the ski filters as a draft, applied together', async ({ page }) => {
+    const stores = await page.request
+      .get('/api/trpc/store.list')
+      .then((response) => response.json() as Promise<{ result: { data: { json: { id: string; name: string }[] } } }>)
+      .then((body) => body.result.data.json);
+    const jasna = stores.find((store) => store.name === 'Jasná');
+    await page.goto(`/app?from=${dayFromToday(45)}&to=${dayFromToday(48)}&store=${jasna?.id}`);
+    await expect(page.getByTestId('ski-count')).toHaveText(/skis? free/);
+    const count = await page.getByTestId('ski-count').textContent();
+
+    await page.getByTestId('more-filters').click();
+    await expect(page.getByTestId('apply-filters')).toBeDisabled();
+    await page.locator('#filter-gender').click();
+    await page.getByRole('option', { name: 'Kids' }).click();
+
+    // Nothing changes until the filters are applied.
+    await expect(page).not.toHaveURL(/gender=/);
+    await expect(page.getByTestId('ski-count')).toHaveText(count ?? '');
+    await page.getByTestId('discard-filters').click();
+    await expect(page.locator('#filter-gender')).toContainText('Anyone');
+
+    await page.locator('#filter-gender').click();
+    await page.getByRole('option', { name: 'Kids' }).click();
+    await page.getByTestId('apply-filters').click();
+    await expect(page).toHaveURL(/gender=KID/);
+    await expect(page.getByTestId('ski-count')).not.toHaveText(count ?? '');
+    await expect(page.getByTestId('more-filters')).toContainText('1');
+
+    await page.getByTestId('clear-filters').click();
+    await expect(page).not.toHaveURL(/gender=/);
+  });
+
   test('reserves two pairs from one store in one booking, and cancels it', async ({ page }) => {
     // Past the end of the seeded bookings, so every ski is free; five days earns 10 %.
     const from = dayFromToday(45);

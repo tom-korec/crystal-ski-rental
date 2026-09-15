@@ -17,7 +17,7 @@ import type { SkiSearchFilters } from '~/lib/ski-schema';
 import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
 
-import { SearchFilters } from './search-filters';
+import { filtersKey, SearchFilters } from './search-filters';
 
 export interface CustomerSearchValue {
   storeId: string;
@@ -177,7 +177,12 @@ function SearchBar({ storeId, range, filters, onSearch, footer }: StepProps & { 
           adornment={<RentalLength range={range} />}
         />
       </div>
-      <SearchFilters filters={filters} onChange={(next) => onSearch({ storeId, range, filters: next })} />
+      {/* Keyed by the applied filters, so the draft starts over whenever the results change under it. */}
+      <DraftSearchFilters
+        key={filtersKey(filters)}
+        applied={filters}
+        onApply={(next) => onSearch({ storeId, range, filters: next })}
+      />
       {footer ? (
         <div className="border-border flex flex-wrap items-center justify-between gap-3 border-t pt-4">{footer}</div>
       ) : null}
@@ -202,4 +207,16 @@ function RentalLength({ range }: RentalLengthProps) {
       {days >= MIN_RENTAL_DAYS && days <= MAX_RENTAL_DAYS ? <DiscountBadge percent={discountPercentFor(days)} /> : null}
     </>
   );
+}
+
+interface DraftSearchFiltersProps {
+  applied: SkiSearchFilters;
+  onApply: (filters: SkiSearchFilters) => void;
+}
+
+/** The filters above the results: edited as a draft and applied together, so the results do not jump on every change. */
+function DraftSearchFilters({ applied, onApply }: DraftSearchFiltersProps) {
+  const [draft, setDraft] = useState(applied);
+
+  return <SearchFilters filters={draft} onChange={setDraft} applied={applied} onApply={onApply} />;
 }
