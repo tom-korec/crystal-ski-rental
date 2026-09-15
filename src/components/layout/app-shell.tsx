@@ -32,7 +32,11 @@ export function AppShell({ name, role, children }: AppShellProps) {
       <HeroArt anchor="top" className="h-[40rem] [mask-image:linear-gradient(to_bottom,black_60%,transparent)]" />
       <DemoBanner />
       <header className="border-border/60 bg-card/60 sticky top-0 z-20 border-b backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl items-center gap-6 px-4 py-3 sm:px-6">
+        {/*
+          The logo against the left edge of the screen and the account against the right. Where the screen
+          is wide enough, the navigation lines up with the page content below; otherwise it follows the logo.
+        */}
+        <div className="relative flex items-center gap-6 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <MobileNav links={links} name={name} />
             <Link
@@ -44,9 +48,11 @@ export function AppShell({ name, role, children }: AppShellProps) {
             </Link>
           </div>
 
-          <PrimaryNav links={links} />
+          <div className="2xl:pointer-events-none 2xl:absolute 2xl:inset-x-0 2xl:top-1/2 2xl:mx-auto 2xl:w-full 2xl:max-w-6xl 2xl:-translate-y-1/2 2xl:px-6 2xl:[&_a]:pointer-events-auto">
+            <PrimaryNav links={links} />
+          </div>
 
-          <div className="ms-auto flex items-center gap-3">
+          <div className="relative ms-auto flex items-center gap-3">
             {isCustomer(role) ? <CartLink /> : null}
             <Link
               href={PROFILE}
