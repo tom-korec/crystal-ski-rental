@@ -9,6 +9,7 @@ import { Badge } from '~/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs';
+import { useStaffActor } from '~/components/layout/staff-actor';
 import { useUrlFilters } from '~/hooks/use-url-filters';
 import { api } from '~/trpc/react';
 
@@ -25,8 +26,12 @@ export function FrontDesk() {
   const t = useTranslations('frontDesk');
   const { filters, apply } = useUrlFilters({ parse, serialise });
   const stores = api.store.list.useQuery();
+  // A manager runs their own store's desk and sees no other (FR-64); admins pick any store.
+  const { storeId: ownStore } = useStaffActor();
 
-  const storeId = stores.data?.find((store) => store.id === filters.storeId)?.id ?? stores.data?.[0]?.id ?? undefined;
+  const storeId =
+    ownStore ?? stores.data?.find((store) => store.id === filters.storeId)?.id ?? stores.data?.[0]?.id ?? undefined;
+  const storeName = stores.data?.find((store) => store.id === storeId)?.name;
 
   const desk = api.reservation.frontDesk.useQuery(
     { storeId: storeId ?? '' },
@@ -35,8 +40,11 @@ export function FrontDesk() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title={t('title')} description={t('description')}>
-        {stores.data && storeId ? (
+      <PageHeader
+        title={t('title')}
+        description={ownStore && storeName ? t('descriptionAt', { store: storeName }) : t('description')}
+      >
+        {ownStore ? null : stores.data && storeId ? (
           <Tabs value={storeId} onValueChange={(value: string) => apply({ storeId: value })}>
             <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
               <TabsList aria-label={t('stores')}>

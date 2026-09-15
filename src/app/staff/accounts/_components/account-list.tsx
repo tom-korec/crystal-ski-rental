@@ -128,7 +128,14 @@ export function AccountList({ actorRole }: AccountListProps) {
                       </TableCell>
                       <TableCell className="text-muted-foreground">{account.email}</TableCell>
                       <TableCell>
-                        <RoleBadge role={account.role} />
+                        <span className="flex flex-wrap items-center gap-2">
+                          <RoleBadge role={account.role} />
+                          {account.store ? (
+                            <span className="text-muted-foreground text-xs" data-testid="account-store">
+                              {account.store.name}
+                            </span>
+                          ) : null}
+                        </span>
                       </TableCell>
                       <TableCell className="text-muted-foreground whitespace-nowrap">
                         {format.dateTime(account.createdAt, DATE_FORMAT)}

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { PencilIcon, UserPlusIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
 import { Field } from '~/components/common/field';
@@ -28,14 +28,26 @@ import { api, type RouterOutputs } from '~/trpc/react';
 
 type Account = RouterOutputs['user']['byId'];
 
-/** Editing may leave the password empty, which keeps the current one. */
-const accountEditFormSchema = userEditSchema.extend({
-  role: roleSchema,
-  password: z.union([z.literal(''), z.string().min(MIN_PASSWORD_LENGTH).max(MAX_PASSWORD_LENGTH)]),
-});
+/** A manager runs one store (FR-64); the form asks for it before the server has to. */
+function requireManagerStore(values: { role?: Role; storeId?: string | null }, ctx: z.RefinementCtx): void {
+  if (values.role === 'MANAGER' && !values.storeId) {
+    ctx.addIssue({ code: 'custom', path: ['storeId'], message: 'Choose a store.' });
+  }
+}
 
-type CreateInput = z.input<typeof userCreateSchema>;
-type CreateOutput = z.output<typeof userCreateSchema>;
+const accountCreateFormSchema = userCreateSchema.superRefine(requireManagerStore);
+
+/** Editing may leave the password empty, which keeps the current one. */
+const accountEditFormSchema = userEditSchema
+  .extend({
+    role: roleSchema,
+    storeId: z.uuid().nullish(),
+    password: z.union([z.literal(''), z.string().min(MIN_PASSWORD_LENGTH).max(MAX_PASSWORD_LENGTH)]),
+  })
+  .superRefine(requireManagerStore);
+
+type CreateInput = z.input<typeof accountCreateFormSchema>;
+type CreateOutput = z.output<typeof accountCreateFormSchema>;
 type EditValues = z.infer<typeof accountEditFormSchema>;
 
 interface AccountDialogProps {
@@ -94,14 +106,40 @@ function RoleSelect({ value, onChange }: { value: Role | undefined; onChange: (r
   );
 }
 
+interface StoreSelectProps {
+  value: string | null | undefined;
+  onChange: (storeId: string) => void;
+  error?: boolean;
+}
+
+function StoreSelect({ value, onChange, error }: StoreSelectProps) {
+  const t = useTranslations('accounts');
+  const stores = api.store.list.useQuery();
+
+  return (
+    <SelectField
+      id="account-store"
+      label={t('store')}
+      placeholder={t('selectStore')}
+      options={(stores.data ?? []).map((store) => ({ value: store.id, label: store.name }))}
+      value={value ?? undefined}
+      onChange={onChange}
+      disabled={stores.isPending}
+      hint={t('storeHint')}
+      error={error ? t('errors.store') : undefined}
+    />
+  );
+}
+
 function CreateAccountForm({ actorRole, onDone }: { actorRole?: string | null; onDone: () => void }) {
   const t = useTranslations('accounts');
   const utils = api.useUtils();
   const form = useForm<CreateInput, unknown, CreateOutput>({
-    resolver: zodResolver(userCreateSchema),
+    resolver: zodResolver(accountCreateFormSchema),
     defaultValues: { name: '', email: '', password: '', role: 'USER' },
   });
   const { errors } = form.formState;
+  const createRole = useWatch({ control: form.control, name: 'role' });
   const create = api.user.create.useMutation({
     onSuccess: async () => {
       await utils.user.list.invalidate();
@@ -146,6 +184,15 @@ function CreateAccountForm({ actorRole, onDone }: { actorRole?: string | null; o
           render={({ field }) => <RoleSelect value={field.value} onChange={field.onChange} />}
         />
       ) : null}
+      {createRole === 'MANAGER' ? (
+        <Controller
+          control={form.control}
+          name="storeId"
+          render={({ field }) => (
+            <StoreSelect value={field.value} onChange={field.onChange} error={Boolean(errors.storeId)} />
+          )}
+        />
+      ) : null}
       <FormError message={create.error?.message} />
       <DialogFooter>
         <DialogClose render={<Button type="button" variant="outline" />}>{t('cancel')}</DialogClose>
@@ -170,9 +217,17 @@ function EditAccountForm({
   const utils = api.useUtils();
   const form = useForm<EditValues>({
     resolver: zodResolver(accountEditFormSchema),
-    defaultValues: { id: account.id, name: account.name, email: account.email, role: account.role, password: '' },
+    defaultValues: {
+      id: account.id,
+      name: account.name,
+      email: account.email,
+      role: account.role,
+      storeId: account.store?.id ?? null,
+      password: '',
+    },
   });
   const { errors } = form.formState;
+  const editRole = useWatch({ control: form.control, name: 'role' });
   const update = api.user.update.useMutation({
     onSuccess: async () => {
       await Promise.all([utils.user.byId.invalidate({ id: account.id }), utils.user.list.invalidate()]);
@@ -180,11 +235,12 @@ function EditAccountForm({
     },
   });
 
-  function submit({ password, role, ...values }: EditValues) {
+  function submit({ password, role, storeId, ...values }: EditValues) {
     update.mutate({
       ...values,
-      // Only sent when they change, so a manager editing a customer never sends a role at all.
+      // Only sent when they change, so a manager editing a customer never sends a role or store at all.
       ...(role !== account.role ? { role } : {}),
+      ...(role === 'MANAGER' && storeId !== account.store?.id ? { storeId } : {}),
       ...(password ? { password } : {}),
     });
   }
@@ -215,6 +271,15 @@ function EditAccountForm({
           control={form.control}
           name="role"
           render={({ field }) => <RoleSelect value={field.value} onChange={field.onChange} />}
+        />
+      ) : null}
+      {isAdmin(actorRole) && editRole === 'MANAGER' ? (
+        <Controller
+          control={form.control}
+          name="storeId"
+          render={({ field }) => (
+            <StoreSelect value={field.value} onChange={field.onChange} error={Boolean(errors.storeId)} />
+          )}
         />
       ) : null}
       <Field

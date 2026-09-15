@@ -13,7 +13,9 @@ import { CardGridSkeleton } from '~/components/common/skeletons/card-grid-skelet
 import { SkiCard } from '~/components/skis/ski-card';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
+import { useStaffActor } from '~/components/layout/staff-actor';
 import { useUrlFilters } from '~/hooks/use-url-filters';
+import { isAdmin } from '~/lib/roles';
 import { GENDER_FILTERS, SKI_TYPES, SKILL_LEVELS } from '~/lib/catalog';
 import { staffSkiRoute } from '~/lib/routes';
 import { api } from '~/trpc/react';
@@ -26,6 +28,7 @@ export function Fleet() {
   const t = useTranslations('fleet');
   const tFilters = useTranslations('filters');
   const { filters, apply } = useUrlFilters({ parse: parseFleet, serialise: serialiseFleet });
+  const actor = useStaffActor();
 
   const skis = api.ski.list.useInfiniteQuery(filters, { getNextPageParam: (page) => page.nextCursor });
 
@@ -51,7 +54,7 @@ export function Fleet() {
                 {tFilters('clear')}
               </Button>
             ) : null}
-            <AddSkiDialog />
+            {isAdmin(actor.role) || actor.storeId ? <AddSkiDialog /> : null}
           </div>
         </div>
       </section>

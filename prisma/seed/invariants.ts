@@ -26,6 +26,11 @@ export function assertSeedData(data: SeedData): void {
   assertUnique(data.modelRatings, (rating) => `${rating.modelId}:${rating.userId}`, 'model rating');
   assertUnique(data.reservationRatings, (rating) => rating.reservationId, 'rental rating');
 
+  for (const user of data.users) {
+    if ((user.role === 'MANAGER') !== (user.storeId !== null))
+      fail(`${user.email} must have a store if and only if they are a manager`);
+  }
+
   const users = new Map(data.users.map((user) => [user.id, user]));
   const skis = new Map(data.skis.map((ski) => [ski.id, ski]));
   const models = new Map(data.models.map((model) => [model.id, model]));

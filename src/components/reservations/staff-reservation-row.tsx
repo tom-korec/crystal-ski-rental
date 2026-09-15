@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { ConfirmDialog } from '~/components/common/confirm-dialog';
+import { useStaffActor } from '~/components/layout/staff-actor';
 import { Button } from '~/components/ui/button';
 import { useFormatDateRange } from '~/hooks/use-format-date-range';
 import { useFormatMoney } from '~/hooks/use-format-money';
@@ -68,6 +69,9 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
   const skis = items.map(({ ski }) => `${ski.model.brand.name} ${ski.model.name} (${ski.inventoryCode})`).join(', ');
   const period = formatDateRange(reservation.startDate, rentalPeriod(reservation).lastDay);
   const today = todayUtc();
+  // Managers handle only their own store's counter (FR-64); admins and managers without a store, any.
+  const { storeId: ownStore } = useStaffActor();
+  const atOwnCounter = !ownStore || reservation.store.id === ownStore;
 
   return (
     <li
@@ -135,7 +139,7 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
       </span>
 
       <span className="flex flex-wrap items-center gap-2 md:justify-end">
-        {canPickUp(reservation, today) ? (
+        {atOwnCounter && canPickUp(reservation, today) ? (
           <ConfirmDialog
             open={confirmingPickUp}
             onOpenChange={(open) => {
@@ -154,7 +158,7 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
             error={pickUp.error?.message}
           />
         ) : null}
-        {canReturn(reservation) ? (
+        {atOwnCounter && canReturn(reservation) ? (
           <ConfirmDialog
             open={confirmingReturn}
             onOpenChange={(open) => {
@@ -173,7 +177,7 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
             error={markReturned.error?.message}
           />
         ) : null}
-        {canCancelAsStore(reservation) ? (
+        {atOwnCounter && canCancelAsStore(reservation) ? (
           <ConfirmDialog
             open={confirmingCancel}
             onOpenChange={(open) => {

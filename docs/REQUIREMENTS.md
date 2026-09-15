@@ -173,6 +173,10 @@ Models and brands share the **Models** page, with a switch between their tables.
 - **FR-62** A manager cannot create, edit, delete, promote or demote a staff account. This is enforced by
   the server, not only hidden in the UI.
 - **FR-63** A deleted account can be restored. Its e-mail address stays reserved while deleted.
+- **FR-64** Every manager belongs to **one store**, chosen by an admin. A manager sees skis, reservations
+  and stores everywhere, but adds, changes, takes out of rental and deletes skis only at their own
+  store; moving a ski to another store is for admins. Their front desk shows only their own store, and
+  the lifecycle actions are offered only on their own store's reservations.
 
 ## 5. Business rules
 

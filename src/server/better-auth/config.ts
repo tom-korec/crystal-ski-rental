@@ -26,6 +26,7 @@ export const auth = betterAuth({
       // `"role": "ADMIN"` and grant itself the staff area (NFR-5).
       role: { type: 'string', required: false, input: false },
       deletedAt: { type: 'date', required: false, input: false },
+      storeId: { type: 'string', required: false, input: false },
     },
   },
   databaseHooks: {

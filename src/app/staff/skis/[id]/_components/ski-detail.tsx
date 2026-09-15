@@ -10,7 +10,9 @@ import { SkiBadges } from '~/components/skis/ski-badges';
 import { Badge } from '~/components/ui/badge';
 import { Card, CardContent } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
+import { useStaffActor } from '~/components/layout/staff-actor';
 import { useFormatMoney } from '~/hooks/use-format-money';
+import { mayChangeSkisAt } from '~/lib/account-rules';
 import { api } from '~/trpc/react';
 
 import { AvailabilityToggle } from './availability-toggle';
@@ -26,6 +28,7 @@ interface SkiDetailProps {
 export function SkiDetail({ id }: SkiDetailProps) {
   const t = useTranslations('skiDetail');
   const formatMoney = useFormatMoney();
+  const actor = useStaffActor();
   const ski = api.ski.byId.useQuery({ id });
   const blockers = api.reservation.blockersBySki.useQuery({ skiId: id });
 
@@ -40,6 +43,7 @@ export function SkiDetail({ id }: SkiDetailProps) {
 
   const { model, store } = ski.data;
   const removed = ski.data.deletedAt !== null;
+  const canChange = mayChangeSkisAt(actor, store.id);
   const upcoming = blockers.data?.upcoming ?? 0;
 
   return (
@@ -65,8 +69,13 @@ export function SkiDetail({ id }: SkiDetailProps) {
           </>
         }
         title={`${model.brand.name} ${model.name} · ${t('length', { length: ski.data.lengthCm })}`}
+        description={
+          !removed && !canChange ? (
+            <span data-testid="read-only-ski">{t('readOnly', { store: store.name })}</span>
+          ) : undefined
+        }
         actions={
-          removed ? null : (
+          removed || !canChange ? null : (
             <>
               <EditSkiDialog ski={ski.data} blockers={blockers.data} />
               <AvailabilityToggle ski={ski.data} upcoming={upcoming} />

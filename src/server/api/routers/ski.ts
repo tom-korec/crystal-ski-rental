@@ -1,5 +1,6 @@
 import { gendersMatching } from '~/lib/catalog';
 import { todayUtc, toUtcDate, utcDaysBetween } from '~/lib/date';
+import { mayChangeSkisAt, type StaffActor } from '~/lib/account-rules';
 import { idSchema } from '~/lib/id-schema';
 import { BATCH_SIZE, nextCursor } from '~/lib/pagination';
 import { quoteRental } from '~/lib/pricing';
@@ -11,7 +12,7 @@ import {
   type SkiSort,
   skiUpdateSchema,
 } from '~/lib/ski-schema';
-import { conflict, isPrismaError, notFound, rethrowPrismaError } from '~/server/api/errors';
+import { conflict, forbidden, isPrismaError, notFound, rethrowPrismaError } from '~/server/api/errors';
 import { overlappingItem } from '~/server/api/overlap';
 import { countOf } from '~/server/api/plural';
 import { skiPublicSelect, withPlainModel } from '~/server/api/selects';
@@ -62,6 +63,13 @@ const SEARCH_ORDER: Record<SkiSort, Prisma.SkiOrderByWithRelationInput[]> = {
   priceAsc: [{ model: { pricePerDay: 'asc' } }, { model: { name: 'asc' } }, { id: 'asc' }],
   priceDesc: [{ model: { pricePerDay: 'desc' } }, { model: { name: 'asc' } }, { id: 'asc' }],
 };
+
+/** Managers change skis only at their own store (FR-64); the message says so rather than "not allowed". */
+function assertMayChangeSkisAt(actor: StaffActor, storeId: string): void {
+  if (!mayChangeSkisAt(actor, storeId)) {
+    throw forbidden('You can only add or change skis at your own store.');
+  }
+}
 
 export const skiRouter = createTRPCRouter({
   /** The fleet (FR-20). Includes skis taken out of rental: staff need to see those. */
@@ -137,6 +145,8 @@ export const skiRouter = createTRPCRouter({
   }),
 
   create: staffProcedure.input(skiCreateSchema).mutation(async ({ ctx, input }) => {
+    assertMayChangeSkisAt(ctx.session.user, input.storeId);
+
     try {
       return withPlainModel(await ctx.db.ski.create({ data: input, select: skiStaffSelect }));
     } catch (error) {
@@ -155,6 +165,10 @@ export const skiRouter = createTRPCRouter({
     const existing = await ctx.db.ski.findFirst({ where: { id, deletedAt: null }, select: { storeId: true } });
 
     if (!existing) throw notFound(NOT_FOUND);
+
+    // Both ends of a move: a manager can neither take a ski from another store nor send one there.
+    assertMayChangeSkisAt(ctx.session.user, existing.storeId);
+    if (data.storeId !== undefined) assertMayChangeSkisAt(ctx.session.user, data.storeId);
 
     if (data.storeId !== undefined && data.storeId !== existing.storeId) {
       const blocking = await ctx.db.reservation.count({
@@ -183,9 +197,14 @@ export const skiRouter = createTRPCRouter({
    * completely; with history it is soft-deleted and taken out of rental (BR-32).
    */
   delete: staffProcedure.input(idSchema).mutation(async ({ ctx, input }) => {
-    const ski = await ctx.db.ski.findFirst({ where: { id: input.id, deletedAt: null }, select: { id: true } });
+    const ski = await ctx.db.ski.findFirst({
+      where: { id: input.id, deletedAt: null },
+      select: { id: true, storeId: true },
+    });
 
     if (!ski) throw notFound(NOT_FOUND);
+
+    assertMayChangeSkisAt(ctx.session.user, ski.storeId);
 
     const [open, history] = await ctx.db.$transaction([
       ctx.db.reservationItem.count({ where: { skiId: ski.id, holdsDates: true } }),

@@ -66,6 +66,11 @@ export function AccountDetail({ id, actor }: AccountDetailProps) {
         eyebrow={
           <>
             <RoleBadge role={user.role} />
+            {user.store ? (
+              <Badge variant="outline" data-testid="account-store">
+                {user.store.name}
+              </Badge>
+            ) : null}
             {removed ? <Badge variant="destructive">{t('removed')}</Badge> : null}
           </>
         }

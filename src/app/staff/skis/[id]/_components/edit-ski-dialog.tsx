@@ -22,6 +22,8 @@ import {
   DialogTrigger,
 } from '~/components/ui/dialog';
 import { inventoryCodeSchema } from '~/lib/ski-schema';
+import { useStaffActor } from '~/components/layout/staff-actor';
+import { isAdmin } from '~/lib/roles';
 import { api, type RouterOutputs } from '~/trpc/react';
 
 /** Model and length are fixed; a form that shows the other fields always submits them (FR-22). */
@@ -57,6 +59,8 @@ function EditSkiForm({ ski, blockers, onDone }: EditSkiDialogProps & { onDone: (
   const tFleet = useTranslations('fleet');
   const utils = api.useUtils();
   const stores = api.store.list.useQuery();
+  // Moving a ski changes two stores' stock, so it is an admin's call (FR-64).
+  const actor = useStaffActor();
 
   const form = useForm<EditSkiInput, unknown, EditSkiOutput>({
     resolver: zodResolver(editSkiSchema),
@@ -99,8 +103,14 @@ function EditSkiForm({ ski, blockers, onDone }: EditSkiDialogProps & { onDone: (
             options={(stores.data ?? []).map((store) => ({ value: store.id, label: store.name }))}
             value={field.value}
             onChange={field.onChange}
-            disabled={stores.isPending || openAtStore > 0}
-            hint={openAtStore > 0 ? t('storeLocked', { count: openAtStore }) : undefined}
+            disabled={stores.isPending || openAtStore > 0 || !isAdmin(actor.role)}
+            hint={
+              openAtStore > 0
+                ? t('storeLocked', { count: openAtStore })
+                : isAdmin(actor.role)
+                  ? undefined
+                  : t('storeAdminOnly')
+            }
             error={errors.storeId && tFleet('errors.store')}
           />
         )}

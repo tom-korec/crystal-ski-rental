@@ -2,17 +2,14 @@ import { expect, type Page, test } from '@playwright/test';
 
 import { signIn } from './helpers';
 
-async function openJasnaDesk(page: Page) {
-  await page.getByRole('tab', { name: 'Jasná' }).click();
-  await expect(page).toHaveURL(/store=/);
-}
-
 const section = (page: Page, name: string) => page.getByTestId(`desk-${name}`);
 
 test.describe('front desk', () => {
   test('works through pickups, a no-show and returns', async ({ page }) => {
+    // The demo manager runs Jasná, so the desk opens there with no other store to pick.
     await signIn(page, 'manager');
-    await openJasnaDesk(page);
+    await expect(page.getByText("Today's pickups and returns at Jasná")).toBeVisible();
+    await expect(page.getByTestId('store-tab')).toHaveCount(0);
 
     for (const name of ['pickupsDueToday', 'overduePickups', 'returnsDueToday', 'overdueReturns']) {
       await expect(section(page, name).getByTestId('section-count')).toHaveText('1');
@@ -55,8 +52,9 @@ test.describe('fleet', () => {
     await dialog.getByLabel('Inventory code').fill('sk-e2e1');
     await dialog.getByTestId('ski-model').click();
     await page.getByRole('option', { name: 'Elan Wingman 78 C' }).click();
-    await dialog.getByTestId('ski-store').click();
-    await page.getByRole('option', { name: 'Donovaly' }).click();
+    // A manager adds to their own store, and cannot pick another.
+    await expect(dialog.getByTestId('ski-store')).toContainText('Jasná');
+    await expect(dialog.getByTestId('ski-store')).toBeDisabled();
     await dialog.getByLabel('Length (cm)').fill('163');
     await dialog.getByTestId('submit-ski').click();
 
@@ -76,6 +74,25 @@ test.describe('fleet', () => {
     await expect(page).not.toHaveURL(/code=/);
     await page.getByTestId('filter-code').press('Enter');
     await expect(page.getByTestId('fleet-count')).toHaveText('No skis');
+  });
+
+  test('sees skis at other stores but cannot change them', async ({ page }) => {
+    await page.locator('#filter-store').click();
+    await page.getByRole('option', { name: 'Donovaly' }).click();
+    await page.getByTestId('apply-filters').click();
+    await page.getByTestId('open-ski').first().click();
+
+    await expect(page.getByTestId('read-only-ski')).toContainText('Donovaly');
+    await expect(page.getByTestId('edit-ski')).toHaveCount(0);
+    await expect(page.getByTestId('toggle-availability')).toHaveCount(0);
+    await expect(page.getByTestId('delete-ski')).toHaveCount(0);
+
+    // The server refuses it too, whatever the page offers.
+    const skiId = page.url().split('/').at(-1);
+    const response = await page.request.post('/api/trpc/ski.update', {
+      data: { json: { id: skiId, isAvailable: false } },
+    });
+    expect(response.status()).toBe(403);
   });
 
   test('refuses to move or delete a ski a customer has booked', async ({ page }) => {

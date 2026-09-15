@@ -33,7 +33,8 @@ Postgres listens on **5433** so it does not collide with another Postgres on the
 | Manager  | `manager@crystalskirental.test`  | `Manager123!`  |
 | Customer | `customer@crystalskirental.test` | `Customer123!` |
 
-The other seeded customers are `<first>.<last>@example.test` with the customer password.
+The demo manager runs the Jasná store, so they can change only Jasná's skis; the other seeded manager runs
+Donovaly. The other seeded customers are `<first>.<last>@example.test` with the customer password.
 
 The seed is set up so every screen has something to show: the demo customer has a rental with a
 locked rating, a newer rental of the same model that may update it, one returned today whose ratings

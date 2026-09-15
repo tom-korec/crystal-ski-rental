@@ -95,6 +95,7 @@ function daysBetween(start: Date, end: Date): number {
 
 export interface UserRow extends SeedAccount {
   id: string;
+  storeId: string | null;
   createdAt: Date;
   deletedAt: Date | null;
 }
@@ -201,7 +202,7 @@ function toEmailPart(value: string): string {
     .toLowerCase();
 }
 
-function buildUsers(): UserRow[] {
+function buildUsers(stores: SeedData['stores']): UserRow[] {
   const generated: SeedAccount[] = CUSTOMER_NAMES.map((name) => {
     const [first = '', last = ''] = name.split(' ');
     return {
@@ -214,9 +215,17 @@ function buildUsers(): UserRow[] {
     };
   });
 
+  const storeId = (name: string | undefined) => {
+    if (!name) return null;
+    const store = stores.find((candidate) => candidate.name === name);
+    if (!store) throw new Error(`Unknown store ${name}`);
+    return store.id;
+  };
+
   return [...DEMO_ACCOUNTS, ...OTHER_STAFF, ...generated].map((account) => ({
     ...account,
     id: randomUUID(),
+    storeId: storeId(account.store),
     createdAt: momentOn(-randomInt(120, 360)),
     deletedAt: account.removed ? momentOn(-randomInt(3, 12)) : null,
   }));
@@ -630,7 +639,7 @@ export function generateSeedData(): SeedData {
     return { ...model, id: randomUUID(), brandId: brand.id };
   });
 
-  const users = buildUsers();
+  const users = buildUsers(stores);
   const staff = users.filter((user) => user.role !== 'USER');
   const customers = users.filter((user) => user.role === 'USER' && user.key !== 'customer');
 

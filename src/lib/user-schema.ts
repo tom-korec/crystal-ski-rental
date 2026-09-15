@@ -20,6 +20,8 @@ export const userCreateSchema = z.object({
   email: z.email(),
   password: passwordSchema,
   role: roleSchema.default('USER'),
+  /** A manager's own store (FR-64). Ignored for other roles. */
+  storeId: z.uuid().nullish(),
 });
 
 /** Optional fields mean "fields this request changes"; an omitted password is left alone. */
@@ -28,6 +30,7 @@ export const userUpdateSchema = z.object({
   name: nameSchema.optional(),
   email: z.email().optional(),
   role: roleSchema.optional(),
+  storeId: z.uuid().nullish(),
   password: passwordSchema.optional(),
 });
 

@@ -220,6 +220,8 @@ export interface SeedAccount {
   role: Role;
   password: string;
   removed?: boolean;
+  /** A manager's own store, by name (FR-64). */
+  store?: string;
 }
 
 /** The accounts the README and the end-to-end tests sign in with. */
@@ -236,6 +238,7 @@ export const DEMO_ACCOUNTS: SeedAccount[] = [
     name: 'Peter Hudák',
     email: 'manager@crystalskirental.test',
     role: 'MANAGER',
+    store: 'Jasná',
     password: DEMO_PASSWORDS.manager,
   },
   {
@@ -253,6 +256,7 @@ export const OTHER_STAFF: SeedAccount[] = [
     name: 'Lucia Šimková',
     email: 'lucia.simkova@crystalskirental.test',
     role: 'MANAGER',
+    store: 'Donovaly',
     password: DEMO_PASSWORDS.manager,
   },
 ];

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { hashPassword } from 'better-auth/crypto';
 
-import { mayManageAccount } from '~/lib/account-rules';
+import { mayManageAccount, storeForRole } from '~/lib/account-rules';
 import { PAGE_SIZE, pageCount, skipForPage } from '~/lib/pagination';
 import type { Role } from '~/lib/roles';
 import { userCreateSchema, userIdSchema, userListSchema, userUpdateSchema } from '~/lib/user-schema';
@@ -23,6 +23,8 @@ import type { Prisma } from '../../../../generated/prisma/client';
 // the account can be restored.
 
 const NOT_FOUND = 'Account not found.';
+const STORE_REQUIRED = 'Choose the store this manager runs.';
+const STORE_MISSING = 'That store no longer exists.';
 const EMAIL_TAKEN = 'That e-mail address is already registered, possibly to a removed account.';
 
 const userSelect = {
@@ -30,6 +32,7 @@ const userSelect = {
   name: true,
   email: true,
   role: true,
+  store: { select: { id: true, name: true } },
   deletedAt: true,
   createdAt: true,
 } satisfies Prisma.UserSelect;
@@ -94,6 +97,9 @@ export const userRouter = createTRPCRouter({
   create: staffProcedure.input(userCreateSchema).mutation(async ({ ctx, input }) => {
     assertMayManage(ctx.session.user.role, input.role);
 
+    const storeId = storeForRole(input.role, input.storeId);
+    if (input.role === 'MANAGER' && !storeId) throw badRequest(STORE_REQUIRED);
+
     const id = randomUUID();
 
     try {
@@ -105,17 +111,18 @@ export const userRouter = createTRPCRouter({
           // The app sends no e-mail, so an account created here could never verify itself.
           emailVerified: true,
           role: input.role,
+          storeId,
           accounts: { create: await credentialAccount(id, input.password) },
         },
         select: userSelect,
       });
     } catch (error) {
-      rethrowPrismaError(error, { P2002: EMAIL_TAKEN });
+      rethrowPrismaError(error, { P2002: EMAIL_TAKEN, P2003: STORE_MISSING });
     }
   }),
 
   update: staffProcedure.input(userUpdateSchema).mutation(async ({ ctx, input }) => {
-    const { id, password, ...data } = input;
+    const { id, password, storeId: requestedStore, ...data } = input;
     const actor = ctx.session.user;
 
     // Lockout guard: an admin demoting themselves might leave nobody able to undo it.
@@ -123,19 +130,27 @@ export const userRouter = createTRPCRouter({
       throw badRequest('You cannot change your own role.');
     }
 
-    const existing = await ctx.db.user.findFirst({ where: { id, deletedAt: null }, select: { role: true } });
+    const existing = await ctx.db.user.findFirst({
+      where: { id, deletedAt: null },
+      select: { role: true, storeId: true },
+    });
 
     if (!existing) throw notFound(NOT_FOUND);
 
     assertMayManage(actor.role, existing.role);
     if (data.role) assertMayManage(actor.role, data.role);
 
+    // Only admins touch staff accounts, so only they ever send a store; a change of role settles it too.
+    const role = data.role ?? existing.role;
+    const storeId = storeForRole(role, requestedStore === undefined ? existing.storeId : requestedStore);
+    if (role === 'MANAGER' && !storeId) throw badRequest(STORE_REQUIRED);
+
     // Hashing is slow by design, so it stays outside the transaction.
     const account = password ? await credentialAccount(id, password) : undefined;
 
     try {
       return await ctx.db.$transaction(async (tx) => {
-        const user = await tx.user.update({ where: { id }, data, select: userSelect });
+        const user = await tx.user.update({ where: { id }, data: { ...data, storeId }, select: userSelect });
 
         if (account) {
           const updated = await tx.account.updateMany({
@@ -152,7 +167,7 @@ export const userRouter = createTRPCRouter({
         return user;
       });
     } catch (error) {
-      rethrowPrismaError(error, { P2002: EMAIL_TAKEN, P2025: NOT_FOUND });
+      rethrowPrismaError(error, { P2002: EMAIL_TAKEN, P2003: STORE_MISSING, P2025: NOT_FOUND });
     }
   }),
 

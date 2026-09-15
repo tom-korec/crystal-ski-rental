@@ -60,6 +60,7 @@ async function write(data: SeedData): Promise<void> {
           email: user.email,
           emailVerified: true,
           role: user.role,
+          storeId: user.storeId,
           deletedAt: user.deletedAt,
           createdAt: user.createdAt,
           updatedAt: user.createdAt,

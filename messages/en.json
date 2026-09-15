@@ -277,7 +277,8 @@
         "title": "Overdue returns",
         "empty": "No overdue returns."
       }
-    }
+    },
+    "descriptionAt": "Today's pickups and returns at {store}, and anything overdue."
   },
   "staffReservations": {
     "length": "{length} cm",
@@ -326,7 +327,8 @@
       "model": "Choose a model.",
       "store": "Choose a store.",
       "length": "Enter a length between {min} and {max} cm."
-    }
+    },
+    "ownStoreOnly": "Managers add skis to their own store."
   },
   "skiDetail": {
     "back": "Back to fleet",
@@ -357,7 +359,9 @@
     "deleteDescription": "The ski leaves the fleet. If it has been rented before, its history stays in the records.",
     "deleteBlocked": "{count, plural, one {# reservation is booked or picked up. Settle it before deleting the ski.} other {# reservations are booked or picked up. Settle them before deleting the ski.}}",
     "reservations": "Reservations",
-    "noReservations": "This ski has not been reserved yet."
+    "noReservations": "This ski has not been reserved yet.",
+    "readOnly": "This ski belongs to {store}. Only its manager or an admin can change it.",
+    "storeAdminOnly": "Only an admin can move a ski to another store."
   },
   "catalogAdmin": {
     "title": "Models",
@@ -462,8 +466,13 @@
     "errors": {
       "name": "Enter a name.",
       "email": "Enter a valid e-mail address.",
-      "password": "Use at least {min} characters."
-    }
+      "password": "Use at least {min} characters.",
+      "store": "Choose the store this manager runs."
+    },
+    "store": "Store",
+    "selectStore": "Select a store",
+    "storeHint": "The manager changes skis and runs the front desk only at this store.",
+    "roleAtStore": "{role} · {store}"
   },
   "profile": {
     "title": "Profile",

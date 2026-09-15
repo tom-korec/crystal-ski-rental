@@ -77,6 +77,10 @@ test.describe('admin', () => {
     await dialog.getByTestId('account-role').click();
     await page.getByRole('option', { name: 'Manager' }).click();
     await dialog.getByTestId('save-account').click();
+    await expect(dialog.getByText('Choose the store this manager runs.')).toBeVisible();
+    await dialog.getByTestId('account-store').click();
+    await page.getByRole('option', { name: 'Štrbské Pleso' }).click();
+    await dialog.getByTestId('save-account').click();
     await expect(dialog).toBeHidden();
 
     const manager = await browser.newPage();
@@ -84,6 +88,7 @@ test.describe('admin', () => {
     await manager.goto('/staff/accounts?q=ivana');
     await manager.getByTestId('account-row').getByRole('link').click();
     await expect(manager.getByTestId('page-title')).toHaveText('Ivana Staff');
+    await expect(manager.getByTestId('account-store')).toHaveText('Štrbské Pleso');
     await expect(manager.getByTestId('edit-account')).toHaveCount(0);
     await expect(manager.getByTestId('remove-account')).toHaveCount(0);
     await manager.close();

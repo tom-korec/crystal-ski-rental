@@ -24,6 +24,8 @@ import {
 } from '~/components/ui/dialog';
 import { staffSkiRoute } from '~/lib/routes';
 import { MAX_LENGTH_CM, MIN_LENGTH_CM, skiCreateSchema } from '~/lib/ski-schema';
+import { useStaffActor } from '~/components/layout/staff-actor';
+import { isAdmin } from '~/lib/roles';
 import { api } from '~/trpc/react';
 
 type AddSkiInput = z.input<typeof skiCreateSchema>;
@@ -51,10 +53,13 @@ function AddSkiForm() {
   const utils = api.useUtils();
   const stores = api.store.list.useQuery();
   const models = api.skiModel.list.useQuery({});
+  // A manager adds skis to their own store only (FR-64).
+  const actor = useStaffActor();
+  const ownStore = isAdmin(actor.role) ? undefined : (actor.storeId ?? undefined);
 
   const form = useForm<AddSkiInput, unknown, AddSkiOutput>({
     resolver: zodResolver(skiCreateSchema),
-    defaultValues: { inventoryCode: '', isAvailable: true },
+    defaultValues: { inventoryCode: '', isAvailable: true, storeId: ownStore },
   });
   const { errors } = form.formState;
 
@@ -110,7 +115,8 @@ function AddSkiForm() {
             options={(stores.data ?? []).map((store) => ({ value: store.id, label: store.name }))}
             value={field.value}
             onChange={field.onChange}
-            disabled={stores.isPending}
+            disabled={stores.isPending || ownStore !== undefined}
+            hint={ownStore ? t('ownStoreOnly') : undefined}
             error={errors.storeId && t('errors.store')}
           />
         )}
