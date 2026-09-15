@@ -18,7 +18,7 @@ interface AccountMenuProps {
   role: Role | null;
 }
 
-/** The account in the header from `md` up: the name, and a panel with the account, theme and sign out. */
+/** The account in the header from `md` up: the initials (and from `lg` the name), opening a panel with the account, theme and sign out. */
 export function AccountMenu({ name, role }: AccountMenuProps) {
   const t = useTranslations('nav');
   const [open, setOpen] = useState(false);
@@ -36,10 +36,15 @@ export function AccountMenu({ name, role }: AccountMenuProps) {
         }
       >
         <AccountAvatar name={name} />
-        <span className="truncate text-sm font-medium" data-testid="account-name">
+        {/* On tablets the circle alone; the panel still names the account. */}
+        <span className="hidden truncate text-sm font-medium lg:inline" data-testid="account-name">
           {name}
         </span>
-        {role ? <RoleBadge role={role} /> : null}
+        {role ? (
+          <span className="hidden lg:inline-flex">
+            <RoleBadge role={role} />
+          </span>
+        ) : null}
         <ChevronDownIcon
           className={cn('text-muted-foreground size-4 transition-transform', open && 'rotate-180')}
           aria-hidden
