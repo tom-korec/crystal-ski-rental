@@ -49,12 +49,17 @@ export function filtersKey(filters: SkiSearchFilters): string {
   return serialiseSearch({ filters: { ...filters, sort: 'rating' } }).toString();
 }
 
-/** Every narrowing filter of the ski search (FR-30), collapsed until the customer opens them. */
+/**
+ * Every narrowing filter of the ski search (FR-30). Collapsed until opened on the first step; always open
+ * above results, where they are edited as a draft.
+ */
 export function SearchFilters({ filters, onChange, applied, onApply }: SearchFiltersProps) {
   const t = useTranslations('filters');
   const tCatalog = useTranslations('catalog');
   const formatMoney = useFormatMoney();
-  const [open, setOpen] = useState(false);
+  const collapsible = applied === undefined;
+  const [expanded, setExpanded] = useState(false);
+  const open = !collapsible || expanded;
 
   const brands = api.brand.list.useQuery();
   const models = api.skiModel.list.useQuery({});
@@ -81,19 +86,26 @@ export function SearchFilters({ filters, onChange, applied, onApply }: SearchFil
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-expanded={open}
-          aria-controls="search-filters"
-          onClick={() => setOpen((current) => !current)}
-          data-testid="more-filters"
-        >
-          <SlidersHorizontalIcon aria-hidden />
-          {t('moreFilters', { count: active })}
-          <ChevronDownIcon className={cn('transition-transform', open && 'rotate-180')} aria-hidden />
-        </Button>
+        {collapsible ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            aria-expanded={open}
+            aria-controls="search-filters"
+            onClick={() => setExpanded((current) => !current)}
+            data-testid="more-filters"
+          >
+            <SlidersHorizontalIcon aria-hidden />
+            {t('moreFilters', { count: active })}
+            <ChevronDownIcon className={cn('transition-transform', open && 'rotate-180')} aria-hidden />
+          </Button>
+        ) : (
+          <p className="flex items-center gap-2 text-sm font-medium" data-testid="active-filters">
+            <SlidersHorizontalIcon className="size-4" aria-hidden />
+            {t('filtersTitle', { count: active })}
+          </p>
+        )}
         {active > 0 ? (
           <Button type="button" variant="ghost" size="sm" onClick={clear} data-testid="clear-filters">
             {t('clear')}

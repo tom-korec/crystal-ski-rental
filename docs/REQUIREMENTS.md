@@ -126,9 +126,9 @@ Models and brands share the **Models** page, with a switch between their tables.
 
 ### 4.4 Search and booking (customer and visitor)
 
-- **FR-30** A customer searches for skis by rental dates (required) and can narrow the results by
-  store, brand, model, type, gender, skill level, length range, maximum price per day and
-  minimum model rating.
+- **FR-30** A customer searches for skis by rental dates (required) and can narrow the results by store,
+  brand, model, type, gender, skill level, length range, maximum price per day and minimum model rating.
+  Before the first search the filters are collapsed under a toggle; above results they are always open.
 - **FR-31** Results can be sorted by best rated (default), price low to high, and price high to low.
 - **FR-32** Each result shows brand and model, length, type, gender and level badges, the model's
   average rating, and the **total for the chosen dates** with the discount applied. The store is the

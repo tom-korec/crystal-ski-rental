@@ -53,7 +53,8 @@ test.describe('customer', () => {
     await expect(page.getByTestId('ski-count')).toHaveText(/skis? free/);
     const count = await page.getByTestId('ski-count').textContent();
 
-    await page.getByTestId('more-filters').click();
+    // Above results the filters are always open.
+    await expect(page.getByTestId('more-filters')).toHaveCount(0);
     await expect(page.getByTestId('apply-filters')).toBeDisabled();
     await page.locator('#filter-gender').click();
     await page.getByRole('option', { name: 'Kids' }).click();
@@ -69,7 +70,7 @@ test.describe('customer', () => {
     await page.getByTestId('apply-filters').click();
     await expect(page).toHaveURL(/gender=KID/);
     await expect(page.getByTestId('ski-count')).not.toHaveText(count ?? '');
-    await expect(page.getByTestId('more-filters')).toContainText('1');
+    await expect(page.getByTestId('active-filters')).toHaveText('Filters (1)');
 
     await page.getByTestId('clear-filters').click();
     await expect(page).not.toHaveURL(/gender=/);
