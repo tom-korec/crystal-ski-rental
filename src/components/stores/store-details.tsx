@@ -99,7 +99,7 @@ export function StoreDetails({ store }: StoreDetailsProps) {
                     {format.dateTime(toUtcDate(day.date), { day: 'numeric', month: 'short', timeZone: 'UTC' })}
                     {day.name ? ` · ${day.name}` : ''}
                   </dt>
-                  <dd className={cn(!day.hours && 'text-muted-foreground')}>
+                  <dd className={cn('whitespace-nowrap', !day.hours && 'text-muted-foreground')}>
                     {formatOpeningHours(day.hours) ?? t('closed')}
                   </dd>
                 </div>
