@@ -1,17 +1,16 @@
 /**
- * Resets the database to the demo data set: stores, catalogue, fleet, accounts, and a reservation
+ * Resets the database to the demo data in `data/`: stores, catalogue, fleet, accounts, and a reservation
  * history around today with ratings. Safe to re-run; each run rebuilds everything from scratch.
+ *
+ * The data files are a committed snapshot. To change them, edit the hand-written files or re-run the
+ * generator (`pnpm db:seed:generate`); see `generate/index.ts`.
  */
-import { hashPassword } from 'better-auth/crypto';
-import { randomUUID } from 'node:crypto';
-
 import { PrismaPg } from '@prisma/adapter-pg';
 
-import { DATE_HOLDING_STATUSES } from '../../src/lib/reservation-lifecycle';
 import { PrismaClient } from '../../generated/prisma/client';
-import { DEMO_ACCOUNTS } from './data';
-import { CATALOGUE_CREATED, generateSeedData, type SeedData } from './generate';
 import { assertSeedData } from './invariants';
+import { loadSeedData } from './load';
+import { writeSeedData } from './write';
 
 if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PRODUCTION_SEED !== 'true') {
   throw new Error('Refusing to seed with NODE_ENV=production. Set ALLOW_PRODUCTION_SEED=true to reset a demo.');
@@ -22,124 +21,32 @@ if (!connectionString) throw new Error('DATABASE_URL is not set.');
 
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 
-async function write(data: SeedData): Promise<void> {
-  // Scrypt is slow on purpose, so each distinct demo password is hashed once.
-  const hashes = new Map<string, string>();
-  for (const password of new Set(data.users.map((user) => user.password))) {
-    hashes.set(password, await hashPassword(password));
-  }
-
-  await db.$transaction(
-    async (tx) => {
-      await tx.$executeRaw`TRUNCATE customer_address, reservation_address, model_rating, reservation_rating, reservation_item, reservation, ski, ski_model, brand, store, session, account, verification, rate_limit, "user" CASCADE`;
-
-      const catalogueTimes = { createdAt: CATALOGUE_CREATED, updatedAt: CATALOGUE_CREATED };
-
-      await tx.store.createMany({
-        data: data.stores.map(({ hours, ...store }) => ({
-          ...store,
-          ...catalogueTimes,
-          openingHoursMonday: hours[0],
-          openingHoursTuesday: hours[1],
-          openingHoursWednesday: hours[2],
-          openingHoursThursday: hours[3],
-          openingHoursFriday: hours[4],
-          openingHoursSaturday: hours[5],
-          openingHoursSunday: hours[6],
-        })),
-      });
-      await tx.brand.createMany({ data: data.brands.map((brand) => ({ ...brand, ...catalogueTimes })) });
-      await tx.skiModel.createMany({
-        data: data.models.map(({ brand: _brand, ...model }) => ({ ...model, ...catalogueTimes })),
-      });
-
-      await tx.user.createMany({
-        data: data.users.map((user) => ({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          emailVerified: true,
-          role: user.role,
-          storeId: user.storeId,
-          deletedAt: user.deletedAt,
-          createdAt: user.createdAt,
-          updatedAt: user.createdAt,
-        })),
-      });
-      // The credential rows Better Auth writes on sign-up, so these accounts sign in normally.
-      await tx.account.createMany({
-        data: data.users.map((user) => ({
-          id: randomUUID(),
-          accountId: user.id,
-          providerId: 'credential',
-          userId: user.id,
-          password: hashes.get(user.password),
-          createdAt: user.createdAt,
-          updatedAt: user.createdAt,
-        })),
-      });
-
-      await tx.customerAddress.createMany({
-        data: data.addresses.map((address) => ({ ...address, updatedAt: address.createdAt })),
-      });
-
-      await tx.ski.createMany({
-        data: data.skis.map((ski) => ({ ...ski, updatedAt: ski.deletedAt ?? ski.createdAt })),
-      });
-      await tx.reservation.createMany({
-        data: data.reservations.map(({ items: _items, ...reservation }) => ({
-          ...reservation,
-          updatedAt:
-            reservation.cancelledAt ?? reservation.returnedAt ?? reservation.pickedUpAt ?? reservation.createdAt,
-        })),
-      });
-      await tx.reservationItem.createMany({
-        data: data.reservations.flatMap((reservation) =>
-          reservation.items.map((item) => ({
-            ...item,
-            reservationId: reservation.id,
-            startDate: reservation.startDate,
-            endDate: reservation.endDate,
-            holdsDates: (DATE_HOLDING_STATUSES as readonly string[]).includes(reservation.status),
-          })),
-        ),
-      });
-      await tx.reservationAddress.createMany({ data: data.reservationAddresses });
-      await tx.reservationRating.createMany({
-        data: data.reservationRatings.map((rating) => ({ ...rating, updatedAt: rating.createdAt })),
-      });
-      await tx.modelRating.createMany({
-        data: data.modelRatings.map((rating) => ({ ...rating, updatedAt: rating.windowStartedAt })),
-      });
-
-      // The denormalised averages, from the same aggregate the rating API uses.
-      await tx.$executeRaw`
-        UPDATE ski_model AS m
-        SET "avgRating" = r.avg, "ratingCount" = r.count
-        FROM (SELECT "modelId", round(avg(score), 2) AS avg, count(*)::int AS count FROM model_rating GROUP BY "modelId") AS r
-        WHERE m.id = r."modelId"`;
-    },
-    { timeout: 60_000 },
-  );
-}
+/** Shown after seeding, so whoever ran it can sign in straight away. */
+const DEMO_EMAILS = ['admin@crystalskirental.test', 'manager@crystalskirental.test', 'customer@crystalskirental.test'];
 
 async function main() {
-  const data = generateSeedData();
+  const data = loadSeedData();
   assertSeedData(data);
-  await write(data);
+  await writeSeedData(db, data);
 
   const count = (status: string) => data.reservations.filter((reservation) => reservation.status === status).length;
+  const customers = data.users.filter((user) => user.role === 'USER').length;
 
   console.log(
     `Seeded ${data.stores.length} stores, ${data.brands.length} brands, ${data.models.length} models, ${data.skis.length} skis, ` +
-      `${data.users.length} accounts and ${data.reservations.length} reservations ` +
+      `${customers} customers, ${data.users.length - customers} staff and ${data.reservations.length} reservations ` +
       `(${count('CREATED')} booked, ${count('ACTIVE')} out, ${count('RETURNED')} returned, ` +
       `${count('CANCELLED_BY_USER') + count('CANCELLED_BY_STORE')} cancelled), ` +
       `${data.reservationRatings.length} rental ratings and ${data.modelRatings.length} model ratings.`,
   );
   console.log('\nDemo accounts:');
-  console.table(DEMO_ACCOUNTS.map(({ role, email, password }) => ({ role, email, password })));
-  console.log('Other customers: <first>.<last>@example.test with the customer password.');
+  console.table(
+    DEMO_EMAILS.flatMap((email) => {
+      const user = data.users.find((candidate) => candidate.email === email);
+      return user ? [{ role: user.role, email, password: user.password }] : [];
+    }),
+  );
+  console.log('Store managers and customers sign in with the manager and customer passwords.');
 }
 
 main()

@@ -33,29 +33,51 @@ Postgres listens on **5433** so it does not collide with another Postgres on the
 | Manager  | `manager@crystalskirental.test`  | `Manager123!`  |
 | Customer | `customer@crystalskirental.test` | `Customer123!` |
 
-The demo manager runs the Jasná store, so they can change only Jasná's skis; the other seeded manager runs
-Donovaly. The other seeded customers are `<first>.<last>@example.test` with the customer password.
+The demo manager runs the Jasná store, so they can change only Jasná's skis; each of the other three
+stores has its own manager (`ondrej.kollar@`, `eva.mikulova@` and `lucia.simkova@crystalskirental.test`, with
+the manager password). The other customers are `<first>.<last>@example.test` with the customer password.
 
-The seed is set up so every screen has something to show: the demo customer has a rental with a
+The demo data is 4 stores with 100 pairs each, 5 brands and 27 models, 100 customers and 1,000 reservations
+from three months back to three months ahead, with ratings. Half the customers came once or twice; the
+others are regulars. Nothing in it is dated: every date counts from the day of seeding, so the demo never
+goes stale.
+
+Some of it is scripted so every screen has something to show: the demo customer has a rental with a
 locked rating, a newer rental of the same model that may update it, one returned today whose ratings
-are still editable, one picked up, one upcoming and one cancelled. They also have a mailing address and
-an invoice address made out to a company. The Jasná front desk has an item in each of its four lists.
+are still editable, one picked up, a family booking coming up and one cancelled. They also have a mailing
+address and an invoice address made out to a company. The Jasná front desk has an item in each of its
+four lists, and nothing else.
+
+### Seed data
+
+`prisma/seed/data/` is a committed snapshot, one record per line:
+
+- **Written by hand:** `stores.json`, `brands.json`, `models.json`, `staff.json`.
+- **Generated:** `customers.json`, `skis/<store>.json` and `reservations/<store>.json`, the latter with each
+  reservation's ratings. `pnpm db:seed:generate` rewrites them from the hand-written files and
+  `prisma/seed/generate/`, the same way every time; commit what changes.
+
+Files refer to each other by what people read: stores by slug, models by "Brand Model", accounts by
+e-mail and skis by inventory code. Days are offsets from today (`"start": -12`), and moments are a day and
+a UTC time (`"-12 09:30"`) or minutes before seeding (`"40m"`). `pnpm db:seed` validates the files, checks
+the result and writes it; it never generates anything.
 
 ## Scripts
 
-| Command             | Does                                        |
-| ------------------- | ------------------------------------------- |
-| `pnpm dev`          | Development server                          |
-| `pnpm build`        | Production build                            |
-| `pnpm check`        | ESLint and TypeScript                       |
-| `pnpm format:write` | Prettier                                    |
-| `pnpm test`         | Unit tests (Vitest)                         |
-| `pnpm test:e2e`     | End-to-end tests (Playwright, own database) |
-| `pnpm db:up`        | Start Postgres in Docker                    |
-| `pnpm db:generate`  | Create and apply a migration                |
-| `pnpm db:migrate`   | Apply pending migrations                    |
-| `pnpm db:seed`      | Reset the database to the demo data         |
-| `pnpm db:studio`    | Browse the database                         |
+| Command                 | Does                                        |
+| ----------------------- | ------------------------------------------- |
+| `pnpm dev`              | Development server                          |
+| `pnpm build`            | Production build                            |
+| `pnpm check`            | ESLint and TypeScript                       |
+| `pnpm format:write`     | Prettier                                    |
+| `pnpm test`             | Unit tests (Vitest)                         |
+| `pnpm test:e2e`         | End-to-end tests (Playwright, own database) |
+| `pnpm db:up`            | Start Postgres in Docker                    |
+| `pnpm db:generate`      | Create and apply a migration                |
+| `pnpm db:migrate`       | Apply pending migrations                    |
+| `pnpm db:seed`          | Reset the database to the demo data         |
+| `pnpm db:seed:generate` | Regenerate the generated seed data files    |
+| `pnpm db:studio`        | Browse the database                         |
 
 ## Stack
 
@@ -233,8 +255,9 @@ development data. Values from `.env.test` are local defaults; variables already 
 win, which is how CI points it at its own database.
 
 The seed checks the rules the database cannot enforce (price snapshots, lifecycle timestamps, rating
-eligibility, no overlaps) before writing anything, so demo data can never be something the app would
-have refused.
+eligibility, no pair on two rentals at once, everything created within the last 90 days, managers handling
+only their own store) before writing anything, so demo data can never be something the app would have
+refused, nor a history that could not have happened.
 
 ## Continuous integration
 

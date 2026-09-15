@@ -10,6 +10,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
+    "db:seed:generate": "tsx prisma/seed/generate/index.ts",
     "db:studio": "prisma studio",
     "db:up": "docker compose up -d --wait",
     "dev": "next dev",

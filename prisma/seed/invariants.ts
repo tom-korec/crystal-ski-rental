@@ -1,9 +1,13 @@
 import { quoteReservation } from '../../src/lib/pricing';
 import { DATE_HOLDING_STATUSES } from '../../src/lib/reservation-lifecycle';
-import { day, NOW, type SeedData } from './generate';
+import type { SeedData } from './rows';
+import { day, NOW } from './time';
 
 // The rules the database does not enforce, checked before anything is written, so the seed can never
-// produce data the application would have refused.
+// produce data the application would have refused, nor a history that could not have happened.
+
+/** How far the demo reaches: nothing was created more than this long ago, and no rental ends further out. */
+export const HISTORY_DAYS = 90;
 
 function fail(message: string): never {
   throw new Error(`Seed invariant broken: ${message}`);
@@ -32,6 +36,26 @@ export function assertSeedData(data: SeedData): void {
       fail(`${user.email} must have a store if and only if they are a manager`);
   }
 
+  const earliest = new Date(NOW.getTime() - HISTORY_DAYS * 86_400_000);
+  const created: [string, { createdAt: Date }[]][] = [
+    ['store', data.stores],
+    ['brand', data.brands],
+    ['model', data.models],
+    ['account', data.users],
+    ['address', data.addresses],
+    ['ski', data.skis],
+    ['reservation', data.reservations],
+    ['rental rating', data.reservationRatings],
+    ['model rating', data.modelRatings],
+  ];
+  for (const [what, rows] of created) {
+    for (const row of rows) {
+      if (row.createdAt < earliest || row.createdAt > NOW) {
+        fail(`a ${what} was created on ${row.createdAt.toISOString()}, outside the last ${HISTORY_DAYS} days`);
+      }
+    }
+  }
+
   const users = new Map(data.users.map((user) => [user.id, user]));
   const skis = new Map(data.skis.map((ski) => [ski.id, ski]));
   const models = new Map(data.models.map((model) => [model.id, model]));
@@ -39,7 +63,7 @@ export function assertSeedData(data: SeedData): void {
   const today = day(0);
 
   for (const reservation of data.reservations) {
-    const label = `reservation ${reservation.id}`;
+    const label = `reservation ${reservation.code}`;
     const user = users.get(reservation.userId) ?? fail(`${label} has no customer`);
     const itemSkis = reservation.items.map((item) => skis.get(item.skiId) ?? fail(`${label} has an unknown ski`));
 
@@ -50,6 +74,19 @@ export function assertSeedData(data: SeedData): void {
     if (user.role !== 'USER') fail(`${label} is rented by staff`);
     if (reservation.createdAt > NOW) fail(`${label} was booked in the future`);
     if (reservation.createdAt < user.createdAt) fail(`${label} was booked before the account existed`);
+    if (itemSkis.some((ski) => reservation.createdAt < ski.createdAt))
+      fail(`${label} was booked before its skis arrived`);
+    if (reservation.createdAt >= new Date(reservation.endDate)) fail(`${label} was booked after it ended`);
+    if (reservation.startDate < day(-HISTORY_DAYS) || reservation.endDate > day(HISTORY_DAYS)) {
+      fail(`${label} lies outside ${HISTORY_DAYS} days either side of today`);
+    }
+    if (user.deletedAt && reservation.createdAt > user.deletedAt) fail(`${label} was booked by a removed account`);
+    for (const staffId of [reservation.pickedUpById, reservation.returnedById]) {
+      const member = staffId ? (users.get(staffId) ?? fail(`${label} names an unknown staff member`)) : null;
+      if (member && member.role !== 'ADMIN' && member.storeId !== reservation.storeId) {
+        fail(`${label} was handled by ${member.email}, who works at another store`);
+      }
+    }
 
     const quote = quoteReservation(
       itemSkis.map((ski) => ({ pricePerDay: (models.get(ski.modelId) ?? fail(`${label} has no model`)).pricePerDay })),
@@ -102,16 +139,17 @@ export function assertSeedData(data: SeedData): void {
     }
   }
 
-  // No ski holds two overlapping CREATED or ACTIVE reservations (the database enforces it too; this names the culprit).
+  // No ski is in two rentals that share a day (the database enforces it for open ones; this names the
+  // culprit, and holds past rentals to the same rule, since one pair cannot be on two people's feet).
   const holding = data.reservations
-    .filter((reservation) => (DATE_HOLDING_STATUSES as readonly string[]).includes(reservation.status))
+    .filter((reservation) => !reservation.status.startsWith('CANCELLED'))
     .flatMap((reservation) => reservation.items.map((item) => ({ ...reservation, skiId: item.skiId })))
     .sort((a, b) => a.skiId.localeCompare(b.skiId) || a.startDate.getTime() - b.startDate.getTime());
 
   for (const [index, current] of holding.entries()) {
     const previous = holding[index - 1];
     if (previous?.skiId === current.skiId && current.startDate < previous.endDate) {
-      fail(`reservations ${previous.id} and ${current.id} overlap`);
+      fail(`reservations ${previous.code} and ${current.code} overlap`);
     }
   }
 

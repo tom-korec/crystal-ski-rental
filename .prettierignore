@@ -5,3 +5,6 @@ old
 .next-e2e
 playwright-report
 test-results
+
+# The seed data files are one record per line, so a changed record is a one-line diff.
+prisma/seed/data

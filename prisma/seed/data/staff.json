@@ -1,0 +1,7 @@
+[
+  { "name": "Martina Kováčová", "email": "admin@crystalskirental.test", "password": "Admin123!", "role": "ADMIN", "createdAt": "-89 07:30" },
+  { "name": "Peter Hudák", "email": "manager@crystalskirental.test", "password": "Manager123!", "role": "MANAGER", "store": "jasna", "createdAt": "-89 07:40" },
+  { "name": "Ondrej Kollár", "email": "ondrej.kollar@crystalskirental.test", "password": "Manager123!", "role": "MANAGER", "store": "tatranska-lomnica", "createdAt": "-89 07:42" },
+  { "name": "Eva Mikulová", "email": "eva.mikulova@crystalskirental.test", "password": "Manager123!", "role": "MANAGER", "store": "strbske-pleso", "createdAt": "-89 07:44" },
+  { "name": "Lucia Šimková", "email": "lucia.simkova@crystalskirental.test", "password": "Manager123!", "role": "MANAGER", "store": "donovaly", "createdAt": "-89 07:46" }
+]

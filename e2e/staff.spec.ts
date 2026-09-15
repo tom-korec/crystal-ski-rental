@@ -141,7 +141,7 @@ test.describe('fleet', () => {
 
     await dialog.getByLabel('Inventory code').fill('sk-e2e1');
     await dialog.getByTestId('ski-model').click();
-    await page.getByRole('option', { name: 'Elan Wingman 78 C' }).click();
+    await page.getByRole('option', { name: 'Head Kore 93' }).click();
     // A manager adds to their own store, and cannot pick another.
     await expect(dialog.getByTestId('ski-store')).toContainText('Jasná');
     await expect(dialog.getByTestId('ski-store')).toBeDisabled();

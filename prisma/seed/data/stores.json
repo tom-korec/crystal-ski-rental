@@ -1,0 +1,82 @@
+[
+  {
+    "slug": "jasna",
+    "name": "Jasná",
+    "street": "Demänovská dolina",
+    "houseNumber": "72",
+    "city": "Liptovský Mikuláš",
+    "zipCode": "03101",
+    "phone": "+421000000101",
+    "email": "jasna@crystalskirental.test",
+    "openingHours": [
+      "8:00 – 16:30",
+      "8:00 – 16:30",
+      "8:00 – 16:30",
+      "8:00 – 16:30",
+      "8:00 – 17:00",
+      "7:30 – 17:00",
+      "7:30 – 17:00"
+    ],
+    "createdAt": "-89 07:00"
+  },
+  {
+    "slug": "tatranska-lomnica",
+    "name": "Tatranská Lomnica",
+    "street": "Cesta Slobody",
+    "houseNumber": "12/A",
+    "city": "Vysoké Tatry",
+    "zipCode": "05960",
+    "phone": "+421000000102",
+    "email": "lomnica@crystalskirental.test",
+    "openingHours": [
+      "8:00 – 16:00",
+      "8:00 – 16:00",
+      "8:00 – 16:00",
+      "8:00 – 16:00",
+      "8:00 – 16:00",
+      "8:00 – 16:00",
+      "8:00 – 16:00"
+    ],
+    "createdAt": "-89 08:00"
+  },
+  {
+    "slug": "strbske-pleso",
+    "name": "Štrbské Pleso",
+    "street": "Nábrežie",
+    "houseNumber": "1543/7",
+    "city": "Vysoké Tatry",
+    "zipCode": "05985",
+    "phone": "+421000000103",
+    "email": "pleso@crystalskirental.test",
+    "openingHours": [
+      "",
+      "8:30 – 16:00",
+      "8:30 – 16:00",
+      "8:30 – 16:00",
+      "8:30 – 16:00",
+      "8:00 – 16:30",
+      "8:00 – 16:30"
+    ],
+    "createdAt": "-89 09:00"
+  },
+  {
+    "slug": "donovaly",
+    "name": "Donovaly",
+    "street": "Donovaly",
+    "houseNumber": "305",
+    "city": "Donovaly",
+    "zipCode": "97639",
+    "phone": "+421000000104",
+    "email": "donovaly@crystalskirental.test",
+    "openingHours": [
+      "9:00 – 16:00",
+      "9:00 – 16:00",
+      "9:00 – 16:00",
+      "9:00 – 16:00",
+      "8:00 – 17:00",
+      "8:00 – 17:00",
+      "8:00 – 17:00"
+    ],
+    "createdAt": "-89 10:00"
+  }
+]
