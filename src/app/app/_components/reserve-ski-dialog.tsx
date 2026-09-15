@@ -119,7 +119,7 @@ function ReserveSkiContent({ ski, quote, range }: ReserveSelection & { range: Da
           <DialogFooter>
             <DialogClose render={<Button variant="outline" />}>{t('cancel')}</DialogClose>
             <Button
-              onClick={() => reserve.mutate({ skiId: ski.id, ...range })}
+              onClick={() => reserve.mutate({ skiIds: [ski.id], ...range })}
               disabled={reserve.isPending}
               data-testid="confirm-reservation"
             >

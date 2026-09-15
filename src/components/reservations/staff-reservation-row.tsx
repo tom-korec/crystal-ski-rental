@@ -59,8 +59,8 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
     },
   });
 
-  const { ski, user } = reservation;
-  const skis = `${ski.model.brand.name} ${ski.model.name}`;
+  const { items, user } = reservation;
+  const skis = items.map(({ ski }) => `${ski.model.brand.name} ${ski.model.name} (${ski.inventoryCode})`).join(', ');
   const period = formatDateRange(reservation.startDate, rentalPeriod(reservation).lastDay);
   const today = todayUtc();
   const error = pickUp.error?.message;
@@ -78,24 +78,32 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
       {show.customer ? <CustomerContact name={user.name} email={user.email} /> : null}
 
       <span className="flex flex-col gap-0.5 text-sm">
-        <span className="flex flex-wrap items-center gap-2">
-          {show.skis ? (
-            <>
-              <span
-                className="bg-secondary text-secondary-foreground rounded px-1.5 py-0.5 font-mono text-xs"
-                data-testid="inventory-code"
-              >
-                {ski.inventoryCode}
-              </span>
-              <span>
-                {skis} · {t('length', { length: ski.lengthCm })}
-              </span>
-            </>
-          ) : (
+        {show.skis ? (
+          <ul className="flex flex-col gap-1" data-testid="reservation-skis">
+            {items.map(({ id, ski }, index) => (
+              <li key={id} className="flex flex-wrap items-center gap-2">
+                <span
+                  className="bg-secondary text-secondary-foreground rounded px-1.5 py-0.5 font-mono text-xs"
+                  data-testid="inventory-code"
+                >
+                  {ski.inventoryCode}
+                </span>
+                <span>
+                  {ski.model.brand.name} {ski.model.name} · {t('length', { length: ski.lengthCm })}
+                </span>
+                {index === 0 && show.status ? <StatusBadge status={reservation.status} audience="staff" /> : null}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <span className="flex flex-wrap items-center gap-2">
             <span className="font-medium">{period}</span>
-          )}
-          {show.status ? <StatusBadge status={reservation.status} audience="staff" /> : null}
-        </span>
+            {items.length > 1 ? (
+              <span className="text-muted-foreground text-xs">{t('pairs', { count: items.length })}</span>
+            ) : null}
+            {show.status ? <StatusBadge status={reservation.status} audience="staff" /> : null}
+          </span>
+        )}
         <span className="text-muted-foreground text-xs">
           {show.skis ? `${period} · ` : ''}
           {formatMoney(reservation.totalPrice)}
@@ -137,7 +145,7 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
             trigger={<Button size="sm" data-testid="mark-returned" />}
             triggerLabel={t('markReturned')}
             title={t('returnTitle')}
-            description={t('returnDescription', { customer: user.name, skis, code: ski.inventoryCode })}
+            description={t('returnDescription', { customer: user.name, skis, count: items.length })}
             confirmLabel={t('returnConfirm')}
             pendingLabel={t('working')}
             cancelLabel={t('notYet')}

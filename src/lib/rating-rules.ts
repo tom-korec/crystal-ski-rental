@@ -72,13 +72,13 @@ export function modelRatingAccess(
 export type RatingAction = 'rate' | 'edit';
 
 /**
- * The rental and the model are rated together, behind one button: "rate" while either rating can still
- * be written for the first time through this reservation, "edit" while an edit window is open, and none
- * once both are locked.
+ * A reservation's rental and ski models are rated together, behind one button: "rate" while any rating
+ * can still be written for the first time through this reservation, "edit" while an edit window is
+ * open, and none once all are locked.
  */
-export function ratingAction(rental: RatingAccess, model: RatingAccess): RatingAction | null {
-  if (rental === 'create' || model === 'create' || model === 'reopen') return 'rate';
-  if (rental === 'edit' || model === 'edit') return 'edit';
+export function ratingAction(rental: RatingAccess, models: readonly RatingAccess[]): RatingAction | null {
+  if (rental === 'create' || models.some((model) => model === 'create' || model === 'reopen')) return 'rate';
+  if (rental === 'edit' || models.includes('edit')) return 'edit';
 
   return null;
 }

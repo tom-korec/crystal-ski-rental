@@ -56,3 +56,37 @@ export function quoteRental(pricePerDay: string | MoneyValue, rentalDays: number
     totalPrice: total.toFixed(2),
   };
 }
+
+export interface ReservationQuote<T> {
+  rentalDays: number;
+  discountPercent: number;
+  subtotal: string;
+  discount: string;
+  totalPrice: string;
+  /** The skis given, in the same order, each with its own quote. */
+  items: (T & { quote: RentalQuote })[];
+}
+
+/**
+ * A reservation of several skis for the same days (BR-6): every ski is quoted on its own, and the
+ * reservation's amounts are the sums of the items' rounded amounts, so the lines always add up.
+ */
+export function quoteReservation<T extends { pricePerDay: string | MoneyValue }>(
+  skis: readonly T[],
+  rentalDays: number,
+): ReservationQuote<T> {
+  if (skis.length === 0) throw new RangeError('A reservation needs at least one ski.');
+
+  const items = skis.map((ski) => ({ ...ski, quote: quoteRental(ski.pricePerDay, rentalDays) }));
+  const sum = (field: 'subtotal' | 'discount' | 'totalPrice') =>
+    items.reduce((total, item) => total.plus(item.quote[field]), new Money(0)).toFixed(2);
+
+  return {
+    rentalDays,
+    discountPercent: discountPercentFor(rentalDays),
+    subtotal: sum('subtotal'),
+    discount: sum('discount'),
+    totalPrice: sum('totalPrice'),
+    items,
+  };
+}

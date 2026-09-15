@@ -20,7 +20,7 @@ import { cn } from '~/lib/utils';
 import type { RouterOutputs } from '~/trpc/react';
 import { api } from '~/trpc/react';
 
-import { RatingDialog, type RatingPart } from './rating-dialog';
+import { type ModelRatingPart, RatingDialog, type RatingPart } from './rating-dialog';
 import { StarScore } from './star-score';
 
 export type MyReservation = RouterOutputs['reservation']['listMine']['items'][number];
@@ -44,25 +44,37 @@ export function ReservationCard({ reservation }: ReservationCardProps) {
     },
   });
 
-  const { ski } = reservation;
-  const skis = `${ski.model.brand.name} ${ski.model.name}`;
+  const { items, store, rating, modelRatings } = reservation;
+  const names = items.map(({ ski }) => `${ski.model.brand.name} ${ski.model.name}`);
+  const skis = names.join(', ');
   const period = formatDateRange(reservation.startDate, rentalPeriod(reservation).lastDay);
   const now = new Date();
 
-  const { rating, modelRating } = reservation;
   const rental: RatingPart = {
     access: reservationRatingAccess(reservation, rating, now),
     current: rating && { score: rating.score, text: rating.note },
     editableUntil: rating ? editWindowEndsAt(rating.createdAt) : null,
   };
-  const model: RatingPart = {
-    access: modelRatingAccess(reservation, modelRating, now),
-    current: modelRating && { score: modelRating.score, text: modelRating.comment },
-    // A window opened through another rental is not this reservation's to edit.
-    editableUntil: modelRating?.reservationId === reservation.id ? editWindowEndsAt(modelRating.windowStartedAt) : null,
-  };
-  const action = ratingAction(rental.access, model.access);
-  const hasRatings = reservation.status === 'RETURNED' && Boolean(rating ?? modelRating);
+  // One rating part per distinct model: two pairs of the same model share one rating.
+  const models = [...new Map(items.map(({ ski }) => [ski.model.id, ski.model])).values()].map(
+    (model): ModelRatingPart => {
+      const current = modelRatings.find((candidate) => candidate.modelId === model.id) ?? null;
+      return {
+        modelId: model.id,
+        name: `${model.brand.name} ${model.name}`,
+        access: modelRatingAccess(reservation, current, now),
+        current: current && { score: current.score, text: current.comment },
+        // A window opened through another rental is not this reservation's to edit.
+        editableUntil: current?.reservationId === reservation.id ? editWindowEndsAt(current.windowStartedAt) : null,
+      };
+    },
+  );
+  const action = ratingAction(
+    rental.access,
+    models.map((model) => model.access),
+  );
+  const ratedModels = models.filter((model) => model.current);
+  const hasRatings = reservation.status === 'RETURNED' && (rating !== null || ratedModels.length > 0);
 
   return (
     <Card
@@ -75,8 +87,11 @@ export function ReservationCard({ reservation }: ReservationCardProps) {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 md:grid md:grid-cols-[minmax(0,1fr)_9rem_8.5rem_5.5rem_12rem]">
           <div className="flex w-full min-w-0 flex-col md:w-auto">
             <span className="font-medium">{period}</span>
-            <span className="text-muted-foreground truncate text-sm">
-              {skis} · {t('length', { length: ski.lengthCm })} · {ski.store.name}
+            <span className="text-muted-foreground truncate text-sm" data-testid="reservation-skis">
+              {items.length === 1 && items[0]
+                ? `${skis} · ${t('length', { length: items[0].ski.lengthCm })}`
+                : t('pairsOf', { count: items.length, skis })}{' '}
+              · {store.name}
             </span>
           </div>
 
@@ -94,11 +109,18 @@ export function ReservationCard({ reservation }: ReservationCardProps) {
                     </dd>
                   </>
                 ) : null}
-                {modelRating ? (
+                {ratedModels.length === 1 && models.length === 1 && ratedModels[0]?.current ? (
                   <>
                     <dt className="text-muted-foreground">{t('ratingSkis')}</dt>
                     <dd>
-                      <StarScore score={modelRating.score} data-testid="model-score" />
+                      <StarScore score={ratedModels[0].current.score} data-testid="model-score" />
+                    </dd>
+                  </>
+                ) : ratedModels.length > 0 ? (
+                  <>
+                    <dt className="text-muted-foreground">{t('ratingSkis')}</dt>
+                    <dd className="text-muted-foreground" data-testid="models-rated">
+                      {t('modelsRated', { rated: ratedModels.length, total: models.length })}
                     </dd>
                   </>
                 ) : null}
@@ -119,10 +141,9 @@ export function ReservationCard({ reservation }: ReservationCardProps) {
               <RatingDialog
                 action={action}
                 reservationId={reservation.id}
-                store={ski.store.name}
-                skis={skis}
+                store={store.name}
                 rental={rental}
-                model={model}
+                models={models}
               />
             ) : null}
             <CollapsibleTrigger
@@ -134,21 +155,39 @@ export function ReservationCard({ reservation }: ReservationCardProps) {
           </div>
         </div>
 
-        <CollapsibleContent className="border-border flex flex-col gap-3 border-t px-4 py-4 text-sm">
+        <CollapsibleContent className="border-border flex flex-col gap-4 border-t px-4 py-4 text-sm">
           <p>{statusHint(t, reservation, period)}</p>
-          <p className="text-muted-foreground">
-            {t('priceSummary', {
-              days: reservation.rentalDays,
-              price: formatMoney(reservation.pricePerDay),
-              discount: reservation.discountPercent,
+          <ul className="flex flex-col gap-2" data-testid="reservation-items">
+            {items.map(({ id, ski, pricePerDay, totalPrice }) => {
+              const modelRating = models.find((model) => model.modelId === ski.model.id)?.current;
+              return (
+                <li key={id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">
+                      {ski.model.brand.name} {ski.model.name}
+                    </span>
+                    <span className="text-muted-foreground">{t('length', { length: ski.lengthCm })}</span>
+                    {reservation.status === 'RETURNED' && modelRating ? <StarScore score={modelRating.score} /> : null}
+                  </span>
+                  <span className="flex items-baseline gap-3 tabular-nums">
+                    <span className="text-muted-foreground text-xs">
+                      {t('perDay', { price: formatMoney(pricePerDay) })}
+                    </span>
+                    <span>{formatMoney(totalPrice)}</span>
+                  </span>
+                </li>
+              );
             })}
+          </ul>
+          <p className="text-muted-foreground">
+            {t('priceSummary', { days: reservation.rentalDays, discount: reservation.discountPercent })}
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               nativeButton={false}
-              render={<Link href={appStoreRoute(ski.store.id)} />}
+              render={<Link href={appStoreRoute(store.id)} />}
               data-testid="store-details-link"
             >
               <MapPinIcon aria-hidden />
@@ -195,7 +234,7 @@ function statusHint(
 ): string {
   switch (reservation.status) {
     case 'CREATED':
-      return t('hint.created', { store: reservation.ski.store.name });
+      return t('hint.created', { store: reservation.store.name });
     case 'ACTIVE':
       return t('hint.active');
     case 'RETURNED':

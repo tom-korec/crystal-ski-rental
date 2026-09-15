@@ -53,13 +53,13 @@ export function isPrismaError(error: unknown, code: HandledPrismaCode): boolean 
 }
 
 /**
- * A write refused by the `reservation_no_overlap` exclusion constraint. Prisma has no code of its own for
+ * A write refused by the `reservation_item_no_overlap` exclusion constraint. Prisma has no code of its own for
  * it (the driver's SQLSTATE is 23P01), so the constraint is recognised by name in the error details.
  */
 export function isOverlapViolation(error: unknown): boolean {
   return (
     error instanceof Prisma.PrismaClientKnownRequestError &&
-    `${error.message} ${JSON.stringify(error.meta ?? {})}`.includes('reservation_no_overlap')
+    `${error.message} ${JSON.stringify(error.meta ?? {})}`.includes('reservation_item_no_overlap')
   );
 }
 

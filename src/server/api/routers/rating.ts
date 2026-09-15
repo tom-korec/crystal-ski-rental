@@ -21,7 +21,13 @@ function refusal(access: RatingAccess) {
 async function ownReservation(db: PrismaClient, id: string, userId: string) {
   const reservation = await db.reservation.findUnique({
     where: { id },
-    select: { id: true, userId: true, status: true, returnedAt: true, ski: { select: { modelId: true } } },
+    select: {
+      id: true,
+      userId: true,
+      status: true,
+      returnedAt: true,
+      items: { select: { ski: { select: { modelId: true } } } },
+    },
   });
 
   if (reservation?.userId !== userId) throw notFound(NOT_FOUND);
@@ -54,7 +60,7 @@ async function writeRentalRating(
 }
 
 /**
- * One model rating per customer per model, written through a returned reservation of that model (BR-41).
+ * One model rating per customer per model, written through a returned reservation with a ski of that model (BR-41).
  * The model's average is recomputed with the model row locked, so two ratings saved at once cannot both
  * compute the average without the other.
  */
@@ -62,10 +68,14 @@ async function writeModelRating(
   tx: Prisma.TransactionClient,
   reservation: OwnReservation,
   userId: string,
-  input: NonNullable<RatingInput['model']>,
+  input: RatingInput['models'][number],
   now: Date,
 ) {
-  const modelId = reservation.ski.modelId;
+  const { modelId } = input;
+  if (!reservation.items.some((item) => item.ski.modelId === modelId)) {
+    throw badRequest('You can only rate skis that were in this rental.');
+  }
+
   await tx.$queryRaw`SELECT id FROM ski_model WHERE id = ${modelId} FOR UPDATE`;
 
   const existing = await tx.modelRating.findUnique({
@@ -99,7 +109,7 @@ async function writeModelRating(
 }
 
 export const ratingRouter = createTRPCRouter({
-  /** Rate the rental and the ski model of one returned reservation at once, all or nothing (FR-42…44). */
+  /** Rate the rental and the ski models of one returned reservation at once, all or nothing (FR-42…44). */
   rate: userProcedure.input(ratingSchema).mutation(async ({ ctx, input }) => {
     const userId = ctx.session.user.id;
     const reservation = await ownReservation(ctx.db, input.reservationId, userId);
@@ -108,7 +118,9 @@ export const ratingRouter = createTRPCRouter({
       await ctx.db.$transaction(async (tx) => {
         const now = new Date();
         if (input.rental) await writeRentalRating(tx, reservation, input.rental, now);
-        if (input.model) await writeModelRating(tx, reservation, userId, input.model, now);
+        // Models in a fixed order, so two saves locking the same rows cannot deadlock.
+        const models = input.models.toSorted((a, b) => a.modelId.localeCompare(b.modelId));
+        for (const model of models) await writeModelRating(tx, reservation, userId, model, now);
       });
     } catch (error) {
       // Two first submissions at once: the second loses a unique constraint.

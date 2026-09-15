@@ -3,9 +3,10 @@
 // User, Session, Account and Verification are the tables Better Auth requires; everything after
 // them is the rental domain.
 //
-// One guarantee is invisible here: `reservation_no_overlap`, an exclusion constraint added by the
-// migration of that name, stops a ski from holding two CREATED or ACTIVE reservations that share a
-// day (BR-20). Prisma cannot express exclusion constraints, so it lives only in that migration.
+// Some guarantees are invisible here because Prisma cannot express them; they live only in migrations.
+// `reservation_item_no_overlap` stops a ski from holding two CREATED or ACTIVE reservations that share
+// a day (BR-20), with a trigger that keeps each item in step with its reservation's status (both in
+// `reservation_items`). `customer_address_invoice_fields` checks which address fields belong to which kind.
 //
 // Rules that need a message worth showing someone (pricing, lifecycle transitions, rating windows,
 // the rental window) are enforced in the service layer.
@@ -194,8 +195,8 @@ model SkiModel {
 }
 
 model Store {
-  id                    String   @id @default(uuid(7))
-  name                  String   @unique
+  id                    String        @id @default(uuid(7))
+  name                  String        @unique
   street                String
   // Text, not a number: "12/A" and "1543/7" are ordinary Slovak house numbers.
   houseNumber           String
@@ -205,35 +206,36 @@ model Store {
   phone                 String
   email                 String
   // Free text per day, shown as written. An empty string means closed (FR-12).
-  openingHoursMonday    String   @default("")
-  openingHoursTuesday   String   @default("")
-  openingHoursWednesday String   @default("")
-  openingHoursThursday  String   @default("")
-  openingHoursFriday    String   @default("")
-  openingHoursSaturday  String   @default("")
-  openingHoursSunday    String   @default("")
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @default(now()) @updatedAt
+  openingHoursMonday    String        @default("")
+  openingHoursTuesday   String        @default("")
+  openingHoursWednesday String        @default("")
+  openingHoursThursday  String        @default("")
+  openingHoursFriday    String        @default("")
+  openingHoursSaturday  String        @default("")
+  openingHoursSunday    String        @default("")
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @default(now()) @updatedAt
+  reservations          Reservation[]
   skis                  Ski[]
 
   @@map("store")
 }
 
 model Ski {
-  id            String        @id @default(uuid(7))
+  id               String            @id @default(uuid(7))
   // Staff-only (BR-50).
-  inventoryCode String        @unique
-  modelId       String
-  storeId       String
-  lengthCm      Int
+  inventoryCode    String            @unique
+  modelId          String
+  storeId          String
+  lengthCm         Int
   // Offered for rental at all. Distinct from "free for these dates" (BR-22).
-  isAvailable   Boolean       @default(true)
-  deletedAt     DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @default(now()) @updatedAt
-  model         SkiModel      @relation(fields: [modelId], references: [id], onDelete: Restrict)
-  store         Store         @relation(fields: [storeId], references: [id], onDelete: Restrict)
-  reservations  Reservation[]
+  isAvailable      Boolean           @default(true)
+  deletedAt        DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
+  model            SkiModel          @relation(fields: [modelId], references: [id], onDelete: Restrict)
+  store            Store             @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  reservationItems ReservationItem[]
 
   @@index([deletedAt, isAvailable])
   @@index([modelId])
@@ -244,15 +246,16 @@ model Ski {
 
 model Reservation {
   id                String             @id @default(uuid(7))
-  skiId             String
   userId            String
+  // Every ski of a reservation is from this store (BR-6).
+  storeId           String
   // Whole days in UTC: startDate inclusive, endDate exclusive, so one rental can end on the day the
   // next begins. The overlap constraint uses the same '[)' range.
   startDate         DateTime           @db.Date
   endDate           DateTime           @db.Date
+  // The skis move through the lifecycle together (BR-10).
   status            ReservationStatus  @default(CREATED)
-  // Price snapshot at booking time. Later price changes never touch these (BR-5).
-  pricePerDay       Decimal            @db.Decimal(10, 2)
+  // Price snapshot at booking time, the sum of the items. Later price changes never touch these (BR-5).
   rentalDays        Int
   discountPercent   Int
   totalPrice        Decimal            @db.Decimal(10, 2)
@@ -265,21 +268,44 @@ model Reservation {
   cancelledById     String?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @default(now()) @updatedAt
-  ski               Ski                @relation(fields: [skiId], references: [id], onDelete: Restrict)
   user              User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  store             Store              @relation(fields: [storeId], references: [id], onDelete: Restrict)
   pickedUpBy        User?              @relation("PickedUpBy", fields: [pickedUpById], references: [id], onDelete: SetNull)
   returnedBy        User?              @relation("ReturnedBy", fields: [returnedById], references: [id], onDelete: SetNull)
   cancelledBy       User?              @relation("CancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+  items             ReservationItem[]
   rating            ReservationRating?
   openedModelRating ModelRating[]
 
-  // The overlap lookup behind every booking and search.
-  @@index([skiId, status, startDate])
   @@index([userId, startDate])
-  // Front desk: pickups and returns due or overdue.
-  @@index([status, startDate])
-  @@index([status, endDate])
+  // Front desk: pickups and returns due or overdue at one store.
+  @@index([storeId, status, startDate])
+  @@index([storeId, status, endDate])
   @@map("reservation")
+}
+
+// One ski of a reservation, with its own price snapshot (BR-5).
+//
+// The dates, and whether they are still held, are copies of the reservation's, because the
+// `reservation_item_no_overlap` constraint can only see this table (BR-20). The dates never change;
+// a trigger from the same migration keeps `holdsDates` in step with the reservation's status.
+model ReservationItem {
+  id            String      @id @default(uuid(7))
+  reservationId String
+  skiId         String
+  startDate     DateTime    @db.Date
+  endDate       DateTime    @db.Date
+  // True while the reservation is CREATED or ACTIVE.
+  holdsDates    Boolean     @default(true)
+  pricePerDay   Decimal     @db.Decimal(10, 2)
+  totalPrice    Decimal     @db.Decimal(10, 2)
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  ski           Ski         @relation(fields: [skiId], references: [id], onDelete: Restrict)
+
+  @@unique([reservationId, skiId])
+  // The overlap lookup behind every booking and search.
+  @@index([skiId, holdsDates, startDate])
+  @@map("reservation_item")
 }
 
 // Feedback on the rental experience, one per reservation (BR-40).

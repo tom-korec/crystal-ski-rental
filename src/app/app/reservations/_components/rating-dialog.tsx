@@ -32,16 +32,21 @@ export interface RatingPart {
   editableUntil: Date | null;
 }
 
+export interface ModelRatingPart extends RatingPart {
+  modelId: string;
+  /** Brand and model, e.g. "Atomic Redster G9". */
+  name: string;
+}
+
 interface RatingDialogProps {
   action: RatingAction;
   reservationId: string;
   store: string;
-  skis: string;
   rental: RatingPart;
-  model: RatingPart;
+  models: ModelRatingPart[];
 }
 
-/** Rate the rental and the skis together, or change both while the edit window is open (FR-42…44). */
+/** Rate the rental and every ski model in it together, or change them while the edit window is open (FR-42…44). */
 export function RatingDialog({ action, ...props }: RatingDialogProps) {
   const t = useTranslations('ratings');
   const [open, setOpen] = useState(false);
@@ -61,24 +66,32 @@ export function RatingDialog({ action, ...props }: RatingDialogProps) {
         {action === 'rate' ? <StarIcon aria-hidden /> : <PencilIcon aria-hidden />}
         {t(action === 'rate' ? 'rate' : 'edit')}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl" data-testid="rating-dialog">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl" data-testid="rating-dialog">
         {open ? <RatingForm action={action} {...props} onDone={() => setOpen(false)} /> : null}
       </DialogContent>
     </Dialog>
   );
 }
 
-interface RatingFormProps extends Omit<RatingDialogProps, 'action'> {
-  action: RatingAction;
+interface RatingFormProps extends RatingDialogProps {
   onDone: () => void;
 }
 
-function RatingForm({ action, reservationId, store, skis, rental, model, onDone }: RatingFormProps) {
+interface Draft {
+  score: number | undefined;
+  text: string;
+}
+
+function draftOf(part: RatingPart): Draft {
+  return { score: part.current?.score, text: part.current?.text ?? '' };
+}
+
+function RatingForm({ action, reservationId, store, rental, models, onDone }: RatingFormProps) {
   const t = useTranslations('ratings');
   const locale = useLocale();
   const utils = api.useUtils();
   const [rentalDraft, setRentalDraft] = useState(draftOf(rental));
-  const [modelDraft, setModelDraft] = useState(draftOf(model));
+  const [modelDrafts, setModelDrafts] = useState(() => models.map(draftOf));
   const [submitted, setSubmitted] = useState(false);
 
   const rate = api.rating.rate.useMutation({
@@ -89,26 +102,28 @@ function RatingForm({ action, reservationId, store, skis, rental, model, onDone 
   });
 
   const writesRental = canWriteRating(rental.access);
-  const writesModel = canWriteRating(model.access);
-
-  const windows = [rental.editableUntil, model.editableUntil].filter((end) => end !== null);
-  // Both ratings are saved together, so their windows close together; the earlier one is the safe answer.
+  const windows = [rental, ...models].map((part) => part.editableUntil).filter((end) => end !== null);
+  // Everything is saved together, so the windows close together; the earliest one is the safe answer.
   const until = windows.length > 0 ? new Date(Math.min(...windows.map((end) => end.getTime()))) : null;
 
   function submit() {
     setSubmitted(true);
-    if ((writesRental && rentalDraft.score === undefined) || (writesModel && modelDraft.score === undefined)) return;
+
+    const writtenModels = models.flatMap((model, index) => {
+      const draft = modelDrafts[index];
+      return canWriteRating(model.access) && draft ? [{ model, draft }] : [];
+    });
+    const rentalScore = rentalDraft.score;
+    if ((writesRental && rentalScore === undefined) || writtenModels.some(({ draft }) => draft.score === undefined)) {
+      return;
+    }
 
     rate.mutate({
       reservationId,
-      rental:
-        writesRental && rentalDraft.score !== undefined
-          ? { score: rentalDraft.score, note: rentalDraft.text }
-          : undefined,
-      model:
-        writesModel && modelDraft.score !== undefined
-          ? { score: modelDraft.score, comment: modelDraft.text }
-          : undefined,
+      rental: writesRental && rentalScore !== undefined ? { score: rentalScore, note: rentalDraft.text } : undefined,
+      models: writtenModels.flatMap(({ model, draft }) =>
+        draft.score === undefined ? [] : [{ modelId: model.modelId, score: draft.score, comment: draft.text }],
+      ),
     });
   }
 
@@ -130,8 +145,9 @@ function RatingForm({ action, reservationId, store, skis, rental, model, onDone 
         </DialogDescription>
       </DialogHeader>
 
-      <div className="grid gap-6 md:grid-cols-2 md:gap-8">
+      <div className="grid gap-x-8 gap-y-8 md:grid-cols-2">
         <RatingSection
+          id="rental"
           kind="rental"
           title={t('rental.title', { store })}
           part={rental}
@@ -139,14 +155,18 @@ function RatingForm({ action, reservationId, store, skis, rental, model, onDone 
           onChange={setRentalDraft}
           submitted={submitted}
         />
-        <RatingSection
-          kind="model"
-          title={t('model.title', { skis })}
-          part={model}
-          draft={modelDraft}
-          onChange={setModelDraft}
-          submitted={submitted}
-        />
+        {models.map((model, index) => (
+          <RatingSection
+            key={model.modelId}
+            id={`model-${index}`}
+            kind="model"
+            title={t('model.title', { skis: model.name })}
+            part={model}
+            draft={modelDrafts[index] ?? draftOf(model)}
+            onChange={(draft) => setModelDrafts((drafts) => drafts.with(index, draft))}
+            submitted={submitted}
+          />
+        ))}
       </div>
 
       <p className="text-muted-foreground text-xs">{t('staffOnly')}</p>
@@ -163,16 +183,9 @@ function RatingForm({ action, reservationId, store, skis, rental, model, onDone 
   );
 }
 
-interface Draft {
-  score: number | undefined;
-  text: string;
-}
-
-function draftOf(part: RatingPart): Draft {
-  return { score: part.current?.score, text: part.current?.text ?? '' };
-}
-
 interface RatingSectionProps {
+  /** Unique within the dialog: names the inputs and the test ids. */
+  id: string;
   kind: 'rental' | 'model';
   title: string;
   part: RatingPart;
@@ -181,12 +194,12 @@ interface RatingSectionProps {
   submitted: boolean;
 }
 
-function RatingSection({ kind, title, part, draft, onChange, submitted }: RatingSectionProps) {
+function RatingSection({ id, kind, title, part, draft, onChange, submitted }: RatingSectionProps) {
   const t = useTranslations('ratings');
-  const textId = `${kind}-text`;
+  const textId = `${id}-text`;
 
   return (
-    <section className="flex flex-col gap-4" data-testid={`${kind}-rating-section`}>
+    <section className="flex flex-col gap-4" data-testid={`${id}-rating-section`}>
       <div className="flex flex-col gap-1">
         <h3 className="font-medium">{title}</h3>
         {part.access === 'reopen' ? <p className="text-muted-foreground text-sm">{t('model.reopenHint')}</p> : null}
@@ -195,7 +208,7 @@ function RatingSection({ kind, title, part, draft, onChange, submitted }: Rating
       {canWriteRating(part.access) ? (
         <>
           <ScoreInput
-            name={`${kind}-score`}
+            name={`${id}-score`}
             label={t('score')}
             value={draft.score}
             onChange={(score) => onChange({ ...draft, score })}
@@ -206,7 +219,7 @@ function RatingSection({ kind, title, part, draft, onChange, submitted }: Rating
             <Textarea
               id={textId}
               value={draft.text}
-              rows={4}
+              rows={3}
               maxLength={RATING_TEXT_MAX_LENGTH}
               onChange={(event) => onChange({ ...draft, text: event.target.value })}
               placeholder={t(`${kind}.textPlaceholder`)}
@@ -214,7 +227,7 @@ function RatingSection({ kind, title, part, draft, onChange, submitted }: Rating
           </div>
         </>
       ) : (
-        <div className="flex flex-col gap-2 text-sm" data-testid={`${kind}-rating-locked`}>
+        <div className="flex flex-col gap-2 text-sm" data-testid={`${id}-rating-locked`}>
           {part.current ? <StarScore score={part.current.score} /> : null}
           {part.current?.text ? <p className="text-muted-foreground">“{part.current.text}”</p> : null}
           <p className="text-muted-foreground text-xs">{t('locked')}</p>

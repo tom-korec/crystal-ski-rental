@@ -196,7 +196,7 @@
     "details": "Details",
     "ratingRental": "Rental",
     "ratingSkis": "Skis",
-    "priceSummary": "{days, plural, one {# day} other {# days}} × {price}{discount, select, 0 {} other { · −{discount} %}}",
+    "priceSummary": "{days, plural, one {# day} other {# days}}{discount, select, 0 {} other { · −{discount} % for the length of the rental}}",
     "cancelTitle": "Cancel this reservation?",
     "cancelDescription": "{skis} for {period} will be released for other customers. This cannot be undone.",
     "cancelConfirm": "Cancel reservation",
@@ -223,7 +223,10 @@
       "CANCELLED_BY_USER": "Cancelled by customer",
       "CANCELLED_BY_STORE": "Cancelled by store"
     },
-    "storeDetails": "Store details"
+    "storeDetails": "Store details",
+    "perDay": "{price} / day",
+    "pairsOf": "{count, plural, one {# pair} other {# pairs}}: {skis}",
+    "modelsRated": "{rated} of {total} rated"
   },
   "ratings": {
     "rate": "Rate",
@@ -280,7 +283,7 @@
     "pickUp": "Mark picked up",
     "markReturned": "Mark returned",
     "returnTitle": "Mark these skis returned?",
-    "returnDescription": "{customer} has brought back {skis} ({code}). The rental ends and the ski can be booked again. This cannot be undone.",
+    "returnDescription": "{customer} has brought back {skis}. The rental ends and {count, plural, one {the ski} other {the skis}} can be booked again. This cannot be undone.",
     "returnConfirm": "Mark returned",
     "notYet": "Not yet",
     "cancel": "Cancel booking",
@@ -290,7 +293,8 @@
     "cancelConfirm": "Cancel booking",
     "keep": "Keep it",
     "cancelledBy": "Cancelled by {name}",
-    "rentalRating": "Rental rated {score} / 5"
+    "rentalRating": "Rental rated {score} / 5",
+    "pairs": "{count, plural, one {# pair} other {# pairs}}"
   },
   "fleet": {
     "title": "Fleet",

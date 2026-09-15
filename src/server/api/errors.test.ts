@@ -44,12 +44,12 @@ describe('isOverlapViolation', () => {
     });
 
   it('recognises the double-booking constraint', () => {
-    expect(isOverlapViolation(driverError('reservation_no_overlap'))).toBe(true);
+    expect(isOverlapViolation(driverError('reservation_item_no_overlap'))).toBe(true);
   });
 
   it('ignores other constraint violations and other errors', () => {
     expect(isOverlapViolation(driverError('some_other_constraint'))).toBe(false);
-    expect(isOverlapViolation(new Error('reservation_no_overlap'))).toBe(false);
+    expect(isOverlapViolation(new Error('reservation_item_no_overlap'))).toBe(false);
     expect(isOverlapViolation(null)).toBe(false);
   });
 });

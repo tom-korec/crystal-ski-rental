@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { Money } from '~/lib/money';
-import { discountPercentFor, quoteRental } from '~/lib/pricing';
+import { discountPercentFor, quoteRental, quoteReservation } from '~/lib/pricing';
 
 describe('discountPercentFor', () => {
   it.each([
@@ -59,5 +59,36 @@ describe('quoteRental', () => {
 
   it('normalises the price to two decimals', () => {
     expect(quoteRental('25', 1)).toMatchObject({ pricePerDay: '25.00', totalPrice: '25.00' });
+  });
+});
+
+describe('quoteReservation', () => {
+  it('quotes every ski for the same days and adds up the rounded lines', () => {
+    // 10 % off five days: 33.33 × 5 × 0.9 = 149.985 → 149.99, twice, is 299.98 (not 299.97 from the raw sum).
+    const quote = quoteReservation(
+      [
+        { id: 'a', pricePerDay: '33.33' },
+        { id: 'b', pricePerDay: '33.33' },
+        { id: 'c', pricePerDay: '20' },
+      ],
+      5,
+    );
+
+    expect(quote.items.map((item) => [item.id, item.quote.totalPrice])).toEqual([
+      ['a', '149.99'],
+      ['b', '149.99'],
+      ['c', '90.00'],
+    ]);
+    expect(quote).toMatchObject({
+      rentalDays: 5,
+      discountPercent: 10,
+      subtotal: '433.30',
+      discount: '43.32',
+      totalPrice: '389.98',
+    });
+  });
+
+  it('needs at least one ski', () => {
+    expect(() => quoteReservation([], 3)).toThrow(RangeError);
   });
 });

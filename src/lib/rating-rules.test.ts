@@ -99,17 +99,19 @@ describe('canWriteRating', () => {
 });
 
 describe('ratingAction', () => {
-  it.each<[RatingAccess, RatingAccess, ReturnType<typeof ratingAction>]>([
-    ['create', 'create', 'rate'],
-    ['create', 'reopen', 'rate'],
-    ['locked', 'reopen', 'rate'],
-    ['create', 'locked', 'rate'],
-    ['edit', 'edit', 'edit'],
-    ['edit', 'locked', 'edit'],
-    ['locked', 'edit', 'edit'],
-    ['locked', 'locked', null],
-    ['notEligible', 'notEligible', null],
-  ])('rental %s and model %s give %s', (rental, model, action) => {
-    expect(ratingAction(rental, model)).toBe(action);
+  it.each<[RatingAccess, RatingAccess[], ReturnType<typeof ratingAction>]>([
+    ['create', ['create'], 'rate'],
+    ['create', ['reopen'], 'rate'],
+    ['locked', ['reopen'], 'rate'],
+    ['create', ['locked'], 'rate'],
+    ['locked', ['locked', 'create'], 'rate'],
+    ['edit', ['edit', 'reopen'], 'rate'],
+    ['edit', ['edit'], 'edit'],
+    ['edit', ['locked'], 'edit'],
+    ['locked', ['locked', 'edit'], 'edit'],
+    ['locked', ['locked', 'locked'], null],
+    ['notEligible', ['notEligible'], null],
+  ])('rental %s and models %j give %s', (rental, models, action) => {
+    expect(ratingAction(rental, models)).toBe(action);
   });
 });

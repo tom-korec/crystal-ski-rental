@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 
 import { PrismaPg } from '@prisma/adapter-pg';
 
+import { DATE_HOLDING_STATUSES } from '../../src/lib/reservation-lifecycle';
 import { PrismaClient } from '../../generated/prisma/client';
 import { DEMO_ACCOUNTS } from './data';
 import { CATALOGUE_CREATED, generateSeedData, type SeedData } from './generate';
@@ -30,7 +31,7 @@ async function write(data: SeedData): Promise<void> {
 
   await db.$transaction(
     async (tx) => {
-      await tx.$executeRaw`TRUNCATE customer_address, model_rating, reservation_rating, reservation, ski, ski_model, brand, store, session, account, verification, rate_limit, "user" CASCADE`;
+      await tx.$executeRaw`TRUNCATE customer_address, model_rating, reservation_rating, reservation_item, reservation, ski, ski_model, brand, store, session, account, verification, rate_limit, "user" CASCADE`;
 
       const catalogueTimes = { createdAt: CATALOGUE_CREATED, updatedAt: CATALOGUE_CREATED };
 
@@ -85,11 +86,22 @@ async function write(data: SeedData): Promise<void> {
         data: data.skis.map((ski) => ({ ...ski, updatedAt: ski.deletedAt ?? ski.createdAt })),
       });
       await tx.reservation.createMany({
-        data: data.reservations.map((reservation) => ({
+        data: data.reservations.map(({ items: _items, ...reservation }) => ({
           ...reservation,
           updatedAt:
             reservation.cancelledAt ?? reservation.returnedAt ?? reservation.pickedUpAt ?? reservation.createdAt,
         })),
+      });
+      await tx.reservationItem.createMany({
+        data: data.reservations.flatMap((reservation) =>
+          reservation.items.map((item) => ({
+            ...item,
+            reservationId: reservation.id,
+            startDate: reservation.startDate,
+            endDate: reservation.endDate,
+            holdsDates: (DATE_HOLDING_STATUSES as readonly string[]).includes(reservation.status),
+          })),
+        ),
       });
       await tx.reservationRating.createMany({
         data: data.reservationRatings.map((rating) => ({ ...rating, updatedAt: rating.createdAt })),

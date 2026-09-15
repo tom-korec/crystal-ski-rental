@@ -1,7 +1,7 @@
 import { addUtcDays, todayUtc, toUtcDate, utcDaysBetween } from '~/lib/date';
 import { toMoneyString } from '~/lib/money';
 import { PAGE_SIZE, pageCount, skipForPage } from '~/lib/pagination';
-import { quoteRental } from '~/lib/pricing';
+import { quoteReservation } from '~/lib/pricing';
 import {
   canCancelAsStore,
   canCancelAsUser,
@@ -19,7 +19,7 @@ import {
 } from '~/lib/reservation-schema';
 import { isStaff } from '~/lib/roles';
 import { badRequest, conflict, isOverlapViolation, notFound } from '~/server/api/errors';
-import { overlappingReservation } from '~/server/api/overlap';
+import { overlappingItem } from '~/server/api/overlap';
 import { createTRPCRouter, protectedProcedure, staffProcedure, userProcedure } from '~/server/api/trpc';
 
 import type { Prisma, PrismaClient } from '../../../../generated/prisma/client';
@@ -30,14 +30,13 @@ import type { Prisma, PrismaClient } from '../../../../generated/prisma/client';
 
 const NOT_FOUND = 'Reservation not found.';
 const CHANGED_MEANWHILE = 'This reservation was changed in the meantime. Reload and try again.';
-const ALREADY_BOOKED = 'These skis are already booked for some of those days. Pick other dates or other skis.';
+const ALREADY_BOOKED = 'Some of these skis are already booked for some of those days. Pick other dates or other skis.';
 
 const reservationFields = {
   id: true,
   startDate: true,
   endDate: true,
   status: true,
-  pricePerDay: true,
   rentalDays: true,
   discountPercent: true,
   totalPrice: true,
@@ -51,24 +50,40 @@ const skiModelSummary = { select: { id: true, name: true, brand: { select: { nam
 
 const rentalRatingSelect = { select: { score: true, note: true, createdAt: true } } as const;
 
-/** A customer's own reservation: the store's full details, never the inventory code (FR-40, BR-50). */
+/** Items in a stable order: by model, then length, so the same reservation always reads the same. */
+const ITEM_ORDER = [
+  { ski: { model: { name: 'asc' } } },
+  { ski: { lengthCm: 'asc' } },
+  { id: 'asc' },
+] satisfies Prisma.ReservationItemOrderByWithRelationInput[];
+
+/** A customer's own reservation: never the inventory codes (FR-40, BR-50). */
 const customerReservationSelect = {
   ...reservationFields,
-  ski: { select: { id: true, lengthCm: true, model: skiModelSummary, store: { select: { id: true, name: true } } } },
+  store: { select: { id: true, name: true } },
+  items: {
+    select: {
+      id: true,
+      pricePerDay: true,
+      totalPrice: true,
+      ski: { select: { id: true, lengthCm: true, model: skiModelSummary } },
+    },
+    orderBy: ITEM_ORDER,
+  },
   rating: rentalRatingSelect,
 } satisfies Prisma.ReservationSelect;
 
 const staffReservationSelect = {
   ...reservationFields,
-  ski: {
+  store: { select: { id: true, name: true, city: true } },
+  items: {
     select: {
       id: true,
-      inventoryCode: true,
-      lengthCm: true,
-      deletedAt: true,
-      model: skiModelSummary,
-      store: { select: { id: true, name: true, city: true } },
+      pricePerDay: true,
+      totalPrice: true,
+      ski: { select: { id: true, inventoryCode: true, lengthCm: true, deletedAt: true, model: skiModelSummary } },
     },
+    orderBy: ITEM_ORDER,
   },
   user: { select: { id: true, name: true, email: true, deletedAt: true } },
   pickedUpBy: { select: { id: true, name: true } },
@@ -77,10 +92,26 @@ const staffReservationSelect = {
   rating: rentalRatingSelect,
 } satisfies Prisma.ReservationSelect;
 
-function withPlainPrices<T extends { pricePerDay: { toString(): string }; totalPrice: { toString(): string } }>(
+type Priced = { toString(): string };
+type PricedItem = { pricePerDay: Priced; totalPrice: Priced };
+type PlainItem<I extends PricedItem> = Omit<I, 'pricePerDay' | 'totalPrice'> & {
+  pricePerDay: string;
+  totalPrice: string;
+};
+
+/** Decimal columns leave the API as plain strings. */
+function withPlainPrices<T extends { totalPrice: Priced; items: PricedItem[] }>(
   row: T,
-) {
-  return { ...row, pricePerDay: toMoneyString(row.pricePerDay), totalPrice: toMoneyString(row.totalPrice) };
+): Omit<T, 'totalPrice' | 'items'> & { totalPrice: string; items: PlainItem<T['items'][number]>[] } {
+  return {
+    ...row,
+    totalPrice: toMoneyString(row.totalPrice),
+    items: row.items.map((item: T['items'][number]): PlainItem<T['items'][number]> => ({
+      ...item,
+      pricePerDay: toMoneyString(item.pricePerDay),
+      totalPrice: toMoneyString(item.totalPrice),
+    })),
+  };
 }
 
 /** Newest first, tie-broken by id so a page boundary cannot repeat or skip a row. */
@@ -106,42 +137,60 @@ async function findForTransition(db: PrismaClient, id: string) {
 
 export const reservationRouter = createTRPCRouter({
   /**
-   * Book a ski (FR-33). The database constraint is what prevents double booking (BR-20); the query
-   * before the insert only exists to answer the ordinary case with a readable message. The price is
-   * quoted from the model's current price and saved on the reservation (BR-5).
+   * Book one or more skis from one store for the same days (FR-33, BR-6). The database constraint is
+   * what prevents double booking (BR-20); the query before the insert only exists to answer the
+   * ordinary case with a readable message. Prices are quoted from the models' current prices and saved
+   * on the items (BR-5).
    */
   create: userProcedure.input(reservationCreateSchema).mutation(async ({ ctx, input }) => {
     const startDate = toUtcDate(input.startDate);
     const endDate = toUtcDate(input.endDate);
 
-    const ski = await ctx.db.ski.findFirst({
-      where: { id: input.skiId, deletedAt: null },
-      select: { id: true, isAvailable: true, model: { select: { pricePerDay: true } } },
+    const skis = await ctx.db.ski.findMany({
+      where: { id: { in: input.skiIds }, deletedAt: null },
+      select: { id: true, storeId: true, isAvailable: true, model: { select: { pricePerDay: true } } },
     });
 
-    if (!ski) throw notFound('Ski not found.');
-    if (!ski.isAvailable) throw conflict('These skis are not offered for rental at the moment.');
+    if (skis.length !== input.skiIds.length) throw notFound('Some of these skis are no longer in the fleet.');
+    if (skis.some((ski) => !ski.isAvailable)) {
+      throw conflict('Some of these skis are not offered for rental at the moment. Remove them and try again.');
+    }
 
-    const clash = await ctx.db.reservation.findFirst({
-      where: { skiId: ski.id, ...overlappingReservation(startDate, endDate) },
+    const storeIds = new Set(skis.map((ski) => ski.storeId));
+    const [storeId] = storeIds;
+    if (storeIds.size !== 1 || !storeId) throw badRequest('All skis in a reservation must be from the same store.');
+
+    const clash = await ctx.db.reservationItem.findFirst({
+      where: { skiId: { in: input.skiIds }, ...overlappingItem(startDate, endDate) },
       select: { id: true },
     });
 
     if (clash) throw conflict(ALREADY_BOOKED);
 
-    const quote = quoteRental(toMoneyString(ski.model.pricePerDay), utcDaysBetween(startDate, endDate));
+    const quote = quoteReservation(
+      skis.map((ski) => ({ skiId: ski.id, pricePerDay: toMoneyString(ski.model.pricePerDay) })),
+      utcDaysBetween(startDate, endDate),
+    );
 
     try {
       const reservation = await ctx.db.reservation.create({
         data: {
-          skiId: ski.id,
           userId: ctx.session.user.id,
+          storeId,
           startDate,
           endDate,
-          pricePerDay: quote.pricePerDay,
           rentalDays: quote.rentalDays,
           discountPercent: quote.discountPercent,
           totalPrice: quote.totalPrice,
+          items: {
+            create: quote.items.map((item) => ({
+              skiId: item.skiId,
+              startDate,
+              endDate,
+              pricePerDay: item.quote.pricePerDay,
+              totalPrice: item.quote.totalPrice,
+            })),
+          },
         },
         select: customerReservationSelect,
       });
@@ -229,8 +278,8 @@ export const reservationRouter = createTRPCRouter({
   }),
 
   /**
-   * The caller's own reservations, newest first (FR-40). Each carries the customer's rating of its ski
-   * model, if any, so the screen can tell whether this reservation may create, edit or reopen it.
+   * The caller's own reservations, newest first (FR-40). Each carries the customer's ratings of the ski
+   * models in it, so the screen can tell whether this reservation may create, edit or reopen each one.
    */
   listMine: userProcedure.input(myReservationsSchema).query(async ({ ctx, input }) => {
     const userId = ctx.session.user.id;
@@ -244,23 +293,23 @@ export const reservationRouter = createTRPCRouter({
       take,
     });
 
+    const modelIds = [...new Set(rows.flatMap((row) => row.items.map((item) => item.ski.model.id)))];
     const modelRatings = await ctx.db.modelRating.findMany({
-      where: { userId, modelId: { in: rows.map((row) => row.ski.model.id) } },
+      where: { userId, modelId: { in: modelIds } },
       select: { modelId: true, score: true, comment: true, reservationId: true, windowStartedAt: true },
     });
-    const ratingByModel = new Map(modelRatings.map(({ modelId, ...rating }) => [modelId, rating]));
 
-    const items = rows.map((row) => ({
-      ...withPlainPrices(row),
-      modelRating: ratingByModel.get(row.ski.model.id) ?? null,
-    }));
+    const items = rows.map((row) => {
+      const models = new Set(row.items.map((item) => item.ski.model.id));
+      return { ...withPlainPrices(row), modelRatings: modelRatings.filter((rating) => models.has(rating.modelId)) };
+    });
 
     return { items, total, page };
   }),
 
   /** Every reservation of one ski, for its detail page (FR-60). */
   bySki: staffProcedure.input(reservationsBySkiSchema).query(async ({ ctx, input }) => {
-    const where = { skiId: input.skiId };
+    const where = { items: { some: { skiId: input.skiId } } } satisfies Prisma.ReservationWhereInput;
     const { total, page, skip, take } = await pageOf(ctx.db, where, input.page);
     const rows = await ctx.db.reservation.findMany({
       where,
@@ -294,7 +343,7 @@ export const reservationRouter = createTRPCRouter({
    */
   frontDesk: staffProcedure.input(frontDeskSchema).query(async ({ ctx, input }) => {
     const today = todayUtc();
-    const atStore = { ski: { storeId: input.storeId } } satisfies Prisma.ReservationWhereInput;
+    const atStore = { storeId: input.storeId } satisfies Prisma.ReservationWhereInput;
     const list = (where: Prisma.ReservationWhereInput, orderBy: Prisma.ReservationOrderByWithRelationInput[]) =>
       ctx.db.reservation.findMany({ where: { ...atStore, ...where }, select: staffReservationSelect, orderBy });
 
@@ -321,10 +370,13 @@ export const reservationRouter = createTRPCRouter({
   blockersBySki: staffProcedure.input(reservationsBySkiSchema.pick({ skiId: true })).query(async ({ ctx, input }) => {
     const today = todayUtc();
 
+    const holding = (where: Prisma.ReservationWhereInput) =>
+      ctx.db.reservation.count({ where: { items: { some: { skiId: input.skiId } }, ...where } });
+
     const [upcoming, active, open] = await ctx.db.$transaction([
-      ctx.db.reservation.count({ where: { skiId: input.skiId, status: 'CREATED', endDate: { gt: today } } }),
-      ctx.db.reservation.count({ where: { skiId: input.skiId, status: 'ACTIVE' } }),
-      ctx.db.reservation.count({ where: { skiId: input.skiId, status: { in: [...DATE_HOLDING_STATUSES] } } }),
+      holding({ status: 'CREATED', endDate: { gt: today } }),
+      holding({ status: 'ACTIVE' }),
+      holding({ status: { in: [...DATE_HOLDING_STATUSES] } }),
     ]);
 
     return { upcoming, active, open };

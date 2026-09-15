@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { invoiceAddressSchema, mailingAddressSchema } from '../../src/lib/address-schema';
 import { addUtcDays, todayUtc } from '../../src/lib/date';
-import { quoteRental } from '../../src/lib/pricing';
+import { quoteReservation } from '../../src/lib/pricing';
 import { RATING_EDIT_WINDOW_MS } from '../../src/lib/rating-rules';
 import type { ReservationStatus } from '../../src/lib/reservation-lifecycle';
 import {
@@ -110,14 +110,21 @@ export interface SkiRow {
   createdAt: Date;
 }
 
-export interface ReservationRow {
+export interface ReservationItemRow {
   id: string;
   skiId: string;
+  pricePerDay: string;
+  totalPrice: string;
+}
+
+export interface ReservationRow {
+  id: string;
   userId: string;
+  storeId: string;
   startDate: Date;
   endDate: Date;
   status: ReservationStatus;
-  pricePerDay: string;
+  items: ReservationItemRow[];
   rentalDays: number;
   discountPercent: number;
   totalPrice: string;
@@ -284,7 +291,7 @@ function buildFleet(data: Pick<SeedData, 'stores' | 'models'>): FleetPlan {
   }
 
   // The first skis at Jasná carry the scripted scenarios below.
-  const scripted = new Map(skis.slice(0, 11).map((ski) => [ski.inventoryCode, ski]));
+  const scripted = new Map(skis.slice(0, 14).map((ski) => [ski.inventoryCode, ski]));
 
   // The demo customer rents the same model twice, so the second rental can reopen their model rating.
   const first = skis[0];
@@ -294,6 +301,15 @@ function buildFleet(data: Pick<SeedData, 'stores' | 'models'>): FleetPlan {
   if (!firstModel) throw new Error('Model missing');
   second.modelId = first.modelId;
   second.lengthCm = LENGTHS_BY_GENDER[firstModel.gender].find((length) => length !== first.lengthCm) ?? first.lengthCm;
+
+  // Its second pair is a different model, so that rental rates two models at once.
+  const secondPair = skis[11];
+  if (!secondPair) throw new Error('Fleet too small');
+  if (secondPair.modelId === first.modelId) {
+    const other = data.models.find((model) => model.id !== first.modelId && model.gender === firstModel.gender);
+    if (!other) throw new Error('No second model for the scripted rental');
+    secondPair.modelId = other.id;
+  }
 
   // One ski taken out of rental (bookings stay honoured) and one retired with history.
   const lastAtPleso = skis.filter((ski) => ski.storeId === data.stores[2]?.id).at(-1);
@@ -307,7 +323,8 @@ function buildFleet(data: Pick<SeedData, 'stores' | 'models'>): FleetPlan {
 }
 
 interface ReservationSpec {
-  ski: SkiRow;
+  /** All from one store. */
+  skis: SkiRow[];
   user: UserRow;
   start: number;
   /** Exclusive, like the stored `endDate`. */
@@ -320,24 +337,36 @@ interface ReservationSpec {
 }
 
 function buildReservation(spec: ReservationSpec, data: SeedData, staff: UserRow[]): ReservationRow {
-  const model = data.models.find((candidate) => candidate.id === spec.ski.modelId);
-  if (!model) throw new Error(`Unknown model for ${spec.ski.inventoryCode}`);
+  const [first] = spec.skis;
+  if (!first) throw new Error('A reservation needs a ski');
 
   const startDate = day(spec.start);
   const endDate = day(spec.end);
-  const quote = quoteRental(model.pricePerDay, daysBetween(startDate, endDate));
+  const quote = quoteReservation(
+    spec.skis.map((ski) => {
+      const model = data.models.find((candidate) => candidate.id === ski.modelId);
+      if (!model) throw new Error(`Unknown model for ${ski.inventoryCode}`);
+      return { skiId: ski.id, pricePerDay: model.pricePerDay };
+    }),
+    daysBetween(startDate, endDate),
+  );
 
   const bookedOn = Math.min(spec.start - randomInt(1, 21), -1);
   const createdAt = new Date(Math.max(momentOn(bookedOn).getTime(), spec.user.createdAt.getTime() + HOUR_MS));
 
   const row: ReservationRow = {
     id: randomUUID(),
-    skiId: spec.ski.id,
     userId: spec.user.id,
+    storeId: first.storeId,
     startDate,
     endDate,
     status: spec.status,
-    pricePerDay: quote.pricePerDay,
+    items: quote.items.map((item) => ({
+      id: randomUUID(),
+      skiId: item.skiId,
+      pricePerDay: item.quote.pricePerDay,
+      totalPrice: item.quote.totalPrice,
+    })),
     rentalDays: quote.rentalDays,
     discountPercent: quote.discountPercent,
     totalPrice: quote.totalPrice,
@@ -394,29 +423,29 @@ function scriptedSpecs(scripted: Map<string, SkiRow>, users: UserRow[]): Reserva
   const martin = user('martin.varga');
 
   return [
-    // The demo customer's history: a rated rental, a newer rental of the same model that may reopen the
-    // model rating, a rental returned today and still inside its edit window, one out now, one upcoming
-    // and one cancelled.
-    { ski: ski('SK-0001'), user: jan, start: -30, end: -26, status: 'RETURNED' },
-    { ski: ski('SK-0002'), user: jan, start: -9, end: -6, status: 'RETURNED' },
+    // The demo customer's history: a rated rental, a newer rental of the same model (with a second pair)
+    // that may reopen the model rating, a rental returned today and still inside its edit window, one out
+    // now, a family booking coming up and one cancelled.
+    { skis: [ski('SK-0001')], user: jan, start: -30, end: -26, status: 'RETURNED' },
+    { skis: [ski('SK-0002'), ski('SK-0012')], user: jan, start: -9, end: -6, status: 'RETURNED' },
     {
-      ski: ski('SK-0003'),
+      skis: [ski('SK-0003')],
       user: jan,
       start: -3,
       end: 1,
       status: 'RETURNED',
       returnedAt: new Date(NOW.getTime() - 40 * MINUTE_MS),
     },
-    { ski: ski('SK-0004'), user: jan, start: -1, end: 3, status: 'ACTIVE' },
-    { ski: ski('SK-0005'), user: jan, start: 7, end: 12, status: 'CREATED' },
-    { ski: ski('SK-0006'), user: jan, start: 14, end: 16, status: 'CANCELLED_BY_USER' },
+    { skis: [ski('SK-0004')], user: jan, start: -1, end: 3, status: 'ACTIVE' },
+    { skis: [ski('SK-0005'), ski('SK-0013')], user: jan, start: 7, end: 12, status: 'CREATED' },
+    { skis: [ski('SK-0006')], user: jan, start: 14, end: 16, status: 'CANCELLED_BY_USER' },
 
-    // The Jasná front desk has something in every list.
-    { ski: ski('SK-0007'), user: zuzana, start: 0, end: 3, status: 'CREATED' },
-    { ski: ski('SK-0008'), user: michal, start: -2, end: 2, status: 'CREATED' },
-    { ski: ski('SK-0009'), user: katarina, start: -4, end: 1, status: 'ACTIVE' },
-    { ski: ski('SK-0010'), user: martin, start: -6, end: -1, status: 'ACTIVE' },
-    { ski: ski('SK-0011'), user: zuzana, start: -8, end: -5, status: 'CANCELLED_BY_STORE' },
+    // The Jasná front desk has something in every list, including a pickup of two pairs.
+    { skis: [ski('SK-0007'), ski('SK-0014')], user: zuzana, start: 0, end: 3, status: 'CREATED' },
+    { skis: [ski('SK-0008')], user: michal, start: -2, end: 2, status: 'CREATED' },
+    { skis: [ski('SK-0009')], user: katarina, start: -4, end: 1, status: 'ACTIVE' },
+    { skis: [ski('SK-0010')], user: martin, start: -6, end: -1, status: 'ACTIVE' },
+    { skis: [ski('SK-0011')], user: zuzana, start: -8, end: -5, status: 'CANCELLED_BY_STORE' },
   ];
 }
 
@@ -453,7 +482,7 @@ function generatedSpecs(ski: SkiRow, customers: UserRow[]): ReservationSpec[] {
       status = chance(0.88) ? 'CREATED' : 'CANCELLED_BY_USER';
     }
 
-    specs.push({ ski, user, start, end, status, returnedOn });
+    specs.push({ skis: [ski], user, start, end, status, returnedOn });
   }
 
   return specs;
@@ -484,9 +513,11 @@ function buildRatings(data: SeedData): Pick<SeedData, 'reservationRatings' | 'mo
     if (reservation.status !== 'RETURNED' || !reservation.returnedAt) continue;
     if (reservation.returnedAt.getTime() > settledBefore) continue;
 
-    const key = `${reservation.userId}:${modelOf.get(reservation.skiId)}`;
-    const current = latest.get(key);
-    if (!current || (current.returnedAt ?? 0) < reservation.returnedAt) latest.set(key, reservation);
+    for (const item of reservation.items) {
+      const key = `${reservation.userId}:${modelOf.get(item.skiId)}`;
+      const current = latest.get(key);
+      if (!current || (current.returnedAt ?? 0) < reservation.returnedAt) latest.set(key, reservation);
+    }
   }
 
   for (const [key, reservation] of latest) {
@@ -518,7 +549,9 @@ function scriptRatings(data: SeedData, janId: string): void {
   const [older, newer, today] = jan.filter((reservation) => reservation.status === 'RETURNED');
   if (!older?.returnedAt || !newer || !today?.returnedAt) throw new Error('Scripted history incomplete');
 
-  const modelOf = (reservation: ReservationRow) => data.skis.find((ski) => ski.id === reservation.skiId)?.modelId ?? '';
+  // The older rental and today's hold one pair each.
+  const modelOf = (reservation: ReservationRow) =>
+    data.skis.find((ski) => ski.id === reservation.items[0]?.skiId)?.modelId ?? '';
   const scripted = new Set([older.id, newer.id, today.id]);
 
   data.reservationRatings = data.reservationRatings.filter((rating) => !scripted.has(rating.reservationId));

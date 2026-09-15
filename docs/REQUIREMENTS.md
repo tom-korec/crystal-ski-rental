@@ -136,7 +136,7 @@ customer account.
   opening hours on its own tab.
 - **FR-41** A customer can cancel a reservation that has not started yet (BR-12).
 - **FR-42** For a returned reservation, the customer can **rate the rental**: score 1–5 and an optional note.
-- **FR-43** For a returned reservation, the customer can **rate the ski model**: score 1–5 and an
+- **FR-43** For a returned reservation, the customer can **rate each ski model** in it: score 1–5 and an
   optional comment.
 - **FR-44** The rental and the ski model are rated together, in one form. Saved scores are always shown.
   While a rating can still be edited, an edit action is offered and the form says until when; after that
@@ -180,13 +180,17 @@ customer account.
   | 20–30 | 25 %     |
 
 - **BR-4** `total = price per day × days × (1 − discount)`, rounded half-up to the cent.
-- **BR-5** The price per day, number of days, discount and total are **saved on the reservation** when it
-  is made. Later price changes don't affect existing reservations.
+- **BR-5** The price per day and total of each pair, and the number of days, discount and total of the
+  reservation, are **saved on the reservation** when it is made. Later price changes don't affect
+  existing reservations.
+- **BR-6** A reservation holds **1 to 8 pairs** of skis, all from the **same store** and for the same days.
+  Each pair is priced on its own (BR-4), and the reservation's total is the sum of the pairs' totals.
 
 ### 5.2 Reservation lifecycle
 
 - **BR-10** Statuses: `CREATED` (booked), `ACTIVE` (picked up), `RETURNED`, `CANCELLED_BY_USER`,
-  `CANCELLED_BY_STORE`.
+  `CANCELLED_BY_STORE`. All pairs of a reservation move through them together: they are picked up,
+  returned or cancelled at once.
 - **BR-11** Allowed transitions, and nothing else:
 
   | From      | To                   | Who          | When                                                       |
@@ -226,7 +230,7 @@ customer account.
 - **BR-40** **Rental rating:** one per reservation, possible only once it is `RETURNED`. Editable for **1 hour**
   after it was first submitted, then locked for good.
 - **BR-41** **Model rating:** one per customer per model, created or changed **through a returned
-  reservation** of a ski of that model. Each returned reservation opens one **1-hour edit window**, starting
+  reservation** that included a ski of that model. Each returned reservation opens one **1-hour edit window**, starting
   when the rating is first submitted through it. To change a locked model rating, the customer needs
   a newer returned reservation of that model.
 - **BR-42** A model's average rating and number of ratings are shown to customers. Comments and notes
@@ -294,6 +298,7 @@ customer account.
 | **Brand**           | Ski manufacturer, e.g. Atomic.                                                                |
 | **Model**           | A product line of a brand, e.g. Atomic Redster G9. It carries price, type, gender and level.  |
 | **Ski**             | One physical pair: a model in a specific length, at a specific store, with an inventory code. |
+| **Reservation**     | One customer's booking of one or more skis from one store for the same days.                  |
 | **Inventory code**  | Staff-only identifier printed on the ski, e.g. `SK-0142`.                                     |
 | **Store**           | A rental location with address, contacts and opening hours.                                   |
 | **Front desk**      | The staff page for today's pickups and returns and the overdue ones.                          |

@@ -3,7 +3,6 @@ import { todayUtc, toUtcDate, utcDaysBetween } from '~/lib/date';
 import { idSchema } from '~/lib/id-schema';
 import { BATCH_SIZE, nextCursor } from '~/lib/pagination';
 import { quoteRental } from '~/lib/pricing';
-import { DATE_HOLDING_STATUSES } from '~/lib/reservation-lifecycle';
 import {
   skiCreateSchema,
   type SkiListInput,
@@ -13,7 +12,7 @@ import {
   skiUpdateSchema,
 } from '~/lib/ski-schema';
 import { conflict, isPrismaError, notFound, rethrowPrismaError } from '~/server/api/errors';
-import { overlappingReservation } from '~/server/api/overlap';
+import { overlappingItem } from '~/server/api/overlap';
 import { countOf } from '~/server/api/plural';
 import { plainSkiModel, skiModelSelect } from '~/server/api/selects';
 import { createTRPCRouter, staffProcedure, userProcedure } from '~/server/api/trpc';
@@ -117,7 +116,7 @@ export const skiRouter = createTRPCRouter({
         pricePerDay: input.maxPricePerDay ? { lte: input.maxPricePerDay } : undefined,
         avgRating: input.minRating ? { gte: input.minRating } : undefined,
       },
-      reservations: { none: overlappingReservation(startDate, endDate) },
+      reservationItems: { none: overlappingItem(startDate, endDate) },
     };
     const cursor = input.cursor ?? 0;
 
@@ -172,7 +171,7 @@ export const skiRouter = createTRPCRouter({
     if (data.storeId !== undefined && data.storeId !== existing.storeId) {
       const blocking = await ctx.db.reservation.count({
         where: {
-          skiId: id,
+          items: { some: { skiId: id } },
           OR: [{ status: 'ACTIVE' }, { status: 'CREATED', endDate: { gt: todayUtc() } }],
         },
       });
@@ -201,8 +200,8 @@ export const skiRouter = createTRPCRouter({
     if (!ski) throw notFound(NOT_FOUND);
 
     const [open, history] = await ctx.db.$transaction([
-      ctx.db.reservation.count({ where: { skiId: ski.id, status: { in: [...DATE_HOLDING_STATUSES] } } }),
-      ctx.db.reservation.count({ where: { skiId: ski.id } }),
+      ctx.db.reservationItem.count({ where: { skiId: ski.id, holdsDates: true } }),
+      ctx.db.reservationItem.count({ where: { skiId: ski.id } }),
     ]);
 
     if (open > 0) {

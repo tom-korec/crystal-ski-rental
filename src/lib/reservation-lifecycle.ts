@@ -13,7 +13,7 @@ export const RESERVATION_STATUSES = [
 
 export type ReservationStatus = (typeof RESERVATION_STATUSES)[number];
 
-/** Statuses that occupy the ski for their dates. Must match the `reservation_no_overlap` constraint. */
+/** Statuses that occupy the skis for their dates. Must match the `reservation_item_follow_status` trigger. */
 export const DATE_HOLDING_STATUSES = ['CREATED', 'ACTIVE'] as const satisfies readonly ReservationStatus[];
 
 export interface LifecycleReservation {

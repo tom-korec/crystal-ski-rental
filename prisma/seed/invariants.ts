@@ -1,4 +1,4 @@
-import { quoteRental } from '../../src/lib/pricing';
+import { quoteReservation } from '../../src/lib/pricing';
 import { DATE_HOLDING_STATUSES } from '../../src/lib/reservation-lifecycle';
 import { day, NOW, type SeedData } from './generate';
 
@@ -34,19 +34,29 @@ export function assertSeedData(data: SeedData): void {
 
   for (const reservation of data.reservations) {
     const label = `reservation ${reservation.id}`;
-    const ski = skis.get(reservation.skiId) ?? fail(`${label} has no ski`);
     const user = users.get(reservation.userId) ?? fail(`${label} has no customer`);
-    const model = models.get(ski.modelId) ?? fail(`${label} has no model`);
+    const itemSkis = reservation.items.map((item) => skis.get(item.skiId) ?? fail(`${label} has an unknown ski`));
 
+    if (itemSkis.length === 0) fail(`${label} has no skis`);
+    if (new Set(reservation.items.map((item) => item.skiId)).size !== itemSkis.length)
+      fail(`${label} holds a ski twice`);
+    if (itemSkis.some((ski) => ski.storeId !== reservation.storeId)) fail(`${label} mixes stores`);
     if (user.role !== 'USER') fail(`${label} is rented by staff`);
     if (reservation.createdAt > NOW) fail(`${label} was booked in the future`);
     if (reservation.createdAt < user.createdAt) fail(`${label} was booked before the account existed`);
 
-    const quote = quoteRental(model.pricePerDay, reservation.rentalDays);
+    const quote = quoteReservation(
+      itemSkis.map((ski) => ({ pricePerDay: (models.get(ski.modelId) ?? fail(`${label} has no model`)).pricePerDay })),
+      reservation.rentalDays,
+    );
     if (
-      quote.pricePerDay !== reservation.pricePerDay ||
       quote.discountPercent !== reservation.discountPercent ||
-      quote.totalPrice !== reservation.totalPrice
+      quote.totalPrice !== reservation.totalPrice ||
+      quote.items.some(
+        (line, index) =>
+          line.quote.pricePerDay !== reservation.items[index]?.pricePerDay ||
+          line.quote.totalPrice !== reservation.items[index]?.totalPrice,
+      )
     ) {
       fail(`${label} price snapshot does not match the quote`);
     }
@@ -78,7 +88,10 @@ export function assertSeedData(data: SeedData): void {
         break;
     }
 
-    if (ski.deletedAt && (DATE_HOLDING_STATUSES as readonly string[]).includes(reservation.status)) {
+    if (
+      itemSkis.some((ski) => ski.deletedAt) &&
+      (DATE_HOLDING_STATUSES as readonly string[]).includes(reservation.status)
+    ) {
       fail(`${label} still holds a removed ski`);
     }
   }
@@ -86,6 +99,7 @@ export function assertSeedData(data: SeedData): void {
   // No ski holds two overlapping CREATED or ACTIVE reservations (the database enforces it too; this names the culprit).
   const holding = data.reservations
     .filter((reservation) => (DATE_HOLDING_STATUSES as readonly string[]).includes(reservation.status))
+    .flatMap((reservation) => reservation.items.map((item) => ({ ...reservation, skiId: item.skiId })))
     .sort((a, b) => a.skiId.localeCompare(b.skiId) || a.startDate.getTime() - b.startDate.getTime());
 
   for (const [index, current] of holding.entries()) {
@@ -108,8 +122,9 @@ export function assertSeedData(data: SeedData): void {
     const returnedAt =
       reservation.returnedAt ?? fail(`model rating ${rating.id} was written through an unreturned reservation`);
     if (reservation.userId !== rating.userId) fail(`model rating ${rating.id} used someone else's reservation`);
-    if (skis.get(reservation.skiId)?.modelId !== rating.modelId)
-      fail(`model rating ${rating.id} used a different model`);
+    if (!reservation.items.some((item) => skis.get(item.skiId)?.modelId === rating.modelId)) {
+      fail(`model rating ${rating.id} used a reservation without that model`);
+    }
     if (rating.windowStartedAt < returnedAt || rating.windowStartedAt > NOW) {
       fail(`model rating ${rating.id} window started outside its reservation's lifetime`);
     }
