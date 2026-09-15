@@ -45,87 +45,88 @@ export function Fleet() {
     <div className="flex flex-col gap-6">
       <section
         aria-label={tFilters('title')}
-        className="bg-card ring-foreground/10 grid gap-4 rounded-xl p-4 ring-1 sm:grid-cols-2 lg:grid-cols-4"
+        className="bg-card ring-foreground/10 flex flex-col gap-4 rounded-xl p-4 shadow-sm ring-1"
       >
-        <SearchFilter
-          id="filter-code"
-          label={t('inventoryCode')}
-          placeholder={t('inventoryCodePlaceholder')}
-          value={filters.inventoryCode}
-          onChange={(inventoryCode) => set({ inventoryCode })}
-        />
-        <SelectFilter
-          id="filter-store"
-          label={tFilters('store')}
-          anyLabel={tFilters('anyStore')}
-          options={(stores.data ?? []).map((store) => ({ value: store.id, label: store.name }))}
-          disabled={stores.isPending}
-          value={filters.storeId}
-          onChange={(storeId) => set({ storeId })}
-        />
-        <SelectFilter
-          id="filter-brand"
-          label={tFilters('brand')}
-          anyLabel={tFilters('anyBrand')}
-          options={(brands.data ?? []).map((brand) => ({ value: brand.id, label: brand.name }))}
-          disabled={brands.isPending}
-          value={filters.brandId}
-          onChange={(brandId) => set({ brandId, modelId: undefined })}
-        />
-        <SelectFilter
-          id="filter-model"
-          label={tFilters('model')}
-          anyLabel={tFilters('anyModel')}
-          options={modelOptions}
-          disabled={models.isPending}
-          value={filters.modelId}
-          onChange={(modelId) => set({ modelId })}
-        />
-        <SelectFilter
-          id="filter-type"
-          label={tFilters('type')}
-          anyLabel={tFilters('anyType')}
-          options={SKI_TYPES.map((type) => ({ value: type, label: tCatalog(`type.${type}`) }))}
-          value={filters.type}
-          onChange={(type) => set({ type: type as FleetFilters['type'] })}
-        />
-        <SelectFilter
-          id="filter-gender"
-          label={tFilters('gender')}
-          anyLabel={tFilters('anyGender')}
-          options={GENDER_FILTERS.map((gender) => ({ value: gender, label: tCatalog(`gender.${gender}`) }))}
-          value={filters.gender}
-          onChange={(gender) => set({ gender: gender as FleetFilters['gender'] })}
-        />
-        <SelectFilter
-          id="filter-level"
-          label={tFilters('level')}
-          anyLabel={tFilters('anyLevel')}
-          options={SKILL_LEVELS.map((level) => ({ value: level, label: tCatalog(`level.${level}`) }))}
-          value={filters.skillLevel}
-          onChange={(skillLevel) => set({ skillLevel: skillLevel as FleetFilters['skillLevel'] })}
-        />
-        <LengthRangeFilter
-          id="filter-length"
-          label={tFilters('length')}
-          value={{ minLengthCm: filters.minLengthCm, maxLengthCm: filters.maxLengthCm }}
-          onChange={set}
-        />
-      </section>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-muted-foreground text-sm" aria-live="polite" data-testid="fleet-count">
-          {skis.data ? t('count', { count: total }) : null}
-        </p>
-        <div className="flex flex-wrap items-center gap-2">
-          {isFiltered ? (
-            <Button variant="ghost" size="sm" onClick={() => apply({})}>
-              {tFilters('clear')}
-            </Button>
-          ) : null}
-          <AddSkiDialog />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <SearchFilter
+            id="filter-code"
+            label={t('inventoryCode')}
+            placeholder={t('inventoryCodePlaceholder')}
+            value={filters.inventoryCode}
+            onChange={(inventoryCode) => set({ inventoryCode })}
+          />
+          <SelectFilter
+            id="filter-store"
+            label={tFilters('store')}
+            anyLabel={tFilters('anyStore')}
+            options={(stores.data ?? []).map((store) => ({ value: store.id, label: store.name }))}
+            disabled={stores.isPending}
+            value={filters.storeId}
+            onChange={(storeId) => set({ storeId })}
+          />
+          <SelectFilter
+            id="filter-brand"
+            label={tFilters('brand')}
+            anyLabel={tFilters('anyBrand')}
+            options={(brands.data ?? []).map((brand) => ({ value: brand.id, label: brand.name }))}
+            disabled={brands.isPending}
+            value={filters.brandId}
+            onChange={(brandId) => set({ brandId, modelId: undefined })}
+          />
+          <SelectFilter
+            id="filter-model"
+            label={tFilters('model')}
+            anyLabel={tFilters('anyModel')}
+            options={modelOptions}
+            disabled={models.isPending}
+            value={filters.modelId}
+            onChange={(modelId) => set({ modelId })}
+          />
+          <SelectFilter
+            id="filter-type"
+            label={tFilters('type')}
+            anyLabel={tFilters('anyType')}
+            options={SKI_TYPES.map((type) => ({ value: type, label: tCatalog(`type.${type}`) }))}
+            value={filters.type}
+            onChange={(type) => set({ type: type as FleetFilters['type'] })}
+          />
+          <SelectFilter
+            id="filter-gender"
+            label={tFilters('gender')}
+            anyLabel={tFilters('anyGender')}
+            options={GENDER_FILTERS.map((gender) => ({ value: gender, label: tCatalog(`gender.${gender}`) }))}
+            value={filters.gender}
+            onChange={(gender) => set({ gender: gender as FleetFilters['gender'] })}
+          />
+          <SelectFilter
+            id="filter-level"
+            label={tFilters('level')}
+            anyLabel={tFilters('anyLevel')}
+            options={SKILL_LEVELS.map((level) => ({ value: level, label: tCatalog(`level.${level}`) }))}
+            value={filters.skillLevel}
+            onChange={(skillLevel) => set({ skillLevel: skillLevel as FleetFilters['skillLevel'] })}
+          />
+          <LengthRangeFilter
+            id="filter-length"
+            label={tFilters('length')}
+            value={{ minLengthCm: filters.minLengthCm, maxLengthCm: filters.maxLengthCm }}
+            onChange={set}
+          />
         </div>
-      </div>
+        <div className="border-border flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <p className="text-muted-foreground text-sm" aria-live="polite" data-testid="fleet-count">
+            {skis.data ? t('count', { count: total }) : null}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            {isFiltered ? (
+              <Button variant="ghost" size="sm" onClick={() => apply({})}>
+                {tFilters('clear')}
+              </Button>
+            ) : null}
+            <AddSkiDialog />
+          </div>
+        </div>
+      </section>
 
       <QueryState
         query={skis}

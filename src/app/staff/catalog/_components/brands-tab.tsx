@@ -34,9 +34,6 @@ export function BrandsTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
-        <BrandDialog />
-      </div>
       <QueryState query={brands} skeleton={<Skeleton className="h-48 w-full" />}>
         {(rows) => (
           <div className="bg-card ring-foreground/10 overflow-x-auto rounded-xl ring-1">
@@ -97,7 +94,7 @@ function BrandRow({ brand }: { brand: Brand }) {
   );
 }
 
-function BrandDialog({ brand }: { brand?: Brand }) {
+export function BrandDialog({ brand }: { brand?: Brand }) {
   const t = useTranslations('catalogAdmin');
   const [open, setOpen] = useState(false);
 

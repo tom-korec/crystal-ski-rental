@@ -56,9 +56,6 @@ export function StoresTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
-        <StoreDialog />
-      </div>
       <QueryState query={stores} skeleton={<Skeleton className="h-48 w-full" />}>
         {(rows) => (
           <div className="bg-card ring-foreground/10 overflow-x-auto rounded-xl ring-1">
@@ -129,7 +126,7 @@ function StoreRow({ store }: { store: Store }) {
   );
 }
 
-function StoreDialog({ store }: { store?: Store }) {
+export function StoreDialog({ store }: { store?: Store }) {
   const t = useTranslations('catalogAdmin');
   const [open, setOpen] = useState(false);
 

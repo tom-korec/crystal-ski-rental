@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 
+import { PageHeader } from '~/components/common/page-header';
 import { QueryState } from '~/components/common/query-state';
 import { LoadingRegion } from '~/components/common/skeletons/loading-region';
 import { Badge } from '~/components/ui/badge';
@@ -34,21 +35,23 @@ export function FrontDesk() {
 
   return (
     <div className="flex flex-col gap-6">
-      {stores.data && storeId ? (
-        <Tabs value={storeId} onValueChange={(value: string) => apply({ storeId: value })}>
-          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-            <TabsList aria-label={t('stores')}>
-              {stores.data.map((store) => (
-                <TabsTrigger key={store.id} value={store.id} data-testid="store-tab">
-                  {store.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-        </Tabs>
-      ) : (
-        <Skeleton className="h-8 w-96 max-w-full" />
-      )}
+      <PageHeader title={t('title')} description={t('description')}>
+        {stores.data && storeId ? (
+          <Tabs value={storeId} onValueChange={(value: string) => apply({ storeId: value })}>
+            <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+              <TabsList aria-label={t('stores')}>
+                {stores.data.map((store) => (
+                  <TabsTrigger key={store.id} value={store.id} data-testid="store-tab">
+                    {store.name}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+          </Tabs>
+        ) : (
+          <Skeleton className="h-8 w-96 max-w-full" />
+        )}
+      </PageHeader>
 
       <QueryState query={desk} skeleton={<DeskSkeleton />}>
         {(lists) => (

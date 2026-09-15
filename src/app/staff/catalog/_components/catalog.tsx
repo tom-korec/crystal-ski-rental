@@ -2,12 +2,13 @@
 
 import { useTranslations } from 'next-intl';
 
+import { PageHeader } from '~/components/common/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { useUrlFilters } from '~/hooks/use-url-filters';
 
-import { BrandsTab } from './brands-tab';
-import { ModelsTab } from './models-tab';
-import { StoresTab } from './stores-tab';
+import { BrandDialog, BrandsTab } from './brands-tab';
+import { ModelDialog, ModelsTab } from './models-tab';
+import { StoreDialog, StoresTab } from './stores-tab';
 
 const TABS = ['models', 'brands', 'stores'] as const;
 type Tab = (typeof TABS)[number];
@@ -23,14 +24,22 @@ export function Catalog() {
   const { filters, apply } = useUrlFilters({ parse, serialise });
 
   return (
-    <Tabs value={filters.tab} onValueChange={(tab: Tab) => apply({ tab })} className="gap-4">
-      <TabsList>
-        {TABS.map((tab) => (
-          <TabsTrigger key={tab} value={tab} data-testid={`tab-${tab}`}>
-            {t(`tabs.${tab}`)}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+    <Tabs value={filters.tab} onValueChange={(tab: Tab) => apply({ tab })} className="gap-6">
+      <PageHeader
+        title={t('title')}
+        description={t('description')}
+        actions={
+          filters.tab === 'models' ? <ModelDialog /> : filters.tab === 'brands' ? <BrandDialog /> : <StoreDialog />
+        }
+      >
+        <TabsList>
+          {TABS.map((tab) => (
+            <TabsTrigger key={tab} value={tab} data-testid={`tab-${tab}`}>
+              {t(`tabs.${tab}`)}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </PageHeader>
       <TabsContent value="models">
         <ModelsTab />
       </TabsContent>

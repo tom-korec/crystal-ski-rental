@@ -6,6 +6,7 @@ import { useState } from 'react';
 
 import { ConfirmDialog } from '~/components/common/confirm-dialog';
 import { FormError } from '~/components/common/form-error';
+import { PageHeader } from '~/components/common/page-header';
 import { Pagination } from '~/components/common/pagination';
 import { QueryState } from '~/components/common/query-state';
 import { LoadingRegion } from '~/components/common/skeletons/loading-region';
@@ -61,62 +62,63 @@ export function AccountDetail({ id, actor }: AccountDetailProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2">
+      <PageHeader
+        eyebrow={
+          <>
             <RoleBadge role={user.role} />
             {removed ? <Badge variant="destructive">{t('removed')}</Badge> : null}
-          </div>
-          <h1 className="text-3xl font-semibold tracking-tight" data-testid="page-title">
-            {user.name}
-          </h1>
-          <p className="text-muted-foreground text-sm">
+          </>
+        }
+        title={user.name}
+        description={
+          <>
             <a href={`mailto:${user.email}`} className="hover:text-primary underline-offset-4 hover:underline">
               {user.email}
             </a>{' '}
             · {t('joinedOn', { date: format.dateTime(user.createdAt, DATE_FORMAT) })}
-          </p>
-        </div>
-
-        {canManage ? (
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex flex-wrap gap-2">
-              {removed ? (
-                <Button
-                  onClick={() => restore.mutate({ id })}
-                  disabled={restore.isPending}
-                  data-testid="restore-account"
-                >
-                  {restore.isPending ? t('saving') : t('restore')}
-                </Button>
-              ) : (
-                <>
-                  <AccountDialog actorRole={actor.role} account={user} />
-                  <ConfirmDialog
-                    open={confirming}
-                    onOpenChange={(open) => {
-                      setConfirming(open);
-                      if (!open) remove.reset();
-                    }}
-                    trigger={<Button variant="destructive" data-testid="remove-account" />}
-                    triggerLabel={t('remove')}
-                    title={t('removeTitle', { name: user.name })}
-                    description={t('removeDescription')}
-                    confirmLabel={t('remove')}
-                    pendingLabel={t('saving')}
-                    cancelLabel={t('cancel')}
-                    onConfirm={() => remove.mutate({ id })}
-                    isPending={remove.isPending}
-                    error={remove.error?.message}
-                    destructive
-                  />
-                </>
-              )}
+          </>
+        }
+        actions={
+          canManage ? (
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-wrap gap-2">
+                {removed ? (
+                  <Button
+                    onClick={() => restore.mutate({ id })}
+                    disabled={restore.isPending}
+                    data-testid="restore-account"
+                  >
+                    {restore.isPending ? t('saving') : t('restore')}
+                  </Button>
+                ) : (
+                  <>
+                    <AccountDialog actorRole={actor.role} account={user} />
+                    <ConfirmDialog
+                      open={confirming}
+                      onOpenChange={(open) => {
+                        setConfirming(open);
+                        if (!open) remove.reset();
+                      }}
+                      trigger={<Button variant="destructive" data-testid="remove-account" />}
+                      triggerLabel={t('remove')}
+                      title={t('removeTitle', { name: user.name })}
+                      description={t('removeDescription')}
+                      confirmLabel={t('remove')}
+                      pendingLabel={t('saving')}
+                      cancelLabel={t('cancel')}
+                      onConfirm={() => remove.mutate({ id })}
+                      isPending={remove.isPending}
+                      error={remove.error?.message}
+                      destructive
+                    />
+                  </>
+                )}
+              </div>
+              <FormError message={restore.error?.message} />
             </div>
-            <FormError message={restore.error?.message} />
-          </div>
-        ) : null}
-      </div>
+          ) : null
+        }
+      />
 
       {user.role === 'USER' ? <AccountReservations userId={id} /> : null}
     </div>

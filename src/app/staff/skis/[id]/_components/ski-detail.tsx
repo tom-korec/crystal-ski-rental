@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 
 import { FormError } from '~/components/common/form-error';
+import { PageHeader } from '~/components/common/page-header';
 import { LoadingRegion } from '~/components/common/skeletons/loading-region';
 import { RatingSummary } from '~/components/skis/rating-summary';
 import { SkiBadges } from '~/components/skis/ski-badges';
@@ -43,9 +44,9 @@ export function SkiDetail({ id }: SkiDetailProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2">
+      <PageHeader
+        eyebrow={
+          <>
             <span
               className="bg-secondary text-secondary-foreground rounded px-2 py-0.5 font-mono text-sm"
               data-testid="inventory-code"
@@ -61,19 +62,19 @@ export function SkiDetail({ id }: SkiDetailProps) {
                 {t('outOfRental')}
               </Badge>
             )}
-          </div>
-          <h1 className="text-3xl font-semibold tracking-tight" data-testid="page-title">
-            {model.brand.name} {model.name} · {t('length', { length: ski.data.lengthCm })}
-          </h1>
-        </div>
-        {removed ? null : (
-          <div className="flex flex-wrap gap-2">
-            <EditSkiDialog ski={ski.data} blockers={blockers.data} />
-            <AvailabilityToggle ski={ski.data} upcoming={upcoming} />
-            <DeleteSkiDialog ski={ski.data} open={blockers.data?.open} />
-          </div>
-        )}
-      </div>
+          </>
+        }
+        title={`${model.brand.name} ${model.name} · ${t('length', { length: ski.data.lengthCm })}`}
+        actions={
+          removed ? null : (
+            <>
+              <EditSkiDialog ski={ski.data} blockers={blockers.data} />
+              <AvailabilityToggle ski={ski.data} upcoming={upcoming} />
+              <DeleteSkiDialog ski={ski.data} open={blockers.data?.open} />
+            </>
+          )
+        }
+      />
 
       {!removed && !ski.data.isAvailable && upcoming > 0 ? (
         <p

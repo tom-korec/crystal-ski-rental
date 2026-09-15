@@ -43,9 +43,6 @@ export function ModelsTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
-        <ModelDialog />
-      </div>
       <QueryState query={models} skeleton={<Skeleton className="h-64 w-full" />}>
         {(rows) => (
           <div className="bg-card ring-foreground/10 overflow-x-auto rounded-xl ring-1">
@@ -124,7 +121,7 @@ function ModelRow({ model }: { model: SkiModel }) {
   );
 }
 
-function ModelDialog({ model }: { model?: SkiModel }) {
+export function ModelDialog({ model }: { model?: SkiModel }) {
   const t = useTranslations('catalogAdmin');
   const [open, setOpen] = useState(false);
 

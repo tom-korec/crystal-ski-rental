@@ -63,37 +63,38 @@ export function AccountList({ actorRole }: AccountListProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-card ring-foreground/10 grid gap-4 rounded-xl p-4 ring-1 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
-        <SearchFilter
-          id="filter-accounts"
-          label={t('search')}
-          placeholder={t('searchPlaceholder')}
-          value={filters.search}
-          onChange={(search) => set({ search })}
-        />
-        <SelectFilter
-          id="filter-role"
-          label={t('role')}
-          anyLabel={t('anyRole')}
-          options={roleSchema.options.map((role) => ({ value: role, label: tRoles(role) }))}
-          value={filters.role}
-          onChange={(role) => set({ role: role as AccountFilters['role'] })}
-        />
-        <Button
-          variant={filters.onlyDeleted ? 'secondary' : 'outline'}
-          aria-pressed={filters.onlyDeleted === true}
-          onClick={() => set({ onlyDeleted: filters.onlyDeleted ? undefined : true })}
-          data-testid="toggle-removed"
-        >
-          {t('showRemoved')}
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-muted-foreground text-sm" aria-live="polite" data-testid="account-count">
-          {accounts.data ? t(filters.onlyDeleted ? 'removedCount' : 'count', { count: accounts.data.total }) : null}
-        </p>
-        <AccountDialog actorRole={actorRole} />
+      <div className="bg-card ring-foreground/10 flex flex-col gap-4 rounded-xl p-4 shadow-sm ring-1">
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end">
+          <SearchFilter
+            id="filter-accounts"
+            label={t('search')}
+            placeholder={t('searchPlaceholder')}
+            value={filters.search}
+            onChange={(search) => set({ search })}
+          />
+          <SelectFilter
+            id="filter-role"
+            label={t('role')}
+            anyLabel={t('anyRole')}
+            options={roleSchema.options.map((role) => ({ value: role, label: tRoles(role) }))}
+            value={filters.role}
+            onChange={(role) => set({ role: role as AccountFilters['role'] })}
+          />
+          <Button
+            variant={filters.onlyDeleted ? 'secondary' : 'outline'}
+            aria-pressed={filters.onlyDeleted === true}
+            onClick={() => set({ onlyDeleted: filters.onlyDeleted ? undefined : true })}
+            data-testid="toggle-removed"
+          >
+            {t('showRemoved')}
+          </Button>
+        </div>
+        <div className="border-border flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <p className="text-muted-foreground text-sm" aria-live="polite" data-testid="account-count">
+            {accounts.data ? t(filters.onlyDeleted ? 'removedCount' : 'count', { count: accounts.data.total }) : null}
+          </p>
+          <AccountDialog actorRole={actorRole} />
+        </div>
       </div>
 
       <QueryState

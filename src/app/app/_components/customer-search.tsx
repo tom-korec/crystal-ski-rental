@@ -2,7 +2,7 @@
 
 import { CheckIcon, MapPinIcon, SearchIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 import { DateRangeFilter } from '~/components/common/filters/date-range-filter';
 import { SelectField } from '~/components/common/select-field';
@@ -29,17 +29,19 @@ interface CustomerSearchProps {
   onSearch: (search: CustomerSearchValue) => void;
   /** Before a search, a large step of its own; afterwards, a compact bar above the results. */
   variant: 'start' | 'bar';
+  /** Bar only: what the search found, e.g. a count and the sort order. */
+  footer?: ReactNode;
 }
 
 /**
  * Where, when and what: the store and dates a customer must pick before any skis are shown, and every
  * other filter, collapsed until opened.
  */
-export function CustomerSearch({ variant, ...props }: CustomerSearchProps) {
-  return variant === 'start' ? <StartSearch {...props} /> : <SearchBar {...props} />;
+export function CustomerSearch({ variant, footer, ...props }: CustomerSearchProps) {
+  return variant === 'start' ? <StartSearch {...props} /> : <SearchBar {...props} footer={footer} />;
 }
 
-type StepProps = Omit<CustomerSearchProps, 'variant'>;
+type StepProps = Omit<CustomerSearchProps, 'variant' | 'footer'>;
 
 function StartSearch({ storeId: initialStore, range: initialRange, filters: initialFilters, onSearch }: StepProps) {
   const t = useTranslations('customerSearch');
@@ -140,7 +142,7 @@ function StartSearch({ storeId: initialStore, range: initialRange, filters: init
   );
 }
 
-function SearchBar({ storeId, range, filters, onSearch }: StepProps) {
+function SearchBar({ storeId, range, filters, onSearch, footer }: StepProps & { footer: ReactNode }) {
   const t = useTranslations('customerSearch');
   const stores = api.store.list.useQuery();
 
@@ -171,6 +173,9 @@ function SearchBar({ storeId, range, filters, onSearch }: StepProps) {
         />
       </div>
       <SearchFilters filters={filters} onChange={(next) => onSearch({ storeId, range, filters: next })} />
+      {footer ? (
+        <div className="border-border flex flex-wrap items-center justify-between gap-3 border-t pt-4">{footer}</div>
+      ) : null}
     </section>
   );
 }

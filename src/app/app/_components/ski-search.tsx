@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { type ComponentProps, useState } from 'react';
 
 import { SelectFilter } from '~/components/common/filters/select-filter';
 import { LoadMore } from '~/components/common/load-more';
@@ -31,21 +31,22 @@ export function SkiSearch() {
 
   if (!input) return <CustomerSearch variant="start" {...props} />;
 
-  return (
-    <div className="flex flex-col gap-6">
-      <CustomerSearch variant="bar" {...props} />
-      <SkiResults input={input} filters={state.filters} onFiltersChange={(filters) => apply({ ...state, filters })} />
-    </div>
-  );
+  return <SkiResults input={input} search={props} />;
 }
 
 interface SkiResultsProps {
   input: SkiSearchInput;
-  filters: SkiSearchFilters;
-  onFiltersChange: (filters: SkiSearchFilters) => void;
+  search: Omit<ComponentProps<typeof CustomerSearch>, 'variant' | 'footer'>;
 }
 
-function SkiResults({ input, filters, onFiltersChange }: SkiResultsProps) {
+function SkiResults({ input, search }: SkiResultsProps) {
+  const { filters } = search;
+  const onFiltersChange = (next: SkiSearchFilters) =>
+    search.onSearch({
+      storeId: input.storeId,
+      range: { startDate: input.startDate, endDate: input.endDate },
+      filters: next,
+    });
   const t = useTranslations('filters');
   const tSkis = useTranslations('skis');
   const [selection, setSelection] = useState<ReserveSelection | null>(null);
@@ -59,28 +60,34 @@ function SkiResults({ input, filters, onFiltersChange }: SkiResultsProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <p className="text-muted-foreground text-sm" aria-live="polite" data-testid="ski-count">
-          {skis.data ? tSkis('count', { count: total }) : null}
-        </p>
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="w-44">
-            <SelectFilter
-              id="sort"
-              label={t('sort')}
-              anyLabel={t('sortOptions.rating')}
-              options={SKI_SORTS.filter((sort) => sort !== 'rating').map((sort) => ({
-                value: sort,
-                label: t(`sortOptions.${sort}`),
-              }))}
-              value={filters.sort === 'rating' ? undefined : filters.sort}
-              onChange={(sort) =>
-                onFiltersChange({ ...filters, sort: (sort as SkiSearchFilters['sort'] | undefined) ?? 'rating' })
-              }
-            />
-          </div>
-        </div>
-      </div>
+      <CustomerSearch
+        variant="bar"
+        {...search}
+        footer={
+          <>
+            <p className="text-muted-foreground text-sm" aria-live="polite" data-testid="ski-count">
+              {skis.data ? tSkis('count', { count: total }) : null}
+            </p>
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="w-44">
+                <SelectFilter
+                  id="sort"
+                  label={t('sort')}
+                  anyLabel={t('sortOptions.rating')}
+                  options={SKI_SORTS.filter((sort) => sort !== 'rating').map((sort) => ({
+                    value: sort,
+                    label: t(`sortOptions.${sort}`),
+                  }))}
+                  value={filters.sort === 'rating' ? undefined : filters.sort}
+                  onChange={(sort) =>
+                    onFiltersChange({ ...filters, sort: (sort as SkiSearchFilters['sort'] | undefined) ?? 'rating' })
+                  }
+                />
+              </div>
+            </div>
+          </>
+        }
+      />
 
       <QueryState
         query={skis}
