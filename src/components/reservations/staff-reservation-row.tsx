@@ -5,7 +5,6 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { ConfirmDialog } from '~/components/common/confirm-dialog';
-import { FormError } from '~/components/common/form-error';
 import { Button } from '~/components/ui/button';
 import { useFormatDateRange } from '~/hooks/use-format-date-range';
 import { useFormatMoney } from '~/hooks/use-format-money';
@@ -35,6 +34,7 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
   const formatDateRange = useFormatDateRange();
   const utils = api.useUtils();
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [confirmingPickUp, setConfirmingPickUp] = useState(false);
   const [confirmingReturn, setConfirmingReturn] = useState(false);
 
   // Any list this reservation appears in may change.
@@ -45,7 +45,12 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
       utils.reservation.byUser.invalidate(),
       utils.reservation.blockersBySki.invalidate(),
     ]);
-  const pickUp = api.reservation.pickUp.useMutation({ onSuccess: refresh });
+  const pickUp = api.reservation.pickUp.useMutation({
+    onSuccess: async () => {
+      await refresh();
+      setConfirmingPickUp(false);
+    },
+  });
   const markReturned = api.reservation.markReturned.useMutation({
     onSuccess: async () => {
       await refresh();
@@ -63,7 +68,6 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
   const skis = items.map(({ ski }) => `${ski.model.brand.name} ${ski.model.name} (${ski.inventoryCode})`).join(', ');
   const period = formatDateRange(reservation.startDate, rentalPeriod(reservation).lastDay);
   const today = todayUtc();
-  const error = pickUp.error?.message;
 
   return (
     <li
@@ -132,14 +136,23 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
 
       <span className="flex flex-wrap items-center gap-2 md:justify-end">
         {canPickUp(reservation, today) ? (
-          <Button
-            size="sm"
-            onClick={() => pickUp.mutate({ id: reservation.id })}
-            disabled={pickUp.isPending}
-            data-testid="pick-up"
-          >
-            {pickUp.isPending ? t('working') : t('pickUp')}
-          </Button>
+          <ConfirmDialog
+            open={confirmingPickUp}
+            onOpenChange={(open) => {
+              setConfirmingPickUp(open);
+              if (!open) pickUp.reset();
+            }}
+            trigger={<Button size="sm" data-testid="pick-up" />}
+            triggerLabel={t('pickUp')}
+            title={t('pickUpTitle', { count: items.length })}
+            description={t('pickUpDescription', { customer: user.name, skis, period, count: items.length })}
+            confirmLabel={t('pickUpConfirm')}
+            pendingLabel={t('working')}
+            cancelLabel={t('notYet')}
+            onConfirm={() => pickUp.mutate({ id: reservation.id })}
+            isPending={pickUp.isPending}
+            error={pickUp.error?.message}
+          />
         ) : null}
         {canReturn(reservation) ? (
           <ConfirmDialog
@@ -181,12 +194,6 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
           />
         ) : null}
       </span>
-
-      {error ? (
-        <div className={show.customer ? 'md:col-span-3' : 'md:col-span-2'}>
-          <FormError message={error} />
-        </div>
-      ) : null}
     </li>
   );
 }

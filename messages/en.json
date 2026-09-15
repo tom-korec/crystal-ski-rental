@@ -279,6 +279,9 @@
   "staffReservations": {
     "length": "{length} cm",
     "pickUp": "Mark picked up",
+    "pickUpTitle": "Hand over {count, plural, one {these skis} other {these # pairs}}?",
+    "pickUpDescription": "{customer} is collecting {skis} for {period}. The rental starts now and can no longer be cancelled. This cannot be undone.",
+    "pickUpConfirm": "Mark picked up",
     "markReturned": "Mark returned",
     "returnTitle": "Mark these skis returned?",
     "returnDescription": "{customer} has brought back {skis}. The rental ends and {count, plural, one {the ski} other {the skis}} can be booked again. This cannot be undone.",

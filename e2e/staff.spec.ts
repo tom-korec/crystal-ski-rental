@@ -22,6 +22,8 @@ test.describe('front desk', () => {
     await expect(section(page, 'pickupsDueToday').getByTestId('reservation-note')).toContainText('bindings');
 
     await section(page, 'pickupsDueToday').getByTestId('pick-up').click();
+    await expect(page.getByTestId('confirm-dialog')).toContainText('2 pairs');
+    await page.getByTestId('confirm-action').click();
     await expect(section(page, 'pickupsDueToday').getByTestId('section-count')).toHaveText('0');
 
     await section(page, 'overduePickups').getByTestId('cancel-booking').click();
