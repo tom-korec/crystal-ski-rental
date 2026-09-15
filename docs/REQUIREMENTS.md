@@ -181,9 +181,10 @@ Models and brands share the **Models** page, with a switch between their tables.
   and stores everywhere, but adds, changes, takes out of rental and deletes skis only at their own
   store; moving a ski to another store is for admins. Their front desk shows only their own store, and
   the lifecycle actions are offered only on their own store's reservations.
-- **FR-65** Staff have a **reservations page** listing every reservation, newest first, searched by the
-  customer's name or e-mail in one field (ignoring case and accents) and by all or part of the
-  reservation code.
+- **FR-65** Staff have a **reservations page**: a table of every reservation, newest first, with its code,
+  customer, skis, store, dates, total, status and a link to its page. It is searched by the customer's
+  name or e-mail in one field (ignoring case and accents), by all or part of the reservation code, and
+  narrowed by store and status.
 - **FR-66** Staff open a **reservation's page**: its code and status, store and dates, every pair with its
   inventory code and price, the price summary, the customer with the addresses and note given at
   booking, the rental rating, and who booked, picked up, returned or cancelled it and when, with the

@@ -46,7 +46,7 @@ test.describe('reservations', () => {
     await page.getByTestId('search-customer').fill('horvathova');
     await page.getByTestId('submit-search').click();
     await expect(page).toHaveURL(/q=horvathova/);
-    const rows = page.getByTestId('staff-reservation-row');
+    const rows = page.getByTestId('reservation-row');
     await expect(rows.first()).toContainText('Zuzana Horváthová');
     const code = (await rows.first().getByTestId('reservation-code').textContent())?.replace('#', '') ?? '';
     expect(code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
@@ -57,7 +57,7 @@ test.describe('reservations', () => {
     await page.getByTestId('submit-search').click();
     await expect(page.getByTestId('reservation-count')).toHaveText('1 reservation');
 
-    await rows.first().getByTestId('reservation-code').click();
+    await rows.first().getByTestId('reservation-details-link').click();
     await expect(page).toHaveURL(/\/staff\/reservations\/[0-9a-f-]{36}$/);
     const detail = page.getByTestId('reservation-detail');
     await expect(detail.getByTestId('reservation-code').first()).toHaveText(code);
@@ -75,6 +75,24 @@ test.describe('reservations', () => {
     await expect(page).toHaveURL(/\/staff\/skis\/[0-9a-f-]{36}$/);
     await page.getByTestId('model-fleet-link').click();
     await expect(page).toHaveURL(/\/staff\/skis\?model=/);
+  });
+
+  test('narrows reservations by store and status', async ({ page }) => {
+    await signIn(page, 'manager');
+    await page.goto('/staff/reservations');
+    await page.locator('#search-store').click();
+    await page.getByRole('option', { name: 'Donovaly' }).click();
+    await page.locator('#search-status').click();
+    await page.getByRole('option', { name: 'Picked up' }).click();
+    await page.getByTestId('submit-search').click();
+
+    await expect(page).toHaveURL(/store=.+status=ACTIVE/);
+    const rows = page.getByTestId('reservation-row');
+    await expect(rows.first()).toBeVisible();
+    for (const row of await rows.all()) {
+      await expect(row).toHaveAttribute('data-status', 'ACTIVE');
+      await expect(row).toContainText('Donovaly');
+    }
   });
 
   test('links a customer in a reservation list to their account', async ({ page }) => {

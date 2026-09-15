@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { invoiceAddressSchema, mailingAddressSchema } from '~/lib/address-schema';
 import { pageSchema } from '~/lib/pagination';
 import { RESERVATION_CODE_LENGTH, reservationCodeSchema } from '~/lib/reservation-code';
+import { RESERVATION_STATUSES } from '~/lib/reservation-lifecycle';
 import { dateRangeSchema, refineRentalRange } from '~/lib/rental-range';
 
 /** A family's skis fit comfortably; more than this is a group booking the store arranges itself (BR-6). */
@@ -60,8 +61,8 @@ export const frontDeskSchema = z.object({ storeId: z.uuid() });
 export const RESERVATION_SEARCH_MAX_LENGTH = 100;
 
 /**
- * Staff finding reservations (FR-65): by the customer's name or e-mail in one field, and by all or part of
- * the reservation code, which ignores case, spaces, dashes and a leading #.
+ * Staff finding reservations (FR-65): by the customer's name or e-mail in one field, by all or part of the
+ * reservation code (ignoring case, spaces, dashes and a leading #), and by store and status.
  */
 export const reservationSearchSchema = z
   .object({
@@ -72,6 +73,8 @@ export const reservationSearchSchema = z
       .pipe(z.string().max(RESERVATION_CODE_LENGTH))
       .transform((value) => value || undefined)
       .optional(),
+    storeId: z.uuid().optional(),
+    status: z.enum(RESERVATION_STATUSES).optional(),
     page: pageSchema,
   })
   .prefault({});

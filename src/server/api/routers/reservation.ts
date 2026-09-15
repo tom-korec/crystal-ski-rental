@@ -446,6 +446,8 @@ export const reservationRouter = createTRPCRouter({
   search: staffProcedure.input(reservationSearchSchema).query(async ({ ctx, input }) => {
     const where: Prisma.ReservationWhereInput = {
       code: input.code ? { contains: input.code } : undefined,
+      storeId: input.storeId,
+      status: input.status,
       userId: input.customer ? { in: await accountIdsMatching(ctx.db, input.customer) } : undefined,
     };
     const { total, page, skip, take } = await pageOf(ctx.db, where, input.page);
