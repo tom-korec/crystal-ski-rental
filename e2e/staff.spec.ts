@@ -36,6 +36,59 @@ test.describe('front desk', () => {
   });
 });
 
+test.describe('reservations', () => {
+  test('finds reservations by customer and by code, and opens one', async ({ page }) => {
+    await signIn(page, 'manager');
+    await page.getByTestId('nav-reservations').click();
+    await expect(page).toHaveURL('/staff/reservations');
+
+    // Accents are optional: "horvathova" finds Horváthová.
+    await page.getByTestId('search-customer').fill('horvathova');
+    await page.getByTestId('submit-search').click();
+    await expect(page).toHaveURL(/q=horvathova/);
+    const rows = page.getByTestId('staff-reservation-row');
+    await expect(rows.first()).toContainText('Zuzana Horváthová');
+    const code = (await rows.first().getByTestId('reservation-code').textContent())?.replace('#', '') ?? '';
+    expect(code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
+
+    await page.getByTestId('clear-search').click();
+    await expect(page).toHaveURL('/staff/reservations');
+    await page.getByTestId('search-code').fill(code.toLowerCase());
+    await page.getByTestId('submit-search').click();
+    await expect(page.getByTestId('reservation-count')).toHaveText('1 reservation');
+
+    await rows.first().getByTestId('reservation-code').click();
+    await expect(page).toHaveURL(/\/staff\/reservations\/[0-9a-f-]{36}$/);
+    const detail = page.getByTestId('reservation-detail');
+    await expect(detail.getByTestId('reservation-code').first()).toHaveText(code);
+    await expect(detail.getByTestId('reservation-customer')).toHaveText('Zuzana Horváthová');
+    await expect(detail.getByTestId('reservation-history')).toContainText('Booked');
+  });
+
+  test('opens a reservation from the front desk by its code', async ({ page }) => {
+    await signIn(page, 'manager');
+    // Any reservation will do; the front desk's own lists were worked through by the test above.
+    await page.goto('/staff/reservations');
+    const code = (await page.getByTestId('reservation-code').first().textContent())?.replace('#', '') ?? '';
+    await page.getByTestId('nav-front-desk').click();
+
+    await page.getByTestId('find-by-code').click();
+    const dialog = page.getByTestId('find-by-code-dialog');
+    await dialog.getByLabel('Reservation code').fill('ABC');
+    await dialog.getByTestId('open-reservation').click();
+    await expect(dialog.getByTestId('find-by-code-error')).toContainText('6 letters and digits');
+
+    await dialog.getByLabel('Reservation code').fill('ZZZZ22');
+    await dialog.getByTestId('open-reservation').click();
+    await expect(dialog.getByTestId('find-by-code-error')).toContainText('No reservation has the code ZZZZ22');
+
+    await dialog.getByLabel('Reservation code').fill(` ${code.slice(0, 3)}-${code.slice(3).toLowerCase()} `);
+    await dialog.getByTestId('open-reservation').click();
+    await expect(page).toHaveURL(/\/staff\/reservations\/[0-9a-f-]{36}$/);
+    await expect(page.getByTestId('reservation-detail').getByTestId('reservation-code').first()).toHaveText(code);
+  });
+});
+
 test.describe('fleet', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page, 'manager');

@@ -42,7 +42,8 @@
     "accounts": "Accounts",
     "models": "Models",
     "account": "Account",
-    "accountMenu": "Account menu for {name}"
+    "accountMenu": "Account menu for {name}",
+    "reservations": "Reservations"
   },
   "roles": {
     "USER": "Customer",
@@ -227,7 +228,8 @@
     "perDayTimesDays": "{price} / day × {days, plural, one {# day} other {# days}}",
     "subtotal": "Before discount",
     "discount": "Discount for {days} days",
-    "total": "Total"
+    "total": "Total",
+    "codeHint": "Your reservation code. Quote it at the store."
   },
   "ratings": {
     "rate": "Rate",
@@ -278,7 +280,16 @@
         "empty": "No overdue returns."
       }
     },
-    "descriptionAt": "Today's pickups and returns at {store}, and anything overdue."
+    "descriptionAt": "Today's pickups and returns at {store}, and anything overdue.",
+    "findByCode": "Find by code",
+    "findByCodeTitle": "Open a reservation",
+    "findByCodeDescription": "Enter the reservation code the customer shows or reads out.",
+    "code": "Reservation code",
+    "codeInvalid": "A reservation code has {length} letters and digits.",
+    "codeNotFound": "No reservation has the code {code}.",
+    "openReservation": "Open reservation",
+    "finding": "Finding…",
+    "cancel": "Cancel"
   },
   "staffReservations": {
     "length": "{length} cm",
@@ -623,5 +634,40 @@
     "descriptionAdmin": "Where customers pick up and return skis. Edit a store's address, contacts and opening hours here.",
     "stores": "Stores",
     "skiCount": "{count, plural, =0 {No skis in the fleet} one {# ski in the fleet} other {# skis in the fleet}}"
+  },
+  "staffReservationSearch": {
+    "title": "Reservations",
+    "customer": "Customer",
+    "customerPlaceholder": "Name or e-mail",
+    "code": "Reservation code",
+    "codePlaceholder": "e.g. K7QX2M",
+    "search": "Search",
+    "count": "{count, plural, =0 {No reservations} one {# reservation} other {# reservations}}",
+    "empty": "There are no reservations yet.",
+    "emptyFiltered": "No reservations match this search."
+  },
+  "staffReservationDetail": {
+    "back": "Back to reservations",
+    "summary": "{store} · {count, plural, one {# pair} other {# pairs}} · {days, plural, one {# day} other {# days}}",
+    "skis": "{count, plural, one {# pair of skis} other {# pairs of skis}}",
+    "length": "{length} cm",
+    "perDayTimesDays": "{price} / day × {days, plural, one {# day} other {# days}}",
+    "beforeDiscount": "Before discount",
+    "discount": "Discount for {days} days",
+    "total": "Total",
+    "note": "Note from the customer",
+    "rating": "Rental rated {score} / 5",
+    "customer": "Customer",
+    "noAddresses": "Booked before addresses were taken.",
+    "mailingAddress": "Mailing address",
+    "invoiceAddress": "Invoice address",
+    "invoiceToMailing": "Same as mailing address, in the customer's name",
+    "companyId": "Company no. {id}",
+    "vatId": "VAT {id}",
+    "history": "History",
+    "booked": "Booked",
+    "pickedUp": "Picked up",
+    "returned": "Returned",
+    "cancelled": "Cancelled"
   }
 }

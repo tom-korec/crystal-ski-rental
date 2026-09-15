@@ -7,6 +7,7 @@ import { PAGE_SIZE, pageCount, skipForPage } from '~/lib/pagination';
 import type { Role } from '~/lib/roles';
 import { userCreateSchema, userIdSchema, userListSchema, userUpdateSchema } from '~/lib/user-schema';
 import { badRequest, conflict, forbidden, notFound, rethrowPrismaError } from '~/server/api/errors';
+import { accountIdsMatching } from '~/server/api/customer-search';
 import { customerAddressSelect } from '~/server/api/selects';
 import { createTRPCRouter, staffProcedure } from '~/server/api/trpc';
 
@@ -59,12 +60,7 @@ export const userRouter = createTRPCRouter({
     const where: Prisma.UserWhereInput = {
       deletedAt: input.onlyDeleted ? { not: null } : null,
       role: input.role,
-      ...(input.search && {
-        OR: [
-          { name: { contains: input.search, mode: 'insensitive' } },
-          { email: { contains: input.search, mode: 'insensitive' } },
-        ],
-      }),
+      id: input.search ? { in: await accountIdsMatching(ctx.db, input.search) } : undefined,
     };
 
     const total = await ctx.db.user.count({ where });

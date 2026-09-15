@@ -261,6 +261,7 @@ test.describe('customer', () => {
     await page.goto('/app/reservations');
     const active = page.locator('[data-testid="reservation-card"][data-status="ACTIVE"]');
     await expect(active).toHaveCount(1);
+    await expect(active.getByTestId('reservation-code')).toHaveText(/^[A-HJ-NP-Z2-9]{6}$/);
     await active.getByTestId('reservation-details').click();
     await expect(active.getByTestId('cancel-reservation')).toHaveCount(0);
   });

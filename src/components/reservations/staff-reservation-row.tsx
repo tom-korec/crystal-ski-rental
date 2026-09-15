@@ -1,6 +1,7 @@
 'use client';
 
 import { MessageSquareIcon, StarIcon } from 'lucide-react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -11,6 +12,7 @@ import { useFormatDateRange } from '~/hooks/use-format-date-range';
 import { useFormatMoney } from '~/hooks/use-format-money';
 import { rentalPeriod, todayUtc } from '~/lib/date';
 import { canCancelAsStore, canPickUp, canReturn } from '~/lib/reservation-lifecycle';
+import { staffReservationRoute } from '~/lib/routes';
 import { api, type RouterOutputs } from '~/trpc/react';
 import { cn } from '~/lib/utils';
 
@@ -33,45 +35,8 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
   const t = useTranslations('staffReservations');
   const formatMoney = useFormatMoney();
   const formatDateRange = useFormatDateRange();
-  const utils = api.useUtils();
-  const [confirmingCancel, setConfirmingCancel] = useState(false);
-  const [confirmingPickUp, setConfirmingPickUp] = useState(false);
-  const [confirmingReturn, setConfirmingReturn] = useState(false);
-
-  // Any list this reservation appears in may change.
-  const refresh = () =>
-    Promise.all([
-      utils.reservation.frontDesk.invalidate(),
-      utils.reservation.bySki.invalidate(),
-      utils.reservation.byUser.invalidate(),
-      utils.reservation.blockersBySki.invalidate(),
-    ]);
-  const pickUp = api.reservation.pickUp.useMutation({
-    onSuccess: async () => {
-      await refresh();
-      setConfirmingPickUp(false);
-    },
-  });
-  const markReturned = api.reservation.markReturned.useMutation({
-    onSuccess: async () => {
-      await refresh();
-      setConfirmingReturn(false);
-    },
-  });
-  const cancel = api.reservation.cancel.useMutation({
-    onSuccess: async () => {
-      await refresh();
-      setConfirmingCancel(false);
-    },
-  });
-
   const { items, user } = reservation;
-  const skis = items.map(({ ski }) => `${ski.model.brand.name} ${ski.model.name} (${ski.inventoryCode})`).join(', ');
   const period = formatDateRange(reservation.startDate, rentalPeriod(reservation).lastDay);
-  const today = todayUtc();
-  // Managers handle only their own store's counter (FR-64); admins and managers without a store, any.
-  const { storeId: ownStore } = useStaffActor();
-  const atOwnCounter = !ownStore || reservation.store.id === ownStore;
 
   return (
     <li
@@ -86,6 +51,13 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
       {show.customer ? <CustomerContact name={user.name} email={user.email} /> : null}
 
       <span className="flex flex-col gap-0.5 text-sm">
+        <Link
+          href={staffReservationRoute(reservation.id)}
+          className="text-primary w-fit font-mono text-xs font-medium underline-offset-4 hover:underline"
+          data-testid="reservation-code"
+        >
+          #{reservation.code}
+        </Link>
         {show.skis ? (
           <ul className="flex flex-col gap-1" data-testid="reservation-skis">
             {items.map(({ id, ski }, index) => (
@@ -138,66 +110,124 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
         ) : null}
       </span>
 
-      <span className="flex flex-wrap items-center gap-2 md:justify-end">
-        {atOwnCounter && canPickUp(reservation, today) ? (
-          <ConfirmDialog
-            open={confirmingPickUp}
-            onOpenChange={(open) => {
-              setConfirmingPickUp(open);
-              if (!open) pickUp.reset();
-            }}
-            trigger={<Button size="sm" data-testid="pick-up" />}
-            triggerLabel={t('pickUp')}
-            title={t('pickUpTitle', { count: items.length })}
-            description={t('pickUpDescription', { customer: user.name, skis, period, count: items.length })}
-            confirmLabel={t('pickUpConfirm')}
-            pendingLabel={t('working')}
-            cancelLabel={t('notYet')}
-            onConfirm={() => pickUp.mutate({ id: reservation.id })}
-            isPending={pickUp.isPending}
-            error={pickUp.error?.message}
-          />
-        ) : null}
-        {atOwnCounter && canReturn(reservation) ? (
-          <ConfirmDialog
-            open={confirmingReturn}
-            onOpenChange={(open) => {
-              setConfirmingReturn(open);
-              if (!open) markReturned.reset();
-            }}
-            trigger={<Button size="sm" data-testid="mark-returned" />}
-            triggerLabel={t('markReturned')}
-            title={t('returnTitle')}
-            description={t('returnDescription', { customer: user.name, skis, count: items.length })}
-            confirmLabel={t('returnConfirm')}
-            pendingLabel={t('working')}
-            cancelLabel={t('notYet')}
-            onConfirm={() => markReturned.mutate({ id: reservation.id })}
-            isPending={markReturned.isPending}
-            error={markReturned.error?.message}
-          />
-        ) : null}
-        {atOwnCounter && canCancelAsStore(reservation) ? (
-          <ConfirmDialog
-            open={confirmingCancel}
-            onOpenChange={(open) => {
-              setConfirmingCancel(open);
-              if (!open) cancel.reset();
-            }}
-            trigger={<Button size="sm" variant="ghost" className="text-destructive" data-testid="cancel-booking" />}
-            triggerLabel={t('cancel')}
-            title={t('cancelTitle')}
-            description={t('cancelDescription', { customer: user.name, skis, period })}
-            confirmLabel={t('cancelConfirm')}
-            pendingLabel={t('working')}
-            cancelLabel={t('keep')}
-            onConfirm={() => cancel.mutate({ id: reservation.id })}
-            isPending={cancel.isPending}
-            error={cancel.error?.message}
-            destructive
-          />
-        ) : null}
-      </span>
+      <StaffReservationActions reservation={reservation} className="md:justify-end" />
     </li>
+  );
+}
+
+interface StaffReservationActionsProps {
+  reservation: StaffReservation;
+  className?: string;
+}
+
+/**
+ * The lifecycle actions a reservation's status allows, each behind a confirmation (FR-51). Offered to
+ * managers only at their own store's counter (FR-64); admins and managers without a store, anywhere.
+ */
+export function StaffReservationActions({ reservation, className }: StaffReservationActionsProps) {
+  const t = useTranslations('staffReservations');
+  const formatDateRange = useFormatDateRange();
+  const utils = api.useUtils();
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [confirmingPickUp, setConfirmingPickUp] = useState(false);
+  const [confirmingReturn, setConfirmingReturn] = useState(false);
+
+  // Any list or page this reservation appears on may change.
+  const refresh = () =>
+    Promise.all([
+      utils.reservation.frontDesk.invalidate(),
+      utils.reservation.bySki.invalidate(),
+      utils.reservation.byUser.invalidate(),
+      utils.reservation.search.invalidate(),
+      utils.reservation.byId.invalidate({ id: reservation.id }),
+      utils.reservation.blockersBySki.invalidate(),
+    ]);
+  const pickUp = api.reservation.pickUp.useMutation({
+    onSuccess: async () => {
+      await refresh();
+      setConfirmingPickUp(false);
+    },
+  });
+  const markReturned = api.reservation.markReturned.useMutation({
+    onSuccess: async () => {
+      await refresh();
+      setConfirmingReturn(false);
+    },
+  });
+  const cancel = api.reservation.cancel.useMutation({
+    onSuccess: async () => {
+      await refresh();
+      setConfirmingCancel(false);
+    },
+  });
+
+  const { items, user } = reservation;
+  const skis = items.map(({ ski }) => `${ski.model.brand.name} ${ski.model.name} (${ski.inventoryCode})`).join(', ');
+  const period = formatDateRange(reservation.startDate, rentalPeriod(reservation).lastDay);
+  const today = todayUtc();
+  const { storeId: ownStore } = useStaffActor();
+  const atOwnCounter = !ownStore || reservation.store.id === ownStore;
+
+  return (
+    <span className={cn('flex flex-wrap items-center gap-2', className)}>
+      {atOwnCounter && canPickUp(reservation, today) ? (
+        <ConfirmDialog
+          open={confirmingPickUp}
+          onOpenChange={(open) => {
+            setConfirmingPickUp(open);
+            if (!open) pickUp.reset();
+          }}
+          trigger={<Button size="sm" data-testid="pick-up" />}
+          triggerLabel={t('pickUp')}
+          title={t('pickUpTitle', { count: items.length })}
+          description={t('pickUpDescription', { customer: user.name, skis, period, count: items.length })}
+          confirmLabel={t('pickUpConfirm')}
+          pendingLabel={t('working')}
+          cancelLabel={t('notYet')}
+          onConfirm={() => pickUp.mutate({ id: reservation.id })}
+          isPending={pickUp.isPending}
+          error={pickUp.error?.message}
+        />
+      ) : null}
+      {atOwnCounter && canReturn(reservation) ? (
+        <ConfirmDialog
+          open={confirmingReturn}
+          onOpenChange={(open) => {
+            setConfirmingReturn(open);
+            if (!open) markReturned.reset();
+          }}
+          trigger={<Button size="sm" data-testid="mark-returned" />}
+          triggerLabel={t('markReturned')}
+          title={t('returnTitle')}
+          description={t('returnDescription', { customer: user.name, skis, count: items.length })}
+          confirmLabel={t('returnConfirm')}
+          pendingLabel={t('working')}
+          cancelLabel={t('notYet')}
+          onConfirm={() => markReturned.mutate({ id: reservation.id })}
+          isPending={markReturned.isPending}
+          error={markReturned.error?.message}
+        />
+      ) : null}
+      {atOwnCounter && canCancelAsStore(reservation) ? (
+        <ConfirmDialog
+          open={confirmingCancel}
+          onOpenChange={(open) => {
+            setConfirmingCancel(open);
+            if (!open) cancel.reset();
+          }}
+          trigger={<Button size="sm" variant="ghost" className="text-destructive" data-testid="cancel-booking" />}
+          triggerLabel={t('cancel')}
+          title={t('cancelTitle')}
+          description={t('cancelDescription', { customer: user.name, skis, period })}
+          confirmLabel={t('cancelConfirm')}
+          pendingLabel={t('working')}
+          cancelLabel={t('keep')}
+          onConfirm={() => cancel.mutate({ id: reservation.id })}
+          isPending={cancel.isPending}
+          error={cancel.error?.message}
+          destructive
+        />
+      ) : null}
+    </span>
   );
 }

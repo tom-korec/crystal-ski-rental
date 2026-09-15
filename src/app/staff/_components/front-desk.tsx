@@ -8,12 +8,13 @@ import { LoadingRegion } from '~/components/common/skeletons/loading-region';
 import { Badge } from '~/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
-import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { useStaffActor } from '~/components/layout/staff-actor';
+import { type StaffReservation, StaffReservationRow } from '~/components/reservations/staff-reservation-row';
+import { Tabs, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { useUrlFilters } from '~/hooks/use-url-filters';
 import { api } from '~/trpc/react';
 
-import { type StaffReservation, StaffReservationRow } from '~/components/reservations/staff-reservation-row';
+import { FindByCodeDialog } from './find-by-code-dialog';
 
 const SECTIONS = ['pickupsDueToday', 'returnsDueToday', 'overduePickups', 'overdueReturns'] as const;
 
@@ -42,6 +43,7 @@ export function FrontDesk() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title={t('title')}
+        actions={<FindByCodeDialog />}
         description={ownStore && storeName ? t('descriptionAt', { store: storeName }) : t('description')}
       >
         {ownStore ? null : stores.data && storeId ? (

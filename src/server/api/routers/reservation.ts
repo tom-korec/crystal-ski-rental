@@ -2,6 +2,7 @@ import { addUtcDays, todayUtc, toUtcDate, utcDaysBetween } from '~/lib/date';
 import { toMoneyString } from '~/lib/money';
 import { PAGE_SIZE, pageCount, skipForPage } from '~/lib/pagination';
 import { quoteReservation } from '~/lib/pricing';
+import { generateReservationCode } from '~/lib/reservation-code';
 import {
   canCancelAsStore,
   canCancelAsUser,
@@ -13,13 +14,16 @@ import {
   frontDeskSchema,
   myReservationsSchema,
   reservationCreateSchema,
+  reservationByCodeSchema,
   reservationIdSchema,
   reservationQuoteSchema,
+  reservationSearchSchema,
   reservationsBySkiSchema,
   reservationsByUserSchema,
 } from '~/lib/reservation-schema';
 import { isStaff } from '~/lib/roles';
-import { badRequest, conflict, isOverlapViolation, notFound } from '~/server/api/errors';
+import { badRequest, conflict, isOverlapViolation, isPrismaError, notFound } from '~/server/api/errors';
+import { accountIdsMatching } from '~/server/api/customer-search';
 import { overlappingItem } from '~/server/api/overlap';
 import { skiPublicSelect, storeSelect, withPlainModel } from '~/server/api/selects';
 import { createTRPCRouter, protectedProcedure, staffProcedure, userProcedure } from '~/server/api/trpc';
@@ -31,11 +35,13 @@ import type { Prisma, PrismaClient } from '../../../../generated/prisma/client';
 // the expected status, so two people acting on one reservation at once cannot both succeed.
 
 const NOT_FOUND = 'Reservation not found.';
+const CODE_ATTEMPTS = 5;
 const CHANGED_MEANWHILE = 'This reservation was changed in the meantime. Reload and try again.';
 const ALREADY_BOOKED = 'Some of these skis are already booked for some of those days. Pick other dates or other skis.';
 
 const reservationFields = {
   id: true,
+  code: true,
   startDate: true,
   endDate: true,
   status: true,
@@ -117,6 +123,25 @@ type PlainItem<I extends PricedItem> = Omit<I, 'pricePerDay' | 'totalPrice'> & {
 };
 
 /** Decimal columns leave the API as plain strings. */
+/** Everything staff need about one reservation: who, what, where, how much, and who did what when (FR-66). */
+const staffReservationDetailSelect = {
+  ...staffReservationSelect,
+  addresses: {
+    select: {
+      kind: true,
+      recipient: true,
+      companyId: true,
+      vatId: true,
+      street: true,
+      houseNumber: true,
+      city: true,
+      zipCode: true,
+      country: true,
+    },
+    orderBy: { kind: 'asc' },
+  },
+} satisfies Prisma.ReservationSelect;
+
 function withPlainPrices<T extends { totalPrice: Priced; items: PricedItem[] }>(
   row: T,
 ): Omit<T, 'totalPrice' | 'items'> & { totalPrice: string; items: PlainItem<T['items'][number]>[] } {
@@ -201,48 +226,53 @@ export const reservationRouter = createTRPCRouter({
           vatId: details.invoice.vatId ?? null,
         };
 
-    try {
-      const reservation = await ctx.db.$transaction(async (tx) => {
-        // What was entered becomes the profile's too, so the next booking starts from it (FR-6). An
-        // invoice address the customer chose not to use this time stays in the profile.
-        for (const { kind, ...address } of invoice ? [mailing, invoice] : [mailing]) {
-          await tx.customerAddress.upsert({
-            where: { userId_kind: { userId, kind } },
-            create: { userId, kind, ...address },
-            update: address,
-          });
-        }
+    // 32⁶ codes make a clash rare, and a fresh code settles it.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        const reservation = await ctx.db.$transaction(async (tx) => {
+          // What was entered becomes the profile's too, so the next booking starts from it (FR-6). An
+          // invoice address the customer chose not to use this time stays in the profile.
+          for (const { kind, ...address } of invoice ? [mailing, invoice] : [mailing]) {
+            await tx.customerAddress.upsert({
+              where: { userId_kind: { userId, kind } },
+              create: { userId, kind, ...address },
+              update: address,
+            });
+          }
 
-        return tx.reservation.create({
-          data: {
-            userId,
-            storeId,
-            startDate,
-            endDate,
-            rentalDays: quote.rentalDays,
-            discountPercent: quote.discountPercent,
-            totalPrice: quote.totalPrice,
-            note: details.note || null,
-            items: {
-              create: quote.items.map((item) => ({
-                skiId: item.skiId,
-                startDate,
-                endDate,
-                pricePerDay: item.quote.pricePerDay,
-                totalPrice: item.quote.totalPrice,
-              })),
+          return tx.reservation.create({
+            data: {
+              code: generateReservationCode(),
+              userId,
+              storeId,
+              startDate,
+              endDate,
+              rentalDays: quote.rentalDays,
+              discountPercent: quote.discountPercent,
+              totalPrice: quote.totalPrice,
+              note: details.note || null,
+              items: {
+                create: quote.items.map((item) => ({
+                  skiId: item.skiId,
+                  startDate,
+                  endDate,
+                  pricePerDay: item.quote.pricePerDay,
+                  totalPrice: item.quote.totalPrice,
+                })),
+              },
+              addresses: { create: invoice ? [mailing, invoice] : [mailing] },
             },
-            addresses: { create: invoice ? [mailing, invoice] : [mailing] },
-          },
-          select: customerReservationSelect,
+            select: customerReservationSelect,
+          });
         });
-      });
 
-      return withPlainPrices(reservation);
-    } catch (error) {
-      // Only reachable when another booking committed between the check and the insert.
-      if (isOverlapViolation(error)) throw conflict(ALREADY_BOOKED);
-      throw error;
+        return withPlainPrices(reservation);
+      } catch (error) {
+        // Only reachable when another booking committed between the check and the insert.
+        if (isOverlapViolation(error)) throw conflict(ALREADY_BOOKED);
+        if (isPrismaError(error, 'P2002') && attempt < CODE_ATTEMPTS) continue;
+        throw error;
+      }
     }
   }),
 
@@ -410,6 +440,45 @@ export const reservationRouter = createTRPCRouter({
     });
 
     return { items, total, page };
+  }),
+
+  /** Staff looking reservations up by customer or code, newest first (FR-65). */
+  search: staffProcedure.input(reservationSearchSchema).query(async ({ ctx, input }) => {
+    const where: Prisma.ReservationWhereInput = {
+      code: input.code ? { contains: input.code } : undefined,
+      userId: input.customer ? { in: await accountIdsMatching(ctx.db, input.customer) } : undefined,
+    };
+    const { total, page, skip, take } = await pageOf(ctx.db, where, input.page);
+    const rows = await ctx.db.reservation.findMany({
+      where,
+      select: staffReservationSelect,
+      orderBy: HISTORY_ORDER,
+      skip,
+      take,
+    });
+
+    return { items: rows.map(withPlainPrices), total, page };
+  }),
+
+  /** The reservation a customer quotes at the counter (FR-45). Only its id, for opening its page. */
+  byCode: staffProcedure.input(reservationByCodeSchema).query(async ({ ctx, input }) => {
+    const reservation = await ctx.db.reservation.findUnique({ where: { code: input.code }, select: { id: true } });
+
+    if (!reservation) throw notFound(`No reservation has the code ${input.code}.`);
+
+    return reservation;
+  }),
+
+  /** One reservation in full, for its staff page (FR-66). */
+  byId: staffProcedure.input(reservationIdSchema).query(async ({ ctx, input }) => {
+    const reservation = await ctx.db.reservation.findUnique({
+      where: { id: input.id },
+      select: staffReservationDetailSelect,
+    });
+
+    if (!reservation) throw notFound(NOT_FOUND);
+
+    return withPlainPrices(reservation);
   }),
 
   /** Every reservation of one ski, for its detail page (FR-60). */

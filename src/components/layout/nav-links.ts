@@ -5,6 +5,7 @@ import {
   APP_STORES,
   STAFF_ACCOUNTS,
   STAFF_MODELS,
+  STAFF_RESERVATIONS,
   STAFF_STORES,
   STAFF_HOME,
   STAFF_SKIS,
@@ -12,7 +13,7 @@ import {
 
 export interface NavLink {
   href: string;
-  labelKey: 'findSkis' | 'myReservations' | 'stores' | 'frontDesk' | 'fleet' | 'accounts' | 'models';
+  labelKey: 'findSkis' | 'myReservations' | 'stores' | 'frontDesk' | 'reservations' | 'fleet' | 'accounts' | 'models';
   testId: string;
   /** Also current on pages below it, such as a ski's detail page under the fleet. */
   includesSubpages?: boolean;
@@ -23,6 +24,7 @@ export function navLinksFor(role?: string | null): NavLink[] {
   return isStaff(role)
     ? [
         { href: STAFF_HOME, labelKey: 'frontDesk', testId: 'nav-front-desk' },
+        { href: STAFF_RESERVATIONS, labelKey: 'reservations', testId: 'nav-reservations', includesSubpages: true },
         { href: STAFF_SKIS, labelKey: 'fleet', testId: 'nav-fleet', includesSubpages: true },
         { href: STAFF_ACCOUNTS, labelKey: 'accounts', testId: 'nav-accounts', includesSubpages: true },
         // Admin only; the page guard turns a manager away as well.

@@ -251,6 +251,8 @@ model Ski {
 
 model Reservation {
   id                String               @id @default(uuid(7))
+  // What the customer quotes at the counter: six capital letters and digits (FR-45).
+  code              String               @unique
   userId            String
   // Every ski of a reservation is from this store (BR-6).
   storeId           String

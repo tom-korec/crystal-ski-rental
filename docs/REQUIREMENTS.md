@@ -154,6 +154,10 @@ Models and brands share the **Models** page, with a switch between their tables.
   While a rating can still be edited, an edit action is offered and the form says until when; after that
   the scores show without it.
 
+- **FR-45** Every reservation has a **reservation code**: six capital letters and digits, unique, without
+  the easily confused O, I, 0 and 1. The customer sees it with their reservation and quotes it at the
+  counter.
+
 ### 4.6 Front desk (staff)
 
 - **FR-50** Staff have a front desk page per store listing:
@@ -177,6 +181,13 @@ Models and brands share the **Models** page, with a switch between their tables.
   and stores everywhere, but adds, changes, takes out of rental and deletes skis only at their own
   store; moving a ski to another store is for admins. Their front desk shows only their own store, and
   the lifecycle actions are offered only on their own store's reservations.
+- **FR-65** Staff have a **reservations page** listing every reservation, newest first, searched by the
+  customer's name or e-mail in one field (ignoring case and accents) and by all or part of the
+  reservation code.
+- **FR-66** Staff open a **reservation's page**: its code and status, store and dates, every pair with its
+  inventory code and price, the price summary, the customer with the addresses and note given at
+  booking, the rental rating, and who booked, picked up, returned or cancelled it and when, with the
+  lifecycle actions its status allows. The front desk has a **Find by code** dialog that opens it.
 
 ## 5. Business rules
 

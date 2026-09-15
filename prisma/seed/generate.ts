@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { invoiceAddressSchema, mailingAddressSchema } from '../../src/lib/address-schema';
 import { addUtcDays, todayUtc } from '../../src/lib/date';
 import { quoteReservation } from '../../src/lib/pricing';
+import { generateReservationCode } from '../../src/lib/reservation-code';
 import { RATING_EDIT_WINDOW_MS } from '../../src/lib/rating-rules';
 import type { ReservationStatus } from '../../src/lib/reservation-lifecycle';
 import {
@@ -52,6 +53,20 @@ function createRandom(seed: number): () => number {
 }
 
 const random = createRandom(0x5c1_7e57);
+
+// Codes draw from their own sequence, so adding them left every other generated value as it was.
+const codeRandom = createRandom(0xc0_de5);
+const usedCodes = new Set<string>();
+
+function reservationCode(): string {
+  for (;;) {
+    const code = generateReservationCode((bytes) => bytes.map(() => Math.floor(codeRandom() * 256)));
+    if (!usedCodes.has(code)) {
+      usedCodes.add(code);
+      return code;
+    }
+  }
+}
 
 function randomInt(min: number, max: number): number {
   return min + Math.floor(random() * (max - min + 1));
@@ -120,6 +135,7 @@ export interface ReservationItemRow {
 
 export interface ReservationRow {
   id: string;
+  code: string;
   userId: string;
   storeId: string;
   startDate: Date;
@@ -370,6 +386,7 @@ function buildReservation(spec: ReservationSpec, data: SeedData, staff: UserRow[
 
   const row: ReservationRow = {
     id: randomUUID(),
+    code: reservationCode(),
     userId: spec.user.id,
     storeId: first.storeId,
     startDate,

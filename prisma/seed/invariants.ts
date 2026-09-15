@@ -21,6 +21,7 @@ function assertUnique<T>(items: T[], key: (item: T) => string, what: string): vo
 
 export function assertSeedData(data: SeedData): void {
   assertUnique(data.users, (user) => user.email, 'e-mail');
+  assertUnique(data.reservations, (reservation) => reservation.code, 'reservation code');
   assertUnique(data.skis, (ski) => ski.inventoryCode, 'inventory code');
   assertUnique(data.models, (model) => `${model.brandId}:${model.name}`, 'model name');
   assertUnique(data.modelRatings, (rating) => `${rating.modelId}:${rating.userId}`, 'model rating');

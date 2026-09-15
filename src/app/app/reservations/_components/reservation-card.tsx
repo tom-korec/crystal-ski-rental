@@ -94,7 +94,16 @@ export function ReservationCard({ reservation }: ReservationCardProps) {
       <Collapsible>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 md:grid md:grid-cols-[minmax(0,1fr)_9rem_8.5rem_5.5rem_12rem]">
           <div className="flex w-full min-w-0 flex-col md:w-auto">
-            <span className="font-medium">{period}</span>
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="font-medium">{period}</span>
+              <span
+                className="bg-secondary text-secondary-foreground rounded px-1.5 py-0.5 font-mono text-xs font-medium tracking-wider"
+                title={t('codeHint')}
+                data-testid="reservation-code"
+              >
+                {reservation.code}
+              </span>
+            </span>
             <span className="text-muted-foreground truncate text-sm" data-testid="reservation-skis">
               {items.length === 1 && items[0]
                 ? `${skis} · ${t('length', { length: items[0].ski.lengthCm })}`

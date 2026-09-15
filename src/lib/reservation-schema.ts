@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { invoiceAddressSchema, mailingAddressSchema } from '~/lib/address-schema';
 import { pageSchema } from '~/lib/pagination';
+import { RESERVATION_CODE_LENGTH, reservationCodeSchema } from '~/lib/reservation-code';
 import { dateRangeSchema, refineRentalRange } from '~/lib/rental-range';
 
 /** A family's skis fit comfortably; more than this is a group booking the store arranges itself (BR-6). */
@@ -55,3 +56,26 @@ export const reservationsBySkiSchema = z.object({ skiId: z.uuid(), page: pageSch
 export const reservationsByUserSchema = z.object({ userId: z.string().min(1), page: pageSchema });
 
 export const frontDeskSchema = z.object({ storeId: z.uuid() });
+
+export const RESERVATION_SEARCH_MAX_LENGTH = 100;
+
+/**
+ * Staff finding reservations (FR-65): by the customer's name or e-mail in one field, and by all or part of
+ * the reservation code, which ignores case, spaces, dashes and a leading #.
+ */
+export const reservationSearchSchema = z
+  .object({
+    customer: z.string().trim().min(1).max(RESERVATION_SEARCH_MAX_LENGTH).optional(),
+    code: z
+      .string()
+      .transform((value) => value.toUpperCase().replace(/[\s#-]/g, ''))
+      .pipe(z.string().max(RESERVATION_CODE_LENGTH))
+      .transform((value) => value || undefined)
+      .optional(),
+    page: pageSchema,
+  })
+  .prefault({});
+
+export const reservationByCodeSchema = z.object({ code: reservationCodeSchema });
+
+export type ReservationSearchInput = z.input<typeof reservationSearchSchema>;
