@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { SKI_GENDERS, SKI_TYPES, SKILL_LEVELS } from '../../src/lib/catalog';
+import { openingHoursSchema, specialDaySchema } from '../../src/lib/opening-hours';
 import { RESERVATION_STATUSES } from '../../src/lib/reservation-lifecycle';
 import { MOMENT_PATTERN } from './time';
 
@@ -20,11 +21,14 @@ export const storeFileSchema = z.array(
     zipCode: z.string(),
     phone: z.string(),
     email: z.email(),
-    /** Monday first; an empty string means closed. */
-    openingHours: z.array(z.string()).length(7),
+    /** Monday first, as intervals like "8:00-12:00;13:00-20:00"; null means closed. */
+    openingHours: z.array(openingHoursSchema).length(7),
     createdAt: moment,
   }),
 );
+
+/** Special days every store keeps: public holidays with short hours, and Christmas closures. Real dates. */
+export const specialDayFileSchema = z.array(specialDaySchema);
 
 export const brandFileSchema = z.array(z.object({ name: z.string(), createdAt: moment }));
 

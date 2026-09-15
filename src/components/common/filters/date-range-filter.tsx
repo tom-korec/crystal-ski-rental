@@ -9,7 +9,7 @@ import { Calendar } from '~/components/ui/calendar';
 import { Label } from '~/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui/popover';
 import { useFormatDateRange } from '~/hooks/use-format-date-range';
-import { addDays, fromCalendarDate, toCalendarDate, todayDateString, toUtcDate } from '~/lib/date';
+import { addDays, type DateString, fromCalendarDate, toCalendarDate, todayDateString, toUtcDate } from '~/lib/date';
 import { MAX_RENTAL_DAYS } from '~/lib/pricing';
 import type { DateRange } from '~/lib/rental-range';
 import { cn } from '~/lib/utils';
@@ -23,6 +23,8 @@ interface DateRangeFilterProps {
   className?: string;
   /** Shown at the end of the field, e.g. how many days the range is. */
   adornment?: ReactNode;
+  /** Days that can be neither the first nor the last of the range, e.g. when the store is closed. */
+  isDayClosed?: (date: DateString) => boolean;
 }
 
 function addCalendarDays(date: Date, days: number): Date {
@@ -45,6 +47,7 @@ export function DateRangeFilter({
   placeholder,
   className,
   adornment,
+  isDayClosed,
 }: DateRangeFilterProps) {
   const t = useTranslations('filters');
   const formatDateRange = useFormatDateRange();
@@ -127,6 +130,7 @@ export function DateRangeFilter({
             // past, and while picking the second day, at most 30 days from the first in either direction.
             disabled={[
               { before: today },
+              ...(isDayClosed ? [(date: Date) => isDayClosed(fromCalendarDate(date))] : []),
               ...(firstDay
                 ? [
                     { before: addCalendarDays(firstDay, -(MAX_RENTAL_DAYS - 1)) },

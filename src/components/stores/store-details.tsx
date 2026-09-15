@@ -1,20 +1,11 @@
 'use client';
 
-import { MailIcon, MapPinIcon, PhoneIcon } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { CalendarClockIcon, MailIcon, MapPinIcon, PhoneIcon } from 'lucide-react';
+import { useFormatter, useTranslations } from 'next-intl';
 
-import type { OpeningHoursField } from '~/lib/store-schema';
-
-const WEEK = [
-  { field: 'openingHoursMonday', day: 'monday' },
-  { field: 'openingHoursTuesday', day: 'tuesday' },
-  { field: 'openingHoursWednesday', day: 'wednesday' },
-  { field: 'openingHoursThursday', day: 'thursday' },
-  { field: 'openingHoursFriday', day: 'friday' },
-  { field: 'openingHoursSaturday', day: 'saturday' },
-  { field: 'openingHoursSunday', day: 'sunday' },
-] as const satisfies readonly { field: OpeningHoursField; day: string }[];
+import { addDays, todayDateString, toUtcDate } from '~/lib/date';
 import { formatPhone, formatZipCode } from '~/lib/format';
+import { formatOpeningHours, OPENING_HOURS_FIELDS, type StoreHours, WEEKDAYS } from '~/lib/opening-hours';
 import { cn } from '~/lib/utils';
 
 export type StoreDetailsData = {
@@ -25,11 +16,14 @@ export type StoreDetailsData = {
   zipCode: string;
   phone: string;
   email: string;
-} & Record<OpeningHoursField, string>;
+} & StoreHours;
 
 interface StoreDetailsProps {
   store: StoreDetailsData;
 }
+
+/** How far ahead special days are listed: about the reach of a booking. */
+const SPECIAL_DAYS_AHEAD = 90;
 
 /** Monday is 0, following the store's week. The stores are in Slovakia, so "today" is judged there. */
 function todayIndex(): number {
@@ -37,10 +31,14 @@ function todayIndex(): number {
   return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(weekday);
 }
 
-/** Where the store is, how to reach it, and when it is open (FR-12, FR-33). */
+/** Where the store is, how to reach it, and when it is open, special days included (FR-12, FR-33, BR-7). */
 export function StoreDetails({ store }: StoreDetailsProps) {
   const t = useTranslations('stores');
+  const format = useFormatter();
   const today = todayIndex();
+  const from = todayDateString();
+  const until = addDays(from, SPECIAL_DAYS_AHEAD);
+  const upcoming = store.specialDays.filter((day) => day.date >= from && day.date <= until);
 
   return (
     <div className="grid gap-4 text-sm sm:grid-cols-2" data-testid="store-details">
@@ -70,16 +68,45 @@ export function StoreDetails({ store }: StoreDetailsProps) {
         </a>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <p className="font-medium">{t('openingHours')}</p>
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5">
-          {WEEK.map(({ field, day }, index) => (
-            <div key={field} className={cn('contents', index === today && 'font-medium')}>
-              <dt className={cn(index !== today && 'text-muted-foreground')}>{t(`weekdays.${day}`)}</dt>
-              <dd className={cn(!store[field] && 'text-muted-foreground')}>{store[field] || t('closed')}</dd>
-            </div>
-          ))}
-        </dl>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <p className="font-medium">{t('openingHours')}</p>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5">
+            {OPENING_HOURS_FIELDS.map((field, index) => {
+              const hours = formatOpeningHours(store[field]);
+              return (
+                <div key={field} className={cn('contents', index === today && 'font-medium')}>
+                  <dt className={cn(index !== today && 'text-muted-foreground')}>
+                    {t(`weekdays.${WEEKDAYS[index] ?? 'monday'}`)}
+                  </dt>
+                  <dd className={cn(!hours && 'text-muted-foreground')}>{hours ?? t('closed')}</dd>
+                </div>
+              );
+            })}
+          </dl>
+        </div>
+
+        {upcoming.length > 0 ? (
+          <div className="flex flex-col gap-2" data-testid="store-special-days">
+            <p className="flex items-center gap-1.5 font-medium">
+              <CalendarClockIcon className="text-highlight size-4" aria-hidden />
+              {t('specialDays')}
+            </p>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5">
+              {upcoming.map((day) => (
+                <div key={day.date} className="contents">
+                  <dt className="text-muted-foreground">
+                    {format.dateTime(toUtcDate(day.date), { day: 'numeric', month: 'short', timeZone: 'UTC' })}
+                    {day.name ? ` · ${day.name}` : ''}
+                  </dt>
+                  <dd className={cn(!day.hours && 'text-muted-foreground')}>
+                    {formatOpeningHours(day.hours) ?? t('closed')}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ) : null}
       </div>
     </div>
   );

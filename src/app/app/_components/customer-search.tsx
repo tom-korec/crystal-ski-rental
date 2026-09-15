@@ -7,10 +7,12 @@ import { type ReactNode, useState } from 'react';
 import { DateRangeFilter } from '~/components/common/filters/date-range-filter';
 import { SelectField } from '~/components/common/select-field';
 import { DiscountBadge } from '~/components/skis/discount-badge';
+import { RentalDayNotice } from '~/components/stores/rental-day-notice';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
 import { Skeleton } from '~/components/ui/skeleton';
 import { toUtcDate, utcDaysBetween } from '~/lib/date';
+import { closedRentalDays, hoursOn, rentalDays } from '~/lib/opening-hours';
 import { discountPercentFor, MAX_RENTAL_DAYS, MIN_RENTAL_DAYS } from '~/lib/pricing';
 import type { DateRange } from '~/lib/rental-range';
 import type { SkiSearchFilters } from '~/lib/ski-schema';
@@ -50,6 +52,7 @@ function StartSearch({ storeId: initialStore, range: initialRange, filters: init
   const t = useTranslations('customerSearch');
   const stores = api.store.list.useQuery();
   const [storeId, setStoreId] = useState(initialStore);
+  const store = stores.data?.find((candidate) => candidate.id === storeId);
   const [range, setRange] = useState(initialRange);
   const [filters, setFilters] = useState(initialFilters);
 
@@ -121,14 +124,20 @@ function StartSearch({ storeId: initialStore, range: initialRange, filters: init
             value={range}
             onChange={setRange}
             adornment={range ? <RentalLength range={range} /> : null}
+            isDayClosed={store ? (date) => hoursOn(store, date).hours === null : undefined}
           />
+          {store && range ? <RentalDayNotice days={rentalDays(store, range)} store={store.name} /> : null}
 
           <SearchFilters filters={filters} onChange={setFilters} />
 
           <Button
             type="submit"
             size="lg"
-            disabled={!storeId || !range}
+            disabled={
+              !storeId ||
+              !range ||
+              (store !== undefined && range !== undefined && closedRentalDays(rentalDays(store, range)).length > 0)
+            }
             className="self-stretch sm:self-end"
             data-testid="show-skis"
           >
@@ -149,6 +158,8 @@ function StartSearch({ storeId: initialStore, range: initialRange, filters: init
 function SearchBar({ storeId, range, filters, onSearch, footer }: StepProps & { footer: ReactNode }) {
   const t = useTranslations('customerSearch');
   const stores = api.store.list.useQuery();
+
+  const store = stores.data?.find((candidate) => candidate.id === storeId);
 
   if (!storeId || !range) return null;
 
@@ -175,8 +186,10 @@ function SearchBar({ storeId, range, filters, onSearch, footer }: StepProps & { 
           value={range}
           onChange={(next) => onSearch({ storeId, range: next, filters })}
           adornment={<RentalLength range={range} />}
+          isDayClosed={store ? (date) => hoursOn(store, date).hours === null : undefined}
         />
       </div>
+      {store ? <RentalDayNotice days={rentalDays(store, range)} store={store.name} /> : null}
       {/* Keyed by the applied filters, so the draft starts over whenever the results change under it. */}
       <DraftSearchFilters
         key={filtersKey(filters)}

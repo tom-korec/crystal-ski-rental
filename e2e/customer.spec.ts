@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { dayFromToday, signIn } from './helpers';
+import { openStoreDates, signIn } from './helpers';
 
 test.describe('customer', () => {
   test.beforeEach(async ({ page }) => {
@@ -48,12 +48,8 @@ test.describe('customer', () => {
   });
 
   test('changes the ski filters as a draft, applied together', async ({ page }) => {
-    const stores = await page.request
-      .get('/api/trpc/store.list')
-      .then((response) => response.json() as Promise<{ result: { data: { json: { id: string; name: string }[] } } }>)
-      .then((body) => body.result.data.json);
-    const jasna = stores.find((store) => store.name === 'Jasná');
-    await page.goto(`/app?from=${dayFromToday(45)}&to=${dayFromToday(48)}&store=${jasna?.id}`);
+    const { store: jasna, from, to } = await openStoreDates(page, 'Jasná', 45, 3);
+    await page.goto(`/app?from=${from}&to=${to}&store=${jasna.id}`);
     await expect(page.getByTestId('ski-count')).toHaveText(/skis? free/);
     const count = await page.getByTestId('ski-count').textContent();
 
@@ -79,18 +75,24 @@ test.describe('customer', () => {
     await expect(page).not.toHaveURL(/gender=/);
   });
 
+  test('cannot pick up or return skis on a day the store is closed', async ({ page }) => {
+    const { store: donovaly } = await openStoreDates(page, 'Donovaly', 0, 1);
+    const christmas = `${new Date().getUTCFullYear()}-12-25`;
+    const boxingDay = `${new Date().getUTCFullYear()}-12-27`;
+
+    await page.goto(`/app?from=${christmas}&to=${boxingDay}&store=${donovaly.id}`);
+    // Pickup on Christmas Day, return on St Stephen's Day: both closed.
+    await expect(page.getByTestId('closed-day')).toHaveCount(2);
+    await expect(page.getByTestId('closed-day').first()).toContainText('Christmas Day');
+    await expect(page.getByTestId('skis-empty')).toContainText('closed');
+  });
+
   test('reserves two pairs from one store in one booking, and cancels it', async ({ page }) => {
     // Five days earns 10 %. The search offers only pairs free for these dates, whatever the seed booked.
-    const from = dayFromToday(45);
-    const to = dayFromToday(50);
-    const stores = await page.request
-      .get('/api/trpc/store.list')
-      .then((response) => response.json() as Promise<{ result: { data: { json: { id: string; name: string }[] } } }>)
-      .then((body) => body.result.data.json);
-    const donovaly = stores.find((store) => store.name === 'Donovaly');
-    const jasna = stores.find((store) => store.name === 'Jasná');
+    const { store: donovaly, from, to } = await openStoreDates(page, 'Donovaly', 45, 5);
+    const { store: jasna } = await openStoreDates(page, 'Jasná', 0, 1);
 
-    await page.goto(`/app?from=${from}&to=${to}&store=${donovaly?.id}&sort=priceAsc`);
+    await page.goto(`/app?from=${from}&to=${to}&store=${donovaly.id}&sort=priceAsc`);
     const cards = page.getByTestId('ski-card');
     // The dates say how long the rental is and what that earns; the cards carry only their total.
     const bar = page.getByTestId('customer-search-bar');
@@ -112,7 +114,7 @@ test.describe('customer', () => {
     await expect(page.getByTestId('cart-count')).toHaveText('2');
 
     // A pair from another store cannot join this reservation.
-    await page.goto(`/app?from=${from}&to=${to}&store=${jasna?.id}`);
+    await page.goto(`/app?from=${from}&to=${to}&store=${jasna.id}`);
     await cards.first().getByTestId('reserve').click();
     await expect(dialog.getByTestId('add-outcome')).toHaveAttribute('data-outcome', 'otherStore');
     await dialog.getByRole('button', { name: 'Keep my reservation' }).click();
@@ -156,15 +158,9 @@ test.describe('customer', () => {
   });
 
   test('removes a pair on the reservation page, and sends invoices elsewhere', async ({ page }) => {
-    const from = dayFromToday(52);
-    const to = dayFromToday(54);
-    const stores = await page.request
-      .get('/api/trpc/store.list')
-      .then((response) => response.json() as Promise<{ result: { data: { json: { id: string; name: string }[] } } }>)
-      .then((body) => body.result.data.json);
-    const pleso = stores.find((store) => store.name === 'Štrbské Pleso');
+    const { store: pleso, from, to } = await openStoreDates(page, 'Štrbské Pleso', 52, 2);
 
-    await page.goto(`/app?from=${from}&to=${to}&store=${pleso?.id}`);
+    await page.goto(`/app?from=${from}&to=${to}&store=${pleso.id}`);
     const cards = page.getByTestId('ski-card');
     const dialog = page.getByTestId('add-to-reservation-dialog');
     for (const n of [0, 1]) {

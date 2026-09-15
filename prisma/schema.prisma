@@ -199,8 +199,8 @@ model SkiModel {
 }
 
 model Store {
-  id                    String        @id @default(uuid(7))
-  name                  String        @unique
+  id                    String            @id @default(uuid(7))
+  name                  String            @unique
   street                String
   // Text, not a number: "12/A" and "1543/7" are ordinary Slovak house numbers.
   houseNumber           String
@@ -209,21 +209,39 @@ model Store {
   zipCode               String
   phone                 String
   email                 String
-  // Free text per day, shown as written. An empty string means closed (FR-12).
-  openingHoursMonday    String        @default("")
-  openingHoursTuesday   String        @default("")
-  openingHoursWednesday String        @default("")
-  openingHoursThursday  String        @default("")
-  openingHoursFriday    String        @default("")
-  openingHoursSaturday  String        @default("")
-  openingHoursSunday    String        @default("")
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @default(now()) @updatedAt
+  // Intervals per weekday, e.g. "8:00-12:00;13:00-20:00"; null means closed (FR-12, BR-7).
+  openingHoursMonday    String?
+  openingHoursTuesday   String?
+  openingHoursWednesday String?
+  openingHoursThursday  String?
+  openingHoursFriday    String?
+  openingHoursSaturday  String?
+  openingHoursSunday    String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @default(now()) @updatedAt
   reservations          Reservation[]
+  specialDays           StoreSpecialDay[]
   managers              User[]
   skis                  Ski[]
 
   @@map("store")
+}
+
+// A date on which a store keeps other hours than its weekday's: a public holiday with short hours, or a
+// closure (null hours) such as Christmas (BR-7).
+model StoreSpecialDay {
+  id        String   @id @default(uuid(7))
+  storeId   String
+  date      DateTime @db.Date
+  hours     String?
+  // Why, for customers: "Christmas Day".
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, date])
+  @@map("store_special_day")
 }
 
 model Ski {

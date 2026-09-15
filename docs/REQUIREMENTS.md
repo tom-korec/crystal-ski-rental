@@ -98,9 +98,11 @@ Models and brands share the **Models** page, with a switch between their tables.
 - **FR-11** An admin can create, edit and delete **models**. A model has a brand, name, ski type,
   gender, skill level and price per day. A model name is unique within its brand.
 - **FR-12** An admin can create, edit and delete **stores**. A store has a name, an address (street,
-  house number, city, zip code), a phone, an e-mail and opening hours as free text for each
-  day of the week (empty means closed). Stores have a page of their own with a tab per store; managers
-  can look them up there, only admins change them.
+  house number, city, zip code), a phone, an e-mail and opening hours for each day of the week, written
+  as intervals like `8:00-12:00;13:00-20:00`, with no hours meaning closed. An admin also keeps a store's
+  **special days**: a date with other hours (a public holiday), or closed (Christmas), with an optional
+  name. Stores have a page of their own with a tab per store; managers can look them up there, only
+  admins change them.
 - **FR-13** A brand, model or store that is still in use cannot be deleted, and the admin is told why.
 - **FR-14** An admin can see all ratings of a model, including comments, with the customer's name
   and a link to reply by e-mail.
@@ -213,6 +215,11 @@ Models and brands share the **Models** page, with a switch between their tables.
   existing reservations.
 - **BR-6** A reservation holds **1 to 8 pairs** of skis, all from the **same store** and for the same days.
   Each pair is priced on its own (BR-4), and the reservation's total is the sum of the pairs' totals.
+- **BR-7** Skis are picked up on a rental's first day and returned on its last, so **neither may fall on a
+  day the store is closed**, by its weekday hours or a special day. The calendar does not offer such days,
+  and search and booking refuse them. A special day with its own hours is allowed, with a warning. A store
+  cannot be closed on a special day while reservations pick up or return on it; changing weekday hours
+  is not checked.
 
 ### 5.2 Reservation lifecycle
 

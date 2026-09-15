@@ -14,7 +14,16 @@ export interface StoreRow {
   zipCode: string;
   phone: string;
   email: string;
-  openingHours: string[];
+  openingHours: (string | null)[];
+  createdAt: Date;
+}
+
+export interface SpecialDayRow {
+  id: string;
+  storeId: string;
+  date: Date;
+  hours: string | null;
+  name: string | null;
   createdAt: Date;
 }
 
@@ -124,6 +133,7 @@ export interface ModelRatingRow {
 
 export interface SeedData {
   stores: StoreRow[];
+  specialDays: SpecialDayRow[];
   brands: BrandRow[];
   models: ModelRow[];
   users: UserRow[];

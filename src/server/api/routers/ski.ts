@@ -1,6 +1,7 @@
 import { gendersMatching } from '~/lib/catalog';
 import { todayUtc, toUtcDate, utcDaysBetween } from '~/lib/date';
 import { mayChangeSkisAt, type StaffActor } from '~/lib/account-rules';
+import { closedRentalDays, rentalDays as rentalDaysOf } from '~/lib/opening-hours';
 import { idSchema } from '~/lib/id-schema';
 import { BATCH_SIZE, nextCursor } from '~/lib/pagination';
 import { quoteRental } from '~/lib/pricing';
@@ -14,6 +15,7 @@ import {
 } from '~/lib/ski-schema';
 import { conflict, forbidden, isPrismaError, notFound, rethrowPrismaError } from '~/server/api/errors';
 import { overlappingItem } from '~/server/api/overlap';
+import { storeWithHours } from '~/server/api/store-hours';
 import { countOf } from '~/server/api/plural';
 import { skiPublicSelect, withPlainModel } from '~/server/api/selects';
 import { createTRPCRouter, staffProcedure, userProcedure } from '~/server/api/trpc';
@@ -104,6 +106,12 @@ export const skiRouter = createTRPCRouter({
     const endDate = toUtcDate(input.endDate);
     const rentalDays = utcDaysBetween(startDate, endDate);
 
+    // Pickup and return need the store open (BR-7): on a closed day there is nothing to offer.
+    const store = await storeWithHours(ctx.db, input.storeId);
+    const days = store ? rentalDaysOf(store, input) : null;
+    const closedDays = days ? closedRentalDays(days) : [];
+    if (!days || closedDays.length > 0) return { items: [], total: 0, nextCursor: null, days, closedDays };
+
     const where: Prisma.SkiWhereInput = {
       ...skiWhere(input),
       isAvailable: true,
@@ -132,7 +140,7 @@ export const skiRouter = createTRPCRouter({
       return { ...ski, quote: quoteRental(ski.model.pricePerDay, rentalDays) };
     });
 
-    return { items, total, nextCursor: nextCursor(cursor, rows.length, total) };
+    return { items, total, nextCursor: nextCursor(cursor, rows.length, total), days, closedDays };
   }),
 
   /** Staff detail (FR-23). Returns deleted skis too, because past reservations still point at them. */

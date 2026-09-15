@@ -9,6 +9,7 @@ import { type DirectoryStore, StoreDirectory } from '~/components/stores/store-d
 import { staffFleetRoute, staffStoreRoute } from '~/lib/routes';
 import { api } from '~/trpc/react';
 
+import { SpecialDays } from './special-days';
 import { StoreDialog } from './store-dialog';
 
 interface StaffStoresProps {
@@ -29,6 +30,7 @@ export function StaffStores({ canEdit }: StaffStoresProps) {
       description={canEdit ? t('descriptionAdmin') : t('description')}
       tabsLabel={t('stores')}
       headerActions={canEdit ? <StoreDialog onSaved={open} /> : undefined}
+      below={(store) => <SpecialDays store={store} canEdit={canEdit} />}
       actions={(store) => (
         <>
           {store.skiCount > 0 ? (

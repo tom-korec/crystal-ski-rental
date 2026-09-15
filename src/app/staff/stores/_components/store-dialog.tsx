@@ -20,30 +20,13 @@ import {
   DialogTrigger,
 } from '~/components/ui/dialog';
 import { formatPhone, formatZipCode } from '~/lib/format';
-import {
-  OPENING_HOURS_FIELDS,
-  OPENING_HOURS_MAX_LENGTH,
-  type OpeningHoursField,
-  storeCreateSchema,
-} from '~/lib/store-schema';
+import { OPENING_HOURS_FIELDS, OPENING_HOURS_MAX_LENGTH, WEEKDAYS } from '~/lib/opening-hours';
+import { storeCreateSchema } from '~/lib/store-schema';
 import { api, type RouterOutputs } from '~/trpc/react';
 
 type Store = RouterOutputs['store']['list'][number];
 type StoreInput = z.input<typeof storeCreateSchema>;
 type StoreOutput = z.output<typeof storeCreateSchema>;
-
-const WEEKDAY: Record<
-  OpeningHoursField,
-  'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
-> = {
-  openingHoursMonday: 'monday',
-  openingHoursTuesday: 'tuesday',
-  openingHoursWednesday: 'wednesday',
-  openingHoursThursday: 'thursday',
-  openingHoursFriday: 'friday',
-  openingHoursSaturday: 'saturday',
-  openingHoursSunday: 'sunday',
-};
 
 interface StoreDialogProps {
   /** Edits this store; without one, adds a store. */
@@ -97,7 +80,13 @@ function StoreForm({ store, onDone }: StoreFormProps) {
   const form = useForm<StoreInput, unknown, StoreOutput>({
     resolver: zodResolver(storeCreateSchema),
     defaultValues: store
-      ? { ...store, zipCode: formatZipCode(store.zipCode), phone: formatPhone(store.phone) }
+      ? {
+          ...store,
+          zipCode: formatZipCode(store.zipCode),
+          phone: formatPhone(store.phone),
+          // A closed day is an empty field to type into.
+          ...Object.fromEntries(OPENING_HOURS_FIELDS.map((field) => [field, store[field] ?? ''])),
+        }
       : {
           name: '',
           street: '',
@@ -120,7 +109,7 @@ function StoreForm({ store, onDone }: StoreFormProps) {
   const mutation = store ? update : create;
 
   function copyMondayToAll() {
-    const monday = form.getValues('openingHoursMonday');
+    const monday = form.getValues('openingHoursMonday') ?? '';
     for (const field of OPENING_HOURS_FIELDS) form.setValue(field, monday, { shouldDirty: true });
   }
 
@@ -198,15 +187,15 @@ function StoreForm({ store, onDone }: StoreFormProps) {
         </div>
         <p className="text-muted-foreground text-xs">{t('hoursHint')}</p>
         <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2">
-          {OPENING_HOURS_FIELDS.map((field) => (
+          {OPENING_HOURS_FIELDS.map((field, index) => (
             <Field
               key={field}
               id={`store-${field}`}
-              label={tStores(`weekdays.${WEEKDAY[field]}`)}
+              label={tStores(`weekdays.${WEEKDAYS[index] ?? 'monday'}`)}
               placeholder={t('hoursPlaceholder')}
               maxLength={OPENING_HOURS_MAX_LENGTH}
               autoComplete="off"
-              error={errors[field] && t('errors.hours', { max: OPENING_HOURS_MAX_LENGTH })}
+              error={errors[field] && t('errors.hours')}
               {...form.register(field)}
             />
           ))}

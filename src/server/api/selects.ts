@@ -1,3 +1,4 @@
+import { toDateString } from '~/lib/date';
 import { toMoneyString } from '~/lib/money';
 
 import type { Prisma } from '../../../generated/prisma/client';
@@ -21,7 +22,18 @@ export const storeSelect = {
   openingHoursFriday: true,
   openingHoursSaturday: true,
   openingHoursSunday: true,
+  specialDays: { select: { date: true, hours: true, name: true }, orderBy: { date: 'asc' } },
 } satisfies Prisma.StoreSelect;
+
+/** Special days leave the API as `YYYY-MM-DD`, like every other whole day. */
+export function withPlainSpecialDays<
+  T extends { specialDays: { date: Date; hours: string | null; name: string | null }[] },
+>(store: T): Omit<T, 'specialDays'> & { specialDays: { date: string; hours: string | null; name: string | null }[] } {
+  return {
+    ...store,
+    specialDays: store.specialDays.map((day) => ({ date: toDateString(day.date), hours: day.hours, name: day.name })),
+  };
+}
 
 export const skiModelSelect = {
   id: true,

@@ -1,6 +1,7 @@
 import { addUtcDays, todayUtc, toUtcDate, utcDaysBetween } from '~/lib/date';
 import { toMoneyString } from '~/lib/money';
 import { PAGE_SIZE, pageCount, skipForPage } from '~/lib/pagination';
+import { closedRentalDays, rentalDays } from '~/lib/opening-hours';
 import { quoteReservation } from '~/lib/pricing';
 import { generateReservationCode } from '~/lib/reservation-code';
 import {
@@ -24,8 +25,9 @@ import {
 import { isStaff } from '~/lib/roles';
 import { badRequest, conflict, isOverlapViolation, isPrismaError, notFound } from '~/server/api/errors';
 import { accountIdsMatching } from '~/server/api/customer-search';
+import { closedMessage, storeWithHours } from '~/server/api/store-hours';
 import { overlappingItem } from '~/server/api/overlap';
-import { skiPublicSelect, storeSelect, withPlainModel } from '~/server/api/selects';
+import { skiPublicSelect, withPlainModel } from '~/server/api/selects';
 import { createTRPCRouter, protectedProcedure, staffProcedure, userProcedure } from '~/server/api/trpc';
 
 import type { Prisma, PrismaClient } from '../../../../generated/prisma/client';
@@ -202,6 +204,12 @@ export const reservationRouter = createTRPCRouter({
     const [storeId] = storeIds;
     if (storeIds.size !== 1 || !storeId) throw badRequest('All skis in a reservation must be from the same store.');
 
+    // Pickup and return need the store open (BR-7).
+    const store = await storeWithHours(ctx.db, storeId);
+    if (!store) throw notFound('This store no longer exists.');
+    const closed = closedRentalDays(rentalDays(store, input));
+    if (closed.length > 0) throw badRequest(closedMessage(store, closed));
+
     const clash = await ctx.db.reservationItem.findFirst({
       where: { skiId: { in: input.skiIds }, ...overlappingItem(startDate, endDate) },
       select: { id: true },
@@ -319,10 +327,14 @@ export const reservationRouter = createTRPCRouter({
             utcDaysBetween(startDate, endDate),
           )
         : null;
-    const store = storeId ? await ctx.db.store.findUnique({ where: { id: storeId }, select: storeSelect }) : null;
+    const store = storeId ? await storeWithHours(ctx.db, storeId) : null;
+    const days = store ? rentalDays(store, input) : null;
 
     return {
       store,
+      /** Pickup and return days with the store's hours; a closed one blocks booking (BR-7). */
+      days,
+      closedDays: days ? closedRentalDays(days) : [],
       missing: input.skiIds.length - found.length,
       lines: lines.map((line) => ({
         ...line,

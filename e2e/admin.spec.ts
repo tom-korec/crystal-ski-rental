@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { signIn } from './helpers';
+import { dayFromToday, signIn } from './helpers';
 
 test.describe('admin', () => {
   test.beforeEach(async ({ page }) => {
@@ -50,8 +50,13 @@ test.describe('admin', () => {
     await expect(dialog.getByText('Enter a zip code like 031 01.')).toBeVisible();
 
     await dialog.getByLabel('Zip code').fill('026 01');
-    await dialog.getByLabel('Monday').fill('9:00 – 16:00');
+    await dialog.getByLabel('Monday').fill('mornings');
+    await dialog.getByTestId('save-entry').click();
+    await expect(dialog.getByText('Write the hours like 8:00-16:30').first()).toBeVisible();
+
+    await dialog.getByLabel('Monday').fill('9:00 – 12:00; 13:00 – 16:00');
     await dialog.getByTestId('copy-monday').click();
+    await dialog.getByLabel('Sunday').fill('');
     await dialog.getByTestId('save-entry').click();
 
     // The new store opens on its own tab.
@@ -60,11 +65,41 @@ test.describe('admin', () => {
     const store = page.getByTestId('store-details');
     await expect(store).toContainText('026 01 Dolný Kubín');
     await expect(store).toContainText('+421 000 000 105');
+    await expect(store).toContainText('9:00 – 12:00, 13:00 – 16:00');
+    await expect(store.getByText('Closed')).toBeVisible();
     await expect(page.getByTestId('store-ski-count')).toHaveText('No skis in the fleet');
 
     await page.getByTestId('delete-entry').click();
     await page.getByTestId('confirm-action').click();
     await expect(page.getByTestId('store-tab').filter({ hasText: 'Kubínska hoľa' })).toHaveCount(0);
+  });
+
+  test('closes a store for a day, but not while a customer picks up that day', async ({ page }) => {
+    await page.goto('/staff/stores');
+    await page.getByTestId('store-tab').filter({ hasText: 'Jasná' }).click();
+    const specialDays = page.getByTestId('special-days');
+
+    // The demo customer's family booking starts at Jasná seven days from now.
+    const pickup = dayFromToday(7);
+    await specialDays.getByTestId('add-special-day').click();
+    const dialog = page.getByTestId('special-day-dialog');
+    await dialog.getByLabel('Date').fill(pickup);
+    await dialog.getByLabel('Name (optional)').fill('Staff training');
+    await dialog.getByTestId('special-day-closed').check();
+    await dialog.getByTestId('save-special-day').click();
+    await expect(dialog.getByTestId('special-day-error')).toContainText('68EK95');
+
+    // Short hours that day are allowed.
+    await dialog.getByTestId('special-day-closed').uncheck();
+    await dialog.getByLabel('Opening hours').fill('10:00-13:00');
+    await dialog.getByTestId('save-special-day').click();
+    await expect(dialog).toBeHidden();
+    const row = specialDays.getByTestId('special-day-row').filter({ hasText: 'Staff training' });
+    await expect(row).toContainText('10:00 – 13:00');
+
+    await row.getByTestId('delete-entry').click();
+    await page.getByTestId('confirm-action').click();
+    await expect(row).toHaveCount(0);
   });
 
   test('creates a staff account, which a manager then cannot edit', async ({ page, browser }) => {

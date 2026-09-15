@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { OPENING_HOURS_FIELDS, phoneSchema, storeCreateSchema, zipCodeSchema } from '~/lib/store-schema';
+import { OPENING_HOURS_FIELDS } from '~/lib/opening-hours';
+import { phoneSchema, storeCreateSchema, zipCodeSchema } from '~/lib/store-schema';
 
 describe('zipCodeSchema', () => {
   it.each([
@@ -38,11 +39,12 @@ describe('storeCreateSchema', () => {
     zipCode: '031 01',
     phone: '+421 903 123 456',
     email: 'jasna@crystalskirental.test',
-    ...Object.fromEntries(OPENING_HOURS_FIELDS.map((field) => [field, '8:00 – 16:00'])),
+    ...Object.fromEntries(OPENING_HOURS_FIELDS.map((field) => [field, '8:00-16:00'])),
   };
 
-  it('accepts a closed day as an empty string', () => {
-    expect(storeCreateSchema.safeParse({ ...store, openingHoursSunday: '   ' }).data?.openingHoursSunday).toBe('');
+  it('stores a closed day as null, whether sent blank or null', () => {
+    expect(storeCreateSchema.parse({ ...store, openingHoursSunday: '   ' }).openingHoursSunday).toBeNull();
+    expect(storeCreateSchema.parse({ ...store, openingHoursSunday: null }).openingHoursSunday).toBeNull();
   });
 
   it('requires every weekday to be present, even if closed', () => {
@@ -52,7 +54,7 @@ describe('storeCreateSchema', () => {
     expect(storeCreateSchema.safeParse(withoutWednesday).success).toBe(false);
   });
 
-  it('refuses opening hours that do not fit the column', () => {
-    expect(storeCreateSchema.safeParse({ ...store, openingHoursMonday: 'x'.repeat(51) }).success).toBe(false);
+  it('refuses hours that are not intervals', () => {
+    expect(storeCreateSchema.safeParse({ ...store, openingHoursMonday: 'mornings' }).success).toBe(false);
   });
 });

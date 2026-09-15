@@ -39,6 +39,7 @@ export function assertSeedData(data: SeedData): void {
   const earliest = new Date(NOW.getTime() - HISTORY_DAYS * 86_400_000);
   const created: [string, { createdAt: Date }[]][] = [
     ['store', data.stores],
+    ['special day', data.specialDays],
     ['brand', data.brands],
     ['model', data.models],
     ['account', data.users],

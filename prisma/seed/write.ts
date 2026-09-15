@@ -16,7 +16,7 @@ export async function writeSeedData(db: PrismaClient, data: SeedData): Promise<v
 
   await db.$transaction(
     async (tx) => {
-      await tx.$executeRaw`TRUNCATE customer_address, reservation_address, model_rating, reservation_rating, reservation_item, reservation, ski, ski_model, brand, store, session, account, verification, rate_limit, "user" CASCADE`;
+      await tx.$executeRaw`TRUNCATE store_special_day, customer_address, reservation_address, model_rating, reservation_rating, reservation_item, reservation, ski, ski_model, brand, store, session, account, verification, rate_limit, "user" CASCADE`;
 
       await tx.store.createMany({
         data: data.stores.map(({ slug: _slug, openingHours, ...store }) => ({
@@ -30,6 +30,9 @@ export async function writeSeedData(db: PrismaClient, data: SeedData): Promise<v
           openingHoursSaturday: openingHours[5],
           openingHoursSunday: openingHours[6],
         })),
+      });
+      await tx.storeSpecialDay.createMany({
+        data: data.specialDays.map((day) => ({ ...day, updatedAt: day.createdAt })),
       });
       await tx.brand.createMany({ data: data.brands.map((brand) => ({ ...brand, updatedAt: brand.createdAt })) });
       await tx.skiModel.createMany({ data: data.models.map((model) => ({ ...model, updatedAt: model.createdAt })) });

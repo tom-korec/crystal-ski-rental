@@ -5,7 +5,7 @@ import path from 'node:path';
 import type { z } from 'zod';
 
 import { invoiceAddressSchema, mailingAddressSchema } from '../../src/lib/address-schema';
-import { utcDaysBetween } from '../../src/lib/date';
+import { toUtcDate, utcDaysBetween } from '../../src/lib/date';
 import { quoteReservation } from '../../src/lib/pricing';
 import type {
   CustomerAddressRow,
@@ -23,6 +23,7 @@ import {
   modelFileSchema,
   reservationFileSchema,
   skiFileSchema,
+  specialDayFileSchema,
   staffFileSchema,
   storeFileSchema,
 } from './schema';
@@ -60,6 +61,18 @@ export function loadSeedData(): SeedData {
     createdAt: moment(createdAt),
   }));
   const storeBySlug = new Map(stores.map((store) => [store.slug, store]));
+
+  // Every store keeps the same holidays, entered the day after the store opened.
+  const specialDays = readJson(specialDayFileSchema, 'special-days.json').flatMap((day) =>
+    stores.map((store) => ({
+      id: randomUUID(),
+      storeId: store.id,
+      date: toUtcDate(day.date),
+      hours: day.hours,
+      name: day.name,
+      createdAt: new Date(store.createdAt.getTime() + 86_400_000),
+    })),
+  );
 
   const brands = readJson(brandFileSchema, 'brands.json').map(({ name, createdAt }) => ({
     id: randomUUID(),
@@ -242,6 +255,7 @@ export function loadSeedData(): SeedData {
 
   return {
     stores,
+    specialDays,
     brands,
     models: models.map(({ key: _key, ...model }) => model),
     users,

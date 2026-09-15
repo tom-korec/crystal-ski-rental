@@ -11,6 +11,7 @@ import { FormError } from '~/components/common/form-error';
 import { LoadingRegion } from '~/components/common/skeletons/loading-region';
 import { PageHeader } from '~/components/common/page-header';
 import { DiscountBadge } from '~/components/skis/discount-badge';
+import { RentalDayNotice } from '~/components/stores/rental-day-notice';
 import { StoreDetails } from '~/components/stores/store-details';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
@@ -137,7 +138,8 @@ function CheckoutFields({ cart, onCartChange, onBooked, defaults }: CheckoutFiel
 
   const { errors } = form.formState;
   const lines = quote.data?.lines ?? [];
-  const blocked = lines.some((line) => line.problem !== null) || (quote.data?.missing ?? 0) > 0;
+  const closed = (quote.data?.closedDays.length ?? 0) > 0;
+  const blocked = closed || lines.some((line) => line.problem !== null) || (quote.data?.missing ?? 0) > 0;
   const searchAgain = `${APP_HOME}?${new URLSearchParams({
     [SEARCH_PARAMS.store]: cart.storeId,
     [SEARCH_PARAMS.from]: cart.startDate,
@@ -337,7 +339,10 @@ function CheckoutFields({ cart, onCartChange, onBooked, defaults }: CheckoutFiel
             ) : (
               <Skeleton className="h-16 w-full" />
             )}
-            {blocked ? <p className="text-destructive">{t('blocked')}</p> : null}
+            {quote.data?.store && quote.data.days ? (
+              <RentalDayNotice days={quote.data.days} store={quote.data.store.name} />
+            ) : null}
+            {blocked && !closed ? <p className="text-destructive">{t('blocked')}</p> : null}
             <FormError message={create.error?.message} data-testid="checkout-error" />
             <Button
               type="submit"

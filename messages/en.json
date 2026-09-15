@@ -143,7 +143,8 @@
     "emptyFiltered": "No skis match these filters for these dates. Try fewer filters.",
     "lengthLabel": "Length",
     "forLabel": "For",
-    "levelLabel": "Level"
+    "levelLabel": "Level",
+    "emptyStoreClosed": "The store is closed on your pickup or return day. Pick dates when it is open."
   },
   "pricing": {
     "daysTimesPrice": "{days, plural, one {# day} other {# days}} × {price}",
@@ -162,7 +163,8 @@
       "friday": "Friday",
       "saturday": "Saturday",
       "sunday": "Sunday"
-    }
+    },
+    "specialDays": "Special days"
   },
   "search": {
     "title": "Find skis"
@@ -405,7 +407,7 @@
     "phone": "Phone",
     "email": "E-mail",
     "copyMonday": "Copy Monday to all days",
-    "hoursHint": "Write the hours as customers should read them. Leave a day empty when the store is closed.",
+    "hoursHint": "Write each day's hours like 8:00-16:30, with a break as 8:00-12:00;13:00-20:00. Leave a day empty when the store is closed.",
     "hoursPlaceholder": "Closed",
     "addBrand": "Add brand",
     "editBrand": "Edit brand",
@@ -435,7 +437,7 @@
       "zip": "Enter a zip code like 031 01.",
       "phone": "Enter a phone number with the country code, like +421 903 123 456.",
       "email": "Enter a valid e-mail address.",
-      "hours": "Keep it under {max} characters."
+      "hours": "Write the hours like 8:00-16:30, or 8:00-12:00;13:00-20:00 with a break."
     },
     "for": "For",
     "skisOfModel": "{count, plural, one {# ski} other {# skis}} of {name} in the fleet"
@@ -683,5 +685,36 @@
     "pickedUp": "Picked up",
     "returned": "Returned",
     "cancelled": "Cancelled"
+  },
+  "specialDays": {
+    "title": "Special days",
+    "description": "Holidays with other hours, and days the store is closed. Customers cannot pick up or return skis on a closed day.",
+    "none": "No special days coming up.",
+    "date": "Date",
+    "name": "Name",
+    "nameOptional": "Name (optional)",
+    "namePlaceholder": "e.g. Christmas Day",
+    "hours": "Opening hours",
+    "hoursHint": "Like 9:00-12:00, or 8:00-12:00;13:00-18:00 with a break.",
+    "closed": "Closed",
+    "closedAllDay": "Closed all day",
+    "actions": "Actions",
+    "add": "Add special day",
+    "addTitle": "Add a special day",
+    "editTitle": "Edit special day",
+    "editNamed": "Edit {name}",
+    "dialogDescription": "The store keeps these hours on this date instead of its usual ones.",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
+    "errors": {
+      "date": "Pick a date.",
+      "hours": "Write the hours like 9:00-12:00, or tick Closed all day.",
+      "name": "Keep the name short."
+    }
+  },
+  "rentalDays": {
+    "closed": "{store} is closed on {date}{name, select, none {} other { ({name})}}, so skis cannot be {role, select, pickup {picked up} return {returned} other {picked up or returned}} then. Pick other dates.",
+    "special": "{role, select, pickup {Pickup} return {Return} other {Pickup and return}} on {date}{name, select, none {} other { ({name})}}: {store} is open only {hours} that day."
   }
 }

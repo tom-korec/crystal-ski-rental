@@ -115,7 +115,11 @@ function SkiResults({ input, search }: SkiResultsProps) {
         isEmpty={() => total === 0}
         empty={
           <p className="text-muted-foreground rounded-xl border border-dashed p-8 text-center" data-testid="skis-empty">
-            {isNarrowed ? tSkis('emptyFiltered') : tSkis('emptyForDates')}
+            {(skis.data?.pages[0]?.closedDays.length ?? 0) > 0
+              ? tSkis('emptyStoreClosed')
+              : isNarrowed
+                ? tSkis('emptyFiltered')
+                : tSkis('emptyForDates')}
           </p>
         }
       >

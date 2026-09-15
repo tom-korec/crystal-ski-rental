@@ -26,10 +26,12 @@ interface StoreDirectoryProps {
   headerActions?: ReactNode;
   /** What can be done with the open store, under its details. */
   actions?: (store: DirectoryStore) => ReactNode;
+  /** More about the open store, below its card. */
+  below?: (store: DirectoryStore) => ReactNode;
 }
 
 /** Every store with its address, contacts and opening hours, one tab each (FR-12, FR-33). The open tab lives in the URL. */
-export function StoreDirectory({ title, description, tabsLabel, headerActions, actions }: StoreDirectoryProps) {
+export function StoreDirectory({ title, description, tabsLabel, headerActions, actions, below }: StoreDirectoryProps) {
   const { filters, apply } = useUrlFilters({ parse, serialise });
   const stores = api.store.list.useQuery();
 
@@ -58,12 +60,15 @@ export function StoreDirectory({ title, description, tabsLabel, headerActions, a
       <QueryState query={stores} skeleton={<Skeleton className="h-64 w-full" />}>
         {() =>
           store ? (
-            <Card>
-              <CardContent className="flex flex-col gap-6">
-                <StoreDetails store={store} />
-                {actions ? <div className="flex flex-wrap items-center gap-2">{actions(store)}</div> : null}
-              </CardContent>
-            </Card>
+            <>
+              <Card>
+                <CardContent className="flex flex-col gap-6">
+                  <StoreDetails store={store} />
+                  {actions ? <div className="flex flex-wrap items-center gap-2">{actions(store)}</div> : null}
+                </CardContent>
+              </Card>
+              {below?.(store)}
+            </>
           ) : null
         }
       </QueryState>
