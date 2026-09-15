@@ -141,13 +141,14 @@
     "rating": "{score} ({count, plural, one {# rating} other {# ratings}})",
     "pricePerDay": "{price} / day",
     "discount": "−{percent} %",
-    "count": "{count, plural, =0 {No skis free} one {# ski free} other {# skis free}}",
+    "count": "{count, plural, =0 {No pairs free} one {# pair free} other {# pairs free}}",
     "emptyForDates": "No skis are free for these dates. Try other dates.",
     "emptyFiltered": "No skis match these filters for these dates. Try fewer filters.",
     "lengthLabel": "Length",
     "forLabel": "For",
     "levelLabel": "Level",
-    "emptyStoreClosed": "The store is closed on your pickup or return day. Pick dates when it is open."
+    "emptyStoreClosed": "The store is closed on your pickup or return day. Pick dates when it is open.",
+    "freePairs": "{count, plural, one {# pair free} other {# pairs free}}"
   },
   "pricing": {
     "daysTimesPrice": "{days, plural, one {# day} other {# days}} × {price}",
@@ -579,7 +580,6 @@
     "link": "Reservation",
     "linkLabel": "Your reservation, {count, plural, one {# pair} other {# pairs}} of skis",
     "reserve": "Reserve",
-    "inReservation": "In your reservation",
     "proceed": "Proceed to reservation",
     "reserveAnother": "Reserve another pair",
     "close": "Close",
@@ -597,7 +597,9 @@
     "otherDatesTitle": "Your reservation is for other dates",
     "otherDatesDescription": "Your reservation holds {count, plural, one {# pair} other {# pairs}} from {cartStore} for {cartPeriod}. All skis in one reservation are for the same dates, so this pair cannot join it.",
     "replaced": "The skis you picked before signing in replaced the reservation you had started on this account earlier.",
-    "dismissReplaced": "Dismiss"
+    "dismissReplaced": "Dismiss",
+    "reserveMore": "{count} in reservation · Add another",
+    "allReserved": "{count} in reservation · No more free"
   },
   "checkout": {
     "title": "Your reservation",

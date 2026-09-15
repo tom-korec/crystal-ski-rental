@@ -132,12 +132,15 @@ Models and brands share the **Models** page, with a switch between their tables.
 - **FR-31** Results can be sorted by best rated (default), price low to high, and price high to low.
 - **FR-32** Each result shows brand and model, length, type, gender and level badges, the model's
   average rating, and the **total for the chosen dates** with the discount applied. The store is the
-  one searched, so results don't repeat it. The number of days and the discount they earn are shown
+  one searched, so results don't repeat it. Pairs of the same brand, model and length are one result,
+  which says how many pairs are free. The number of days and the discount they earn are shown
   next to the dates.
-- **FR-33** The customer puts a reservation together from the results: **Reserve** adds a pair to it and
-  says so, offering to reserve another pair or to proceed. A pair from another store or for other dates
-  cannot join (BR-6); the customer is told why and may start a new reservation with it instead. The
-  reservation stays in the browser until booked, and the header shows how many pairs it holds.
+- **FR-33** The customer puts a reservation together from the results: **Reserve** adds the first free
+  pair of a result to it and says so, offering to reserve another pair or to proceed. The result then
+  shows how many of its pairs are in the reservation and lets the customer add another while any are
+  free. A pair from another store or for other dates cannot join (BR-6); the customer is told why and may
+  start a new reservation with it instead. The reservation stays in the browser until booked, and the
+  header shows how many pairs it holds.
 - **FR-34** Results never include skis that are out of rental, deleted, or already booked for any of
   the chosen days.
 - **FR-35** The filters and page state are kept in the URL, so a search can be reloaded, shared and

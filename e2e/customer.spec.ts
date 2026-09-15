@@ -50,7 +50,7 @@ test.describe('customer', () => {
   test('changes the ski filters as a draft, applied together', async ({ page }) => {
     const { store: jasna, from, to } = await openStoreDates(page, 'Jasná', 45, 3);
     await page.goto(`/app?from=${from}&to=${to}&store=${jasna.id}`);
-    await expect(page.getByTestId('ski-count')).toHaveText(/skis? free/);
+    await expect(page.getByTestId('ski-count')).toHaveText(/pairs? free/);
     const count = await page.getByTestId('ski-count').textContent();
 
     // Above results the filters are always open.
@@ -88,6 +88,34 @@ test.describe('customer', () => {
     await expect(page.getByTestId('skis-empty')).toContainText('closed');
   });
 
+  test('shows the same skis in one length once, and reserves more of them while any are free', async ({ page }) => {
+    const { store: jasna, from, to } = await openStoreDates(page, 'Jasná', 20, 2);
+    await page.goto(`/app?from=${from}&to=${to}&store=${jasna.id}`);
+    const cards = page.getByTestId('ski-card');
+    await expect(cards.first()).toBeVisible();
+
+    const titles = await cards.evaluateAll((elements) =>
+      elements.map((card) => `${card.querySelector('h3')?.textContent} ${card.querySelector('dd')?.textContent}`),
+    );
+    expect(new Set(titles).size).toBe(titles.length);
+
+    const card = cards.filter({ has: page.getByTestId('free-pairs').filter({ hasText: /^2 pairs free$/ }) }).first();
+    const dialog = page.getByTestId('add-to-reservation-dialog');
+    await card.getByTestId('reserve').click();
+    await dialog.getByTestId('reserve-another').click();
+    await expect(card.getByTestId('reserve-more')).toHaveText('1 in reservation · Add another');
+
+    await card.getByTestId('reserve-more').click();
+    await expect(dialog.getByTestId('add-outcome')).toHaveAttribute('data-outcome', 'added');
+    await dialog.getByTestId('reserve-another').click();
+    await expect(card.getByTestId('all-reserved')).toHaveText('2 in reservation · No more free');
+    await expect(card.getByTestId('all-reserved')).toBeDisabled();
+    await expect(page.getByTestId('cart-count')).toHaveText('2');
+
+    await page.getByTestId('cart-link').click();
+    await expect(page.getByTestId('checkout-line')).toHaveCount(2);
+  });
+
   test('reserves two pairs from one store in one booking, and cancels it', async ({ page }) => {
     // Five days earns 10 %. The search offers only pairs free for these dates, whatever the seed booked.
     const { store: donovaly, from, to } = await openStoreDates(page, 'Donovaly', 45, 5);
@@ -107,7 +135,7 @@ test.describe('customer', () => {
     await cards.nth(0).getByTestId('reserve').click();
     await expect(dialog.getByTestId('add-outcome')).toHaveAttribute('data-outcome', 'added');
     await dialog.getByTestId('reserve-another').click();
-    await expect(cards.nth(0).getByTestId('in-reservation')).toBeVisible();
+    await expect(cards.nth(0).getByTestId('reserve')).toHaveCount(0);
 
     await cards.nth(1).getByTestId('reserve').click();
     await expect(dialog.getByTestId('cart-summary')).toContainText('2 pairs');

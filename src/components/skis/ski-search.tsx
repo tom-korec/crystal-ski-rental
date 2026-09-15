@@ -14,7 +14,7 @@ import { useReservationCart } from '~/hooks/use-reservation-cart';
 import { useUrlFilters } from '~/hooks/use-url-filters';
 import { addToCart, startCart } from '~/lib/reservation-cart';
 import { SKI_SORTS, type SkiSearchFilters, type SkiSearchInput } from '~/lib/ski-schema';
-import { api } from '~/trpc/react';
+import { api, type RouterOutputs } from '~/trpc/react';
 
 import { type AddAttempt, type AddedSki, AddToReservationDialog } from './add-to-reservation-dialog';
 import { CustomerSearch, type CustomerSearchValue } from './customer-search';
@@ -37,6 +37,8 @@ export function SkiSearch() {
   return <SkiResults input={input} search={props} />;
 }
 
+type SearchResult = RouterOutputs['ski']['search']['items'][number];
+
 interface SkiResultsProps {
   input: SkiSearchInput;
   search: Omit<ComponentProps<typeof CustomerSearch>, 'variant' | 'footer'>;
@@ -52,7 +54,6 @@ function SkiResults({ input, search }: SkiResultsProps) {
     });
   const t = useTranslations('filters');
   const tSkis = useTranslations('skis');
-  const tCart = useTranslations('cart');
   const { cart, setCart } = useReservationCart();
   const [attempt, setAttempt] = useState<AddAttempt | null>(null);
 
@@ -64,7 +65,10 @@ function SkiResults({ input, search }: SkiResultsProps) {
   const inCart = (skiId: string) =>
     cart?.startDate === range.startDate && cart.endDate === range.endDate && cart.skiIds.includes(skiId);
 
-  function reserve(ski: AddedSki) {
+  /** Adds the first free pair of a result that is not in the reservation yet. */
+  function reserve(result: SearchResult) {
+    const skiId = result.skiIds.find((id) => !inCart(id)) ?? result.id;
+    const ski = { ...result, id: skiId };
     const outcome = addToCart(cart, { id: ski.id, storeId: ski.store.id }, range);
     const next = outcome.kind === 'added' ? outcome.cart : cart;
     if (outcome.kind === 'added') setCart(outcome.cart);
@@ -86,7 +90,7 @@ function SkiResults({ input, search }: SkiResultsProps) {
         footer={
           <>
             <p className="text-muted-foreground text-sm" aria-live="polite" data-testid="ski-count">
-              {skis.data ? tSkis('count', { count: total }) : null}
+              {skis.data ? tSkis('count', { count: skis.data.pages[0]?.pairs ?? 0 }) : null}
             </p>
             <div className="flex flex-wrap items-end gap-3">
               <div className="w-44">
@@ -126,23 +130,23 @@ function SkiResults({ input, search }: SkiResultsProps) {
         {() => (
           <>
             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {found.map((ski) => (
-                <li key={ski.id}>
+              {found.map((result) => (
+                <li key={result.id}>
                   <SkiCard
                     showStore={false}
-                    ski={ski}
-                    quote={ski.quote}
+                    ski={result}
+                    quote={result.quote}
+                    status={
+                      <span className="text-muted-foreground" data-testid="free-pairs">
+                        {tSkis('freePairs', { count: result.skiIds.length })}
+                      </span>
+                    }
                     action={
-                      inCart(ski.id) ? (
-                        <Button variant="outline" onClick={() => reserve(ski)} data-testid="in-reservation">
-                          <CheckIcon aria-hidden />
-                          {tCart('inReservation')}
-                        </Button>
-                      ) : (
-                        <Button onClick={() => reserve(ski)} data-testid="reserve">
-                          {tCart('reserve')}
-                        </Button>
-                      )
+                      <ReserveButton
+                        reserved={result.skiIds.filter(inCart).length}
+                        free={result.skiIds.length}
+                        onReserve={() => reserve(result)}
+                      />
                     }
                   />
                 </li>
@@ -161,5 +165,41 @@ function SkiResults({ input, search }: SkiResultsProps) {
 
       <AddToReservationDialog attempt={attempt} onClose={() => setAttempt(null)} onStartOver={startOver} />
     </div>
+  );
+}
+
+interface ReserveButtonProps {
+  /** Pairs of this result already in the reservation. */
+  reserved: number;
+  free: number;
+  onReserve: () => void;
+}
+
+/** Reserve a pair, then more of the same while any are free (FR-33). */
+function ReserveButton({ reserved, free, onReserve }: ReserveButtonProps) {
+  const t = useTranslations('cart');
+
+  if (reserved === 0) {
+    return (
+      <Button onClick={onReserve} data-testid="reserve">
+        {t('reserve')}
+      </Button>
+    );
+  }
+
+  if (reserved >= free) {
+    return (
+      <Button variant="outline" disabled data-testid="all-reserved">
+        <CheckIcon aria-hidden />
+        {t('allReserved', { count: reserved })}
+      </Button>
+    );
+  }
+
+  return (
+    <Button variant="outline" onClick={onReserve} data-testid="reserve-more">
+      <CheckIcon aria-hidden />
+      {t('reserveMore', { count: reserved })}
+    </Button>
   );
 }

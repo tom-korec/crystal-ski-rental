@@ -58,12 +58,33 @@ function skiWhere(filters: CatalogueFilters): Prisma.SkiWhereInput {
   };
 }
 
-/** Always tie-broken by id, so a batch boundary between equal rows cannot repeat or skip a card. */
+/**
+ * Always tie-broken, so equal rows keep their order between requests. In the search, a model's lengths
+ * follow each other, and within a length the pair with the lowest inventory code comes first.
+ */
 const SEARCH_ORDER: Record<SkiSort, Prisma.SkiOrderByWithRelationInput[]> = {
   // Unrated models last rather than treated as zero.
-  rating: [{ model: { avgRating: { sort: 'desc', nulls: 'last' } } }, { model: { name: 'asc' } }, { id: 'asc' }],
-  priceAsc: [{ model: { pricePerDay: 'asc' } }, { model: { name: 'asc' } }, { id: 'asc' }],
-  priceDesc: [{ model: { pricePerDay: 'desc' } }, { model: { name: 'asc' } }, { id: 'asc' }],
+  rating: [
+    { model: { avgRating: { sort: 'desc', nulls: 'last' } } },
+    { model: { name: 'asc' } },
+    { modelId: 'asc' },
+    { lengthCm: 'asc' },
+    { inventoryCode: 'asc' },
+  ],
+  priceAsc: [
+    { model: { pricePerDay: 'asc' } },
+    { model: { name: 'asc' } },
+    { modelId: 'asc' },
+    { lengthCm: 'asc' },
+    { inventoryCode: 'asc' },
+  ],
+  priceDesc: [
+    { model: { pricePerDay: 'desc' } },
+    { model: { name: 'asc' } },
+    { modelId: 'asc' },
+    { lengthCm: 'asc' },
+    { inventoryCode: 'asc' },
+  ],
 };
 
 /** Managers change skis only at their own store (FR-64); the message says so rather than "not allowed". */
@@ -98,9 +119,10 @@ export const skiRouter = createTRPCRouter({
   }),
 
   /**
-   * The customer search (FR-30…34): in the fleet, offered for rental, and free on every chosen day.
+   * The customer search (FR-30…34): in the fleet, offered for rental, and free on every chosen day. Pairs
+   * of the same model and length are one result, with the free pairs in the order they are handed out.
    * Each result carries the quote for the chosen dates, computed exactly as the booking will be. Public, so
-   * visitors can browse before they have an account.
+   * visitors can browse before they have an account (FR-37).
    */
   search: publicProcedure.input(skiSearchSchema).query(async ({ ctx, input }) => {
     const startDate = toUtcDate(input.startDate);
@@ -111,37 +133,49 @@ export const skiRouter = createTRPCRouter({
     const store = await storeWithHours(ctx.db, input.storeId);
     const days = store ? rentalDaysOf(store, input) : null;
     const closedDays = days ? closedRentalDays(days) : [];
-    if (!days || closedDays.length > 0) return { items: [], total: 0, nextCursor: null, days, closedDays };
+    if (!days || closedDays.length > 0) {
+      return { items: [], total: 0, pairs: 0, nextCursor: null, days, closedDays };
+    }
 
-    const where: Prisma.SkiWhereInput = {
-      ...skiWhere(input),
-      isAvailable: true,
-      model: {
-        ...modelWhere(input),
-        pricePerDay: input.maxPricePerDay ? { lte: input.maxPricePerDay } : undefined,
-        avgRating: input.minRating ? { gte: input.minRating } : undefined,
+    // One store's free pairs are few enough to group in memory, which keeps batches whole results.
+    const rows = await ctx.db.ski.findMany({
+      where: {
+        ...skiWhere(input),
+        isAvailable: true,
+        model: {
+          ...modelWhere(input),
+          pricePerDay: input.maxPricePerDay ? { lte: input.maxPricePerDay } : undefined,
+          avgRating: input.minRating ? { gte: input.minRating } : undefined,
+        },
+        reservationItems: { none: overlappingItem(startDate, endDate) },
       },
-      reservationItems: { none: overlappingItem(startDate, endDate) },
-    };
-    const cursor = input.cursor ?? 0;
-
-    const [rows, total] = await ctx.db.$transaction([
-      ctx.db.ski.findMany({
-        where,
-        select: skiPublicSelect,
-        orderBy: SEARCH_ORDER[input.sort],
-        skip: cursor,
-        take: BATCH_SIZE,
-      }),
-      ctx.db.ski.count({ where }),
-    ]);
-
-    const items = rows.map((row) => {
-      const ski = withPlainModel(row);
-      return { ...ski, quote: quoteRental(ski.model.pricePerDay, rentalDays) };
+      select: skiPublicSelect,
+      orderBy: SEARCH_ORDER[input.sort],
     });
 
-    return { items, total, nextCursor: nextCursor(cursor, rows.length, total), days, closedDays };
+    const groups = new Map<string, { ski: (typeof rows)[number]; skiIds: string[] }>();
+    for (const row of rows) {
+      const key = `${row.model.id}:${row.lengthCm}`;
+      const group = groups.get(key);
+      if (group) group.skiIds.push(row.id);
+      else groups.set(key, { ski: row, skiIds: [row.id] });
+    }
+
+    const cursor = input.cursor ?? 0;
+    const batch = [...groups.values()].slice(cursor, cursor + BATCH_SIZE);
+    const items = batch.map(({ ski: row, skiIds }) => {
+      const ski = withPlainModel(row);
+      return { ...ski, skiIds, quote: quoteRental(ski.model.pricePerDay, rentalDays) };
+    });
+
+    return {
+      items,
+      total: groups.size,
+      pairs: rows.length,
+      nextCursor: nextCursor(cursor, items.length, groups.size),
+      days,
+      closedDays,
+    };
   }),
 
   /** Staff detail (FR-23). Returns deleted skis too, because past reservations still point at them. */

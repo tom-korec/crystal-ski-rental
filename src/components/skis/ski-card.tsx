@@ -105,7 +105,7 @@ export function SkiCard({ ski, quote, inventoryCode, status, action, showStore =
           </div>
         ) : null}
 
-        <div className="border-border mt-auto flex items-center justify-between gap-3 border-t pt-4">
+        <div className="border-border mt-auto flex flex-wrap items-center justify-between gap-3 border-t pt-4">
           {quote ? (
             // The days and their discount are shown by the dates; the card carries only what this pair costs.
             <span className="text-2xl font-semibold tracking-tight tabular-nums" data-testid="quote-total">
