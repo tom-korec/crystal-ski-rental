@@ -13,21 +13,18 @@ const ratingTextSchema = z
   .transform((value) => value || null)
   .nullish();
 
-/** Rate the rental experience of one returned reservation (FR-42). */
-export const reservationRatingUpsertSchema = z.object({
-  reservationId: z.uuid(),
-  score: scoreSchema,
-  note: ratingTextSchema,
-});
-
-/** Rate the ski model, through a returned reservation of that model (FR-43). */
-export const modelRatingUpsertSchema = z.object({
-  reservationId: z.uuid(),
-  score: scoreSchema,
-  comment: ratingTextSchema,
-});
+/**
+ * Rate a returned reservation: the rental experience (FR-42) and the ski model (FR-43), sent together.
+ * Either part may be missing when it cannot be written any more, but not both.
+ */
+export const ratingSchema = z
+  .object({
+    reservationId: z.uuid(),
+    rental: z.object({ score: scoreSchema, note: ratingTextSchema }).optional(),
+    model: z.object({ score: scoreSchema, comment: ratingTextSchema }).optional(),
+  })
+  .refine((input) => Boolean(input.rental ?? input.model), { message: 'Rate the rental or the skis.' });
 
 export const modelRatingsSchema = z.object({ modelId: z.uuid(), page: pageSchema });
 
-export type ReservationRatingUpsertInput = z.input<typeof reservationRatingUpsertSchema>;
-export type ModelRatingUpsertInput = z.input<typeof modelRatingUpsertSchema>;
+export type RatingInput = z.infer<typeof ratingSchema>;

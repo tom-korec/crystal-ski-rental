@@ -192,8 +192,9 @@
     "findSkis": "Find skis",
     "length": "{length} cm",
     "store": "Store",
-    "storeDetails": "Store details",
-    "storeDetailsDescription": "Where to pick up and return the skis.",
+    "details": "Details",
+    "ratingRental": "Rental",
+    "ratingSkis": "Skis",
     "priceSummary": "{days, plural, one {# day} other {# days}} × {price}{discount, select, 0 {} other { · −{discount} %}}",
     "cancelTitle": "Cancel this reservation?",
     "cancelDescription": "{skis} for {period} will be released for other customers. This cannot be undone.",
@@ -223,33 +224,30 @@
     }
   },
   "ratings": {
+    "rate": "Rate",
+    "edit": "Edit rating",
+    "rateTitle": "Rate your rental",
+    "editTitle": "Edit your rating",
+    "editableForAnHour": "You can edit your rating for one hour after submitting it.",
+    "editableUntil": "You can edit your rating until {time}.",
+    "locked": "This rating can no longer be changed.",
     "score": "Your score",
     "scoreRequired": "Choose a score.",
     "stars": "{score, plural, one {# star} other {# stars}}",
-    "scoreOutOf": "{score} / 5",
-    "windowHint": "You can change it for one hour after saving.",
-    "reopenHint": "You rented this model again, so you can update your rating. You can change it for one hour after saving.",
-    "staffOnly": "Only our staff read this. We may reply by e-mail.",
+    "staffOnly": "Only our staff read notes and comments. We may reply by e-mail.",
     "cancel": "Cancel",
     "save": "Save rating",
     "saving": "Saving…",
     "rental": {
-      "label": "Rental",
-      "rate": "Rate rental",
-      "update": "Update rental rating",
-      "title": "How was your rental at {subject}?",
+      "title": "The rental at {store}",
       "textLabel": "Note (optional)",
-      "textPlaceholder": "Pickup, service, return…",
-      "editUntil": "Edit rental rating (until {time})"
+      "textPlaceholder": "Pickup, service, return…"
     },
     "model": {
-      "label": "Skis",
-      "rate": "Rate skis",
-      "update": "Update ski rating",
-      "title": "How were the {subject}?",
+      "title": "The skis: {skis}",
+      "reopenHint": "You rented these skis again, so you can update your earlier rating.",
       "textLabel": "Comment (optional)",
-      "textPlaceholder": "How they skied, who they suit…",
-      "editUntil": "Edit ski rating (until {time})"
+      "textPlaceholder": "How they skied, who they suit…"
     }
   },
   "frontDesk": {

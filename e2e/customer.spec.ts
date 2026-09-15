@@ -82,40 +82,62 @@ test.describe('customer', () => {
     // Customers never see inventory codes.
     await expect(page.getByTestId('inventory-code')).toHaveCount(0);
 
+    await booking.getByTestId('reservation-details').click();
     await booking.getByTestId('cancel-reservation').click();
     await page.getByTestId('confirm-action').click();
     await expect(booking).toHaveAttribute('data-status', 'CANCELLED_BY_USER');
   });
 
-  test('rates a returned rental and updates a model rating through a newer rental', async ({ page }) => {
+  test('rates the rental and the skis together, and can edit both within the hour', async ({ page }) => {
     await page.goto('/app/reservations');
     await expect(page.getByTestId('reservation-card').first()).toBeVisible();
+    // Returned today and rated twenty minutes ago, so still editable.
+    await expect(page.locator('[data-testid="rate-reservation"][data-action="edit"]')).toHaveCount(1);
 
-    await page.getByTestId('rate-rental').filter({ hasText: 'Rate rental' }).first().click();
-    const rental = page.getByTestId('rate-rental-dialog');
-    await rental.getByTestId('submit-rating').click();
-    await expect(rental.getByText('Choose a score.')).toBeVisible();
-    await rental.getByTestId('rental-score-4').click();
-    await rental.getByLabel('Note (optional)').fill('Quick and friendly.');
-    await rental.getByTestId('submit-rating').click();
-    await expect(rental).toBeHidden();
-    await expect(page.getByTestId('rate-rental').filter({ hasText: /Edit rental rating/ })).toHaveCount(2);
+    // The newer rental of a model rated long ago: the rental is unrated and the skis rating reopens.
+    const rateButton = page.locator('[data-testid="rate-reservation"][data-action="rate"]');
+    await expect(rateButton).toHaveCount(1);
+    const card = page.locator('[data-testid="reservation-card"]', { has: rateButton });
+    const id = await card.getAttribute('data-reservation-id');
+    const newer = page.locator(`[data-testid="reservation-card"][data-reservation-id="${id}"]`);
 
-    await page.getByTestId('rate-model').filter({ hasText: 'Update ski rating' }).click();
-    const model = page.getByTestId('rate-model-dialog');
-    await expect(model.getByText('You rented this model again')).toBeVisible();
-    await model.getByTestId('model-score-5').click();
-    await model.getByTestId('submit-rating').click();
-    await expect(model).toBeHidden();
+    await rateButton.click();
+    const dialog = page.getByTestId('rating-dialog');
+    await expect(dialog.getByTestId('rating-window')).toHaveText(
+      'You can edit your rating for one hour after submitting it.',
+    );
+    await expect(dialog.getByText('You rented these skis again')).toBeVisible();
 
-    // The rental whose edit window closed long ago now shows the updated model score as locked.
-    await expect(page.getByTestId('model-rating-locked')).toContainText('5 / 5');
+    await dialog.getByTestId('submit-rating').click();
+    await expect(dialog.getByText('Choose a score.')).toBeVisible();
+    await dialog.getByTestId('rental-score-4').click();
+    await dialog.getByLabel('Note (optional)').fill('Quick and friendly.');
+    await dialog.getByTestId('model-score-5').click();
+    await dialog.getByTestId('submit-rating').click();
+    await expect(dialog).toBeHidden();
+
+    await expect(newer.getByTestId('rental-score')).toHaveAttribute('data-score', '4');
+    await expect(newer.getByTestId('model-score')).toHaveAttribute('data-score', '5');
+    await expect(newer.getByTestId('rate-reservation')).toHaveAttribute('data-action', 'edit');
+
+    await newer.getByTestId('rate-reservation').click();
+    await expect(dialog.getByTestId('rating-window')).toHaveText(/^You can edit your rating until .+\.$/);
+    await expect(dialog.getByTestId('rental-score-4').locator('input')).toBeChecked();
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toBeHidden();
+
+    // The rental rated long ago is locked, and shows the updated skis score.
+    const older = page.locator('[data-testid="reservation-card"][data-status="RETURNED"]').last();
+    await expect(older.getByTestId('rate-reservation')).toHaveCount(0);
+    await expect(older.getByTestId('model-score')).toHaveAttribute('data-score', '5');
   });
 
   test('cannot cancel a rental that has started', async ({ page }) => {
     await page.goto('/app/reservations');
     const active = page.locator('[data-testid="reservation-card"][data-status="ACTIVE"]');
     await expect(active).toHaveCount(1);
+    await active.getByTestId('reservation-details').click();
+    await expect(active.getByTestId('store-details')).toBeVisible();
     await expect(active.getByTestId('cancel-reservation')).toHaveCount(0);
   });
 });

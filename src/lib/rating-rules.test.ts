@@ -5,6 +5,7 @@ import {
   editWindowEndsAt,
   modelRatingAccess,
   type RatingAccess,
+  ratingAction,
   reservationRatingAccess,
 } from '~/lib/rating-rules';
 import { RESERVATION_STATUSES } from '~/lib/reservation-lifecycle';
@@ -94,5 +95,21 @@ describe('canWriteRating', () => {
     ['notEligible', false],
   ] satisfies [RatingAccess, boolean][])('%s → %s', (access, expected) => {
     expect(canWriteRating(access)).toBe(expected);
+  });
+});
+
+describe('ratingAction', () => {
+  it.each<[RatingAccess, RatingAccess, ReturnType<typeof ratingAction>]>([
+    ['create', 'create', 'rate'],
+    ['create', 'reopen', 'rate'],
+    ['locked', 'reopen', 'rate'],
+    ['create', 'locked', 'rate'],
+    ['edit', 'edit', 'edit'],
+    ['edit', 'locked', 'edit'],
+    ['locked', 'edit', 'edit'],
+    ['locked', 'locked', null],
+    ['notEligible', 'notEligible', null],
+  ])('rental %s and model %s give %s', (rental, model, action) => {
+    expect(ratingAction(rental, model)).toBe(action);
   });
 });

@@ -42,10 +42,7 @@ export function MyReservations() {
     >
       {(data) => (
         <div className="flex flex-col gap-4">
-          <p className="text-muted-foreground text-sm" aria-live="polite">
-            {t('count', { count: data.total })}
-          </p>
-          <ul className="flex flex-col gap-4">
+          <ul className="flex flex-col gap-2">
             {data.items.map((reservation) => (
               <li key={reservation.id}>
                 <ReservationCard reservation={reservation} />

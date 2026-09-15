@@ -68,3 +68,17 @@ export function modelRatingAccess(
   // one must not be usable to reopen a rating it was never used for.
   return reservation.returnedAt > rating.windowStartedAt ? 'reopen' : 'locked';
 }
+
+export type RatingAction = 'rate' | 'edit';
+
+/**
+ * The rental and the model are rated together, behind one button: "rate" while either rating can still
+ * be written for the first time through this reservation, "edit" while an edit window is open, and none
+ * once both are locked.
+ */
+export function ratingAction(rental: RatingAccess, model: RatingAccess): RatingAction | null {
+  if (rental === 'create' || model === 'create' || model === 'reopen') return 'rate';
+  if (rental === 'edit' || model === 'edit') return 'edit';
+
+  return null;
+}

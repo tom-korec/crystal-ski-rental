@@ -132,7 +132,9 @@ customer account.
 - **FR-42** For a returned reservation, the customer can **rate the rental**: score 1–5 and an optional note.
 - **FR-43** For a returned reservation, the customer can **rate the ski model**: score 1–5 and an
   optional comment.
-- **FR-44** While a rating can still be edited, the page says until when. After that it shows as locked.
+- **FR-44** The rental and the ski model are rated together, in one form. Saved scores are always shown.
+  While a rating can still be edited, an edit action is offered and the form says until when; after that
+  the scores show without it.
 
 ### 4.6 Front desk (staff)
 
