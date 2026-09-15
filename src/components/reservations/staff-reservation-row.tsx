@@ -12,7 +12,7 @@ import { useFormatDateRange } from '~/hooks/use-format-date-range';
 import { useFormatMoney } from '~/hooks/use-format-money';
 import { rentalPeriod, todayUtc } from '~/lib/date';
 import { canCancelAsStore, canPickUp, canReturn } from '~/lib/reservation-lifecycle';
-import { staffReservationRoute } from '~/lib/routes';
+import { staffAccountRoute, staffReservationRoute, staffSkiRoute } from '~/lib/routes';
 import { api, type RouterOutputs } from '~/trpc/react';
 import { cn } from '~/lib/utils';
 
@@ -48,7 +48,7 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
       data-reservation-id={reservation.id}
       data-status={reservation.status}
     >
-      {show.customer ? <CustomerContact name={user.name} email={user.email} /> : null}
+      {show.customer ? <CustomerContact name={user.name} email={user.email} href={staffAccountRoute(user.id)} /> : null}
 
       <span className="flex flex-col gap-0.5 text-sm">
         <Link
@@ -62,12 +62,13 @@ export function StaffReservationRow({ reservation, show }: StaffReservationRowPr
           <ul className="flex flex-col gap-1" data-testid="reservation-skis">
             {items.map(({ id, ski }, index) => (
               <li key={id} className="flex flex-wrap items-center gap-2">
-                <span
-                  className="bg-secondary text-secondary-foreground rounded px-1.5 py-0.5 font-mono text-xs"
+                <Link
+                  href={staffSkiRoute(ski.id)}
+                  className="bg-secondary text-secondary-foreground rounded px-1.5 py-0.5 font-mono text-xs underline-offset-2 hover:underline"
                   data-testid="inventory-code"
                 >
                   {ski.inventoryCode}
-                </span>
+                </Link>
                 <span>
                   {ski.model.brand.name} {ski.model.name} · {t('length', { length: ski.lengthCm })}
                 </span>

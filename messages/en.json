@@ -372,7 +372,8 @@
     "reservations": "Reservations",
     "noReservations": "This ski has not been reserved yet.",
     "readOnly": "This ski belongs to {store}. Only its manager or an admin can change it.",
-    "storeAdminOnly": "Only an admin can move a ski to another store."
+    "storeAdminOnly": "Only an admin can move a ski to another store.",
+    "allOfModel": "All pairs of this model"
   },
   "catalogAdmin": {
     "title": "Models",
@@ -436,7 +437,8 @@
       "email": "Enter a valid e-mail address.",
       "hours": "Keep it under {max} characters."
     },
-    "for": "For"
+    "for": "For",
+    "skisOfModel": "{count, plural, one {# ski} other {# skis}} of {name} in the fleet"
   },
   "accounts": {
     "title": "Accounts",
@@ -648,7 +650,7 @@
   },
   "staffReservationDetail": {
     "back": "Back to reservations",
-    "summary": "{store} · {count, plural, one {# pair} other {# pairs}} · {days, plural, one {# day} other {# days}}",
+    "summary": "<storeLink>{store}</storeLink> · {count, plural, one {# pair} other {# pairs}} · {days, plural, one {# day} other {# days}}",
     "skis": "{count, plural, one {# pair of skis} other {# pairs of skis}}",
     "length": "{length} cm",
     "perDayTimesDays": "{price} / day × {days, plural, one {# day} other {# days}}",

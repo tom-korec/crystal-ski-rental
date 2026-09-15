@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
 import { FormError } from '~/components/common/form-error';
@@ -13,6 +14,7 @@ import { Skeleton } from '~/components/ui/skeleton';
 import { useStaffActor } from '~/components/layout/staff-actor';
 import { useFormatMoney } from '~/hooks/use-format-money';
 import { mayChangeSkisAt } from '~/lib/account-rules';
+import { staffFleetRoute, staffStoreRoute } from '~/lib/routes';
 import { api } from '~/trpc/react';
 
 import { AvailabilityToggle } from './availability-toggle';
@@ -101,7 +103,13 @@ export function SkiDetail({ id }: SkiDetailProps) {
             <div className="flex flex-col gap-1">
               <dt className="text-muted-foreground">{t('store')}</dt>
               <dd className="font-medium">
-                {store.name}, {store.city}
+                <Link
+                  href={staffStoreRoute(store.id)}
+                  className="hover:text-primary underline-offset-4 hover:underline"
+                  data-testid="ski-store-link"
+                >
+                  {store.name}, {store.city}
+                </Link>
               </dd>
             </div>
             <div className="flex flex-col gap-1">
@@ -116,8 +124,15 @@ export function SkiDetail({ id }: SkiDetailProps) {
             </div>
             <div className="flex flex-col gap-1">
               <dt className="text-muted-foreground">{t('model')}</dt>
-              <dd>
+              <dd className="flex flex-col items-start gap-1.5">
                 <SkiBadges type={model.type} gender={model.gender} skillLevel={model.skillLevel} />
+                <Link
+                  href={staffFleetRoute({ modelId: model.id })}
+                  className="text-primary text-xs underline-offset-4 hover:underline"
+                  data-testid="model-fleet-link"
+                >
+                  {t('allOfModel')}
+                </Link>
               </dd>
             </div>
           </dl>

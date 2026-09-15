@@ -1,11 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { DeleteEntryButton } from '~/components/common/delete-entry-button';
 import { type DirectoryStore, StoreDirectory } from '~/components/stores/store-directory';
-import { SEARCH_PARAMS, STAFF_STORES } from '~/lib/routes';
+import { staffFleetRoute, staffStoreRoute } from '~/lib/routes';
 import { api } from '~/trpc/react';
 
 import { StoreDialog } from './store-dialog';
@@ -20,7 +21,7 @@ export function StaffStores({ canEdit }: StaffStoresProps) {
   const t = useTranslations('storesAdmin');
   const router = useRouter();
   // A store just added opens on its own tab.
-  const open = (store: { id: string }) => router.replace(`${STAFF_STORES}?${SEARCH_PARAMS.store}=${store.id}`);
+  const open = (store: { id: string }) => router.replace(staffStoreRoute(store.id));
 
   return (
     <StoreDirectory
@@ -30,9 +31,19 @@ export function StaffStores({ canEdit }: StaffStoresProps) {
       headerActions={canEdit ? <StoreDialog onSaved={open} /> : undefined}
       actions={(store) => (
         <>
-          <span className="text-muted-foreground me-auto text-sm" data-testid="store-ski-count">
-            {t('skiCount', { count: store.skiCount })}
-          </span>
+          {store.skiCount > 0 ? (
+            <Link
+              href={staffFleetRoute({ storeId: store.id })}
+              className="text-muted-foreground hover:text-primary me-auto text-sm underline-offset-4 hover:underline"
+              data-testid="store-ski-count"
+            >
+              {t('skiCount', { count: store.skiCount })}
+            </Link>
+          ) : (
+            <span className="text-muted-foreground me-auto text-sm" data-testid="store-ski-count">
+              {t('skiCount', { count: store.skiCount })}
+            </span>
+          )}
           {canEdit ? (
             <>
               <StoreDialog store={store} />

@@ -1,12 +1,13 @@
+import { FLEET_PARAMS } from '~/lib/routes';
 import { type SkiListInput, skiListSchema } from '~/lib/ski-schema';
 
 export type FleetFilters = Omit<SkiListInput, 'cursor'>;
 
 const PARAMS = {
   inventoryCode: 'code',
-  storeId: 'store',
+  storeId: FLEET_PARAMS.store,
   brandId: 'brand',
-  modelId: 'model',
+  modelId: FLEET_PARAMS.model,
   type: 'type',
   gender: 'gender',
   skillLevel: 'level',

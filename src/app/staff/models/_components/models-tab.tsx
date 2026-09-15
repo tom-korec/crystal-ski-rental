@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PencilIcon, PlusIcon } from 'lucide-react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -27,6 +28,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~
 import { useFormatMoney } from '~/hooks/use-format-money';
 import { SKI_GENDERS, SKI_TYPES, SKILL_LEVELS } from '~/lib/catalog';
 import { SKI_MODEL_NAME_MAX_LENGTH, skiModelCreateSchema } from '~/lib/ski-model-schema';
+import { staffFleetRoute } from '~/lib/routes';
 import { api, type RouterOutputs } from '~/trpc/react';
 
 import { DeleteEntryButton } from '~/components/common/delete-entry-button';
@@ -76,6 +78,7 @@ export function ModelsTab() {
 }
 
 function ModelRow({ model }: { model: SkiModel }) {
+  const t = useTranslations('catalogAdmin');
   const tCatalog = useTranslations('catalog');
   const formatMoney = useFormatMoney();
   const utils = api.useUtils();
@@ -94,7 +97,20 @@ function ModelRow({ model }: { model: SkiModel }) {
           <RatingSummary avgRating={model.avgRating} ratingCount={model.ratingCount} />
         </ModelRatingsDialog>
       </TableCell>
-      <TableCell className="text-right tabular-nums">{model.skiCount}</TableCell>
+      <TableCell className="text-right tabular-nums">
+        {model.skiCount > 0 ? (
+          <Link
+            href={staffFleetRoute({ modelId: model.id })}
+            className="hover:text-primary underline-offset-4 hover:underline"
+            aria-label={t('skisOfModel', { count: model.skiCount, name })}
+            data-testid="model-skis-link"
+          >
+            {model.skiCount}
+          </Link>
+        ) : (
+          model.skiCount
+        )}
+      </TableCell>
       <TableCell>
         <span className="flex justify-end gap-1">
           <ModelDialog model={model} />

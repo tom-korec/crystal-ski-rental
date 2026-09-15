@@ -22,6 +22,22 @@ export function appStoreRoute(id: string): string {
   return `${APP_STORES}?${SEARCH_PARAMS.store}=${id}`;
 }
 
+/** Query parameters the fleet keeps its filters in; only the ones other pages link with are named here. */
+export const FLEET_PARAMS = { store: 'store', model: 'model' } as const;
+
+/** The fleet, narrowed to one store or one model. */
+export function staffFleetRoute(filter: { storeId?: string; modelId?: string }): string {
+  const params = new URLSearchParams();
+  if (filter.storeId) params.set(FLEET_PARAMS.store, filter.storeId);
+  if (filter.modelId) params.set(FLEET_PARAMS.model, filter.modelId);
+  return `${STAFF_SKIS}?${params.toString()}`;
+}
+
+/** The stores page, open on one store's tab. */
+export function staffStoreRoute(id: string): string {
+  return `${STAFF_STORES}?${SEARCH_PARAMS.store}=${id}`;
+}
+
 export function staffReservationRoute(id: string): string {
   return `${STAFF_RESERVATIONS}/${id}`;
 }

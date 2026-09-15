@@ -63,6 +63,25 @@ test.describe('reservations', () => {
     await expect(detail.getByTestId('reservation-code').first()).toHaveText(code);
     await expect(detail.getByTestId('reservation-customer')).toHaveText('Zuzana Horváthová');
     await expect(detail.getByTestId('reservation-history')).toContainText('Booked');
+
+    // Everything named on the page opens its own page.
+    await detail.getByTestId('reservation-store-link').click();
+    await expect(page).toHaveURL(/\/staff\/stores\?store=/);
+    await page.goBack();
+    await detail.getByTestId('reservation-customer').click();
+    await expect(page.getByTestId('page-title')).toHaveText('Zuzana Horváthová');
+    await page.goBack();
+    await detail.getByTestId('inventory-code').first().click();
+    await expect(page).toHaveURL(/\/staff\/skis\/[0-9a-f-]{36}$/);
+    await page.getByTestId('model-fleet-link').click();
+    await expect(page).toHaveURL(/\/staff\/skis\?model=/);
+  });
+
+  test('links a customer in a reservation list to their account', async ({ page }) => {
+    await signIn(page, 'manager');
+    await page.goto('/staff/reservations?q=novak');
+    await page.getByTestId('customer-link').first().click();
+    await expect(page.getByTestId('page-title')).toHaveText('Jan Novák');
   });
 
   test('opens a reservation from the front desk by its code', async ({ page }) => {

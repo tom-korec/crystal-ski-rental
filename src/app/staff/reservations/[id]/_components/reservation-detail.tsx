@@ -18,7 +18,7 @@ import { formatPostalCode } from '~/lib/address-schema';
 import { rentalPeriod } from '~/lib/date';
 import { DATE_FORMAT, TIME_FORMAT } from '~/lib/format';
 import { Money } from '~/lib/money';
-import { staffAccountRoute, staffSkiRoute } from '~/lib/routes';
+import { staffAccountRoute, staffSkiRoute, staffStoreRoute } from '~/lib/routes';
 import { api, type RouterOutputs } from '~/trpc/react';
 
 type Detail = RouterOutputs['reservation']['byId'];
@@ -66,7 +66,20 @@ export function ReservationDetail({ id }: ReservationDetailProps) {
           </>
         }
         title={period}
-        description={t('summary', { store: store.name, count: items.length, days: data.rentalDays })}
+        description={t.rich('summary', {
+          store: store.name,
+          count: items.length,
+          days: data.rentalDays,
+          storeLink: (chunks) => (
+            <Link
+              href={staffStoreRoute(store.id)}
+              className="hover:text-primary underline-offset-4 hover:underline"
+              data-testid="reservation-store-link"
+            >
+              {chunks}
+            </Link>
+          ),
+        })}
         actions={<StaffReservationActions reservation={data} />}
       />
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { MailIcon, StarIcon } from 'lucide-react';
+import Link from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 
@@ -17,6 +18,7 @@ import {
 import { Skeleton } from '~/components/ui/skeleton';
 import { DATE_FORMAT } from '~/lib/format';
 import { pageCount } from '~/lib/pagination';
+import { staffAccountRoute } from '~/lib/routes';
 import { api } from '~/trpc/react';
 
 interface ModelRatingsDialogProps {
@@ -73,7 +75,13 @@ function RatingsList({ modelId, name }: { modelId: string; name: string }) {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="flex items-center gap-1.5 font-medium">
                     <StarIcon className="fill-highlight text-highlight size-4" aria-hidden />
-                    {t('scoreOutOf', { score: rating.score })} · {rating.user.name}
+                    {t('scoreOutOf', { score: rating.score })} ·{' '}
+                    <Link
+                      href={staffAccountRoute(rating.user.id)}
+                      className="hover:text-primary underline-offset-4 hover:underline"
+                    >
+                      {rating.user.name}
+                    </Link>
                   </span>
                   <span className="text-muted-foreground text-xs">
                     {format.dateTime(rating.updatedAt, DATE_FORMAT)}
