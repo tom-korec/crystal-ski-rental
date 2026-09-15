@@ -8,7 +8,8 @@ staff accounts.
 
 It is a portfolio project built the way a client project would be: [the brief and the
 requirements](docs/REQUIREMENTS.md) first, then [a plan](docs/PLAN.md) delivered as a sequence of
-reviewable commits.
+reviewable commits. [What real use would still need](docs/PRODUCTION-READINESS.md) lists the gaps
+between this demo and a rental that takes real customers.
 
 ## Getting started
 
@@ -88,7 +89,7 @@ next-intl · decimal.js · Vitest and Playwright · GitHub Actions.
 ## Layout
 
 ```
-docs/                 Requirements and implementation plan
+docs/                 Requirements, implementation plan and production readiness
 e2e/                  Playwright specs, their seeding and helpers
 messages/en.json      Every user-facing string
 prisma/               Schema, migrations and the demo seed
