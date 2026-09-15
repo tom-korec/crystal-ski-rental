@@ -32,6 +32,8 @@
 - Unit and end-to-end tests and CI.
 - Light and dark themes, phone layouts.
 - Rate-limited sign-in, and a deterministic demo seed.
+- Structured opening hours and special days, with no pickup or return on a closed day (BR-7).
+- Example legal documents, accepted at sign-up and booking (FR-7).
 
 **Not done yet from release 1:** the deployment itself (repository, Neon, Vercel, CI checks, the first
 demo reset; see PLAN §4 Part E) and the manual accessibility pass. `PLAN.md` also describes the data model
@@ -81,19 +83,15 @@ Sizes follow PLAN: **S** a day or less, **M** a few days, **L** a week or more.
 
   "Today" should be the stores' local day, one time zone for the whole chain. **S**
 
-- **Bookings can start or end on a day the store is closed.** Opening hours are free text, so nothing
-  checks them. They need a structured form (closed, or open with times), with free text kept for the
-  opening-hours display. **M**
 - **Front-desk actions are limited by store only on screen.** A manager's pickup, return and cancel
   buttons appear only for their own store, but the API accepts them for any store (FR-64, agreed as a
   screen-only rule). Real use should enforce it on the server like ski changes. **S**
 
 ### Legal and privacy (GDPR)
 
-- **No terms and conditions or privacy policy, and nothing accepted at sign-up or booking.** **S** for
-  the flow; the texts come from the business.
-- **No rental agreement or liability waiver.** Rental shops usually have one signed at pickup, stating
-  the customer's responsibility for damage and loss. **M**
+- **The legal texts are examples.** Terms, privacy policy and rental agreement exist and are accepted
+  at sign-up and booking (FR-7), but a lawyer has to write the real ones. A signed agreement at pickup,
+  with the customer's responsibility for damage and loss, is still missing. **M**
 - **No way to export or erase a customer's data.** Removing an account today is a soft delete that keeps
   everything. Erasure has to anonymise the person while keeping the booking history truthful (BR-33). **M**
 - **No record of consent** for marketing or data processing, and no cookie notice (only a functional
@@ -219,9 +217,9 @@ Sizes follow PLAN: **S** a day or less, **M** a few days, **L** a week or more.
 ## Suggested order
 
 1. **Finish release 1:** deploy, run the accessibility pass, bring `PLAN.md` up to date.
-2. **Before any real customer:** stores' local day and closed-day checks, server-side store rule for
-   the front desk, password reset with e-mail, booking e-mails, terms and privacy, data export and
-   erasure.
+2. **Before any real customer:** stores' local day, server-side store rule for
+   the front desk, password reset with e-mail, booking e-mails, the real legal texts, data export
+   and erasure.
 3. **First season at the counter:** staff bookings for walk-ins, changing bookings, fitting details,
    documents at pickup, recording payments.
 4. **Grow:** equipment and packages, seasonal pricing, payments online, servicing, reports.
