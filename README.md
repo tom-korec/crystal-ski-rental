@@ -37,8 +37,8 @@ The other seeded customers are `<first>.<last>@example.test` with the customer p
 
 The seed is set up so every screen has something to show: the demo customer has a rental with a
 locked rating, a newer rental of the same model that may update it, one returned today whose ratings
-are still editable, one picked up, one upcoming and one cancelled. The Jasná front desk has an item in
-each of its four lists.
+are still editable, one picked up, one upcoming and one cancelled. They also have a mailing address and
+an invoice address made out to a company. The Jasná front desk has an item in each of its four lists.
 
 ## Scripts
 

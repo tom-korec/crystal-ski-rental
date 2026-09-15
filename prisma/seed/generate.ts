@@ -1,20 +1,26 @@
 import { randomUUID } from 'node:crypto';
 
+import { invoiceAddressSchema, mailingAddressSchema } from '../../src/lib/address-schema';
 import { addUtcDays, todayUtc } from '../../src/lib/date';
 import { quoteRental } from '../../src/lib/pricing';
 import { RATING_EDIT_WINDOW_MS } from '../../src/lib/rating-rules';
 import type { ReservationStatus } from '../../src/lib/reservation-lifecycle';
 import {
+  COMPANY_INVOICE,
   CUSTOMER_NAMES,
   DEMO_ACCOUNTS,
+  DEMO_CUSTOMER_ADDRESSES,
   DEMO_PASSWORDS,
   LENGTHS_BY_GENDER,
+  MAILING_ADDRESSES,
   MODEL_COMMENTS,
   MODELS,
   OTHER_STAFF,
   REMOVED_CUSTOMERS,
   RENTAL_NOTES,
   type SeedAccount,
+  type SeedInvoiceAddress,
+  type SeedMailingAddress,
   STORES,
 } from './data';
 
@@ -143,11 +149,27 @@ export interface ModelRatingRow {
   createdAt: Date;
 }
 
+export interface CustomerAddressRow {
+  id: string;
+  userId: string;
+  kind: 'MAILING' | 'INVOICE';
+  recipient: string | null;
+  companyId: string | null;
+  vatId: string | null;
+  street: string;
+  houseNumber: string;
+  city: string;
+  zipCode: string;
+  country: string;
+  createdAt: Date;
+}
+
 export interface SeedData {
   stores: ((typeof STORES)[number] & { id: string })[];
   brands: { id: string; name: string }[];
   models: ((typeof MODELS)[number] & { id: string; brandId: string })[];
   users: UserRow[];
+  addresses: CustomerAddressRow[];
   skis: SkiRow[];
   reservations: ReservationRow[];
   reservationRatings: ReservationRatingRow[];
@@ -187,6 +209,47 @@ function buildUsers(): UserRow[] {
     createdAt: momentOn(-randomInt(120, 360)),
     deletedAt: account.removed ? momentOn(-randomInt(3, 12)) : null,
   }));
+}
+
+/**
+ * Every address goes through the same schemas as the API, so the seed stores what a customer could have
+ * saved. The demo customer has both kinds; most generated customers a mailing address, one of them an
+ * invoice address for their employer, and every fifth none at all.
+ */
+function buildAddresses(users: UserRow[]): CustomerAddressRow[] {
+  const rows: CustomerAddressRow[] = [];
+  const row = (
+    user: UserRow,
+    kind: CustomerAddressRow['kind'],
+    address: Omit<CustomerAddressRow, 'id' | 'userId' | 'kind' | 'createdAt'>,
+  ) => rows.push({ id: randomUUID(), userId: user.id, kind, ...address, createdAt: hoursAfter(user.createdAt, 1) });
+  const mailing = (address: SeedMailingAddress) => ({
+    ...mailingAddressSchema.parse(address),
+    recipient: null,
+    companyId: null,
+    vatId: null,
+  });
+  const invoice = (address: SeedInvoiceAddress) => {
+    const parsed = invoiceAddressSchema.parse(address);
+    return { ...parsed, companyId: parsed.companyId ?? null, vatId: parsed.vatId ?? null };
+  };
+
+  const customers = users.filter((user) => user.role === 'USER');
+  for (const [index, user] of customers.filter((customer) => customer.key !== 'customer').entries()) {
+    if (index % 5 === 4) continue;
+
+    const address = MAILING_ADDRESSES[index % MAILING_ADDRESSES.length];
+    if (!address) throw new Error('No seed addresses');
+    row(user, 'MAILING', mailing(address));
+    if (index === 1) row(user, 'INVOICE', invoice({ ...address, ...COMPANY_INVOICE }));
+  }
+
+  const jan = customers.find((user) => user.key === 'customer');
+  if (!jan) throw new Error('Demo customer missing');
+  row(jan, 'MAILING', mailing(DEMO_CUSTOMER_ADDRESSES.mailing));
+  row(jan, 'INVOICE', invoice(DEMO_CUSTOMER_ADDRESSES.invoice));
+
+  return rows;
 }
 
 interface FleetPlan {
@@ -523,6 +586,7 @@ export function generateSeedData(): SeedData {
     brands,
     models,
     users,
+    addresses: buildAddresses(users),
     skis: [],
     reservations: [],
     reservationRatings: [],

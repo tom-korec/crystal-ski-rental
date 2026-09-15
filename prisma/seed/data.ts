@@ -274,6 +274,54 @@ export const CUSTOMER_NAMES = [
   'Samuel Mráz',
 ];
 
+export interface SeedMailingAddress {
+  street: string;
+  houseNumber: string;
+  city: string;
+  zipCode: string;
+  country: string;
+}
+
+export interface SeedInvoiceAddress extends SeedMailingAddress {
+  recipient: string;
+  companyId?: string;
+  vatId?: string;
+}
+
+/** The demo customer rents privately but has invoices made out to their company (FR-6). */
+export const DEMO_CUSTOMER_ADDRESSES: { mailing: SeedMailingAddress; invoice: SeedInvoiceAddress } = {
+  mailing: { street: 'Karadžičova', houseNumber: '14', city: 'Bratislava', zipCode: '811 09', country: 'SK' },
+  invoice: {
+    recipient: 'Novák Consulting s.r.o.',
+    companyId: '12 345 678',
+    vatId: 'SK2020123456',
+    street: 'Mlynské nivy',
+    houseNumber: '1543/7',
+    city: 'Bratislava',
+    zipCode: '821 09',
+    country: 'SK',
+  },
+};
+
+/** Handed out to generated customers in turn. Guests come from abroad too. */
+export const MAILING_ADDRESSES: SeedMailingAddress[] = [
+  { street: 'Hlavná', houseNumber: '12/A', city: 'Košice', zipCode: '040 01', country: 'SK' },
+  { street: 'Štefánikova', houseNumber: '31', city: 'Žilina', zipCode: '010 01', country: 'SK' },
+  { street: 'Námestie SNP', houseNumber: '5', city: 'Banská Bystrica', zipCode: '974 01', country: 'SK' },
+  { street: 'Vinohradská', houseNumber: '88', city: 'Praha', zipCode: '120 00', country: 'CZ' },
+  { street: 'Popradská', houseNumber: '2', city: 'Poprad', zipCode: '058 01', country: 'SK' },
+  { street: 'ul. Krupówki', houseNumber: '40', city: 'Zakopane', zipCode: '34-500', country: 'PL' },
+  { street: 'Nitrianska', houseNumber: '17', city: 'Trnava', zipCode: '917 01', country: 'SK' },
+  { street: 'Andrássy út', houseNumber: '60', city: 'Budapest', zipCode: '1062', country: 'HU' },
+];
+
+/** A generated customer whose invoices go to their employer. */
+export const COMPANY_INVOICE: Omit<SeedInvoiceAddress, keyof SeedMailingAddress> = {
+  recipient: 'Tatra Outdoor a.s.',
+  companyId: '87654321',
+  vatId: 'SK2021987654',
+};
+
 /** Generated customers whose accounts have been removed, to show the restore flow. */
 export const REMOVED_CUSTOMERS = new Set(['Tomáš Král']);
 

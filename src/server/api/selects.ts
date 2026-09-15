@@ -45,3 +45,17 @@ export function plainSkiModel<T extends { pricePerDay: DecimalLike; avgRating: D
     avgRating: model.avgRating === null ? null : model.avgRating.toNumber(),
   };
 }
+
+/** A customer's address as the customer and staff see it (FR-6). */
+export const customerAddressSelect = {
+  kind: true,
+  recipient: true,
+  companyId: true,
+  vatId: true,
+  street: true,
+  houseNumber: true,
+  city: true,
+  zipCode: true,
+  country: true,
+  updatedAt: true,
+} satisfies Prisma.CustomerAddressSelect;

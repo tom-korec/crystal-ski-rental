@@ -7,6 +7,7 @@ import { PAGE_SIZE, pageCount, skipForPage } from '~/lib/pagination';
 import type { Role } from '~/lib/roles';
 import { userCreateSchema, userIdSchema, userListSchema, userUpdateSchema } from '~/lib/user-schema';
 import { badRequest, conflict, forbidden, notFound, rethrowPrismaError } from '~/server/api/errors';
+import { customerAddressSelect } from '~/server/api/selects';
 import { createTRPCRouter, staffProcedure } from '~/server/api/trpc';
 
 import type { Prisma } from '../../../../generated/prisma/client';
@@ -79,7 +80,11 @@ export const userRouter = createTRPCRouter({
 
   /** Returns removed accounts too, so a reservation history still opens after the account is gone. */
   byId: staffProcedure.input(userIdSchema).query(async ({ ctx, input }) => {
-    const user = await ctx.db.user.findUnique({ where: { id: input.id }, select: userSelect });
+    const user = await ctx.db.user.findUnique({
+      where: { id: input.id },
+      // Staff see a customer's addresses, e.g. to sort out an invoice (FR-6).
+      select: { ...userSelect, addresses: { select: customerAddressSelect, orderBy: { kind: 'asc' } } },
+    });
 
     if (!user) throw notFound(NOT_FOUND);
 

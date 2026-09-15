@@ -84,6 +84,11 @@ customer account.
 - **FR-4** A signed-in user can edit their name and change their password (current password required).
 - **FR-5** Pages and data are restricted by role. A user who opens a page they may not use is
   redirected to their own home rather than shown an error.
+- **FR-6** A customer can keep a **mailing address** and an **invoice address**, at most one of each, and
+  change or remove either. Both have street, house number, city, postal code and country. The invoice
+  address also names who invoices are made out to (the customer or a company), with an optional company
+  number and VAT number. Staff can see a customer's addresses. _No screens yet: release 1 stores the
+  addresses and offers the API; the profile and account pages follow._
 
 ### 4.2 Catalogue (admin)
 
@@ -230,6 +235,7 @@ customer account.
 ### 5.6 Privacy
 
 - **BR-50** Customers never see inventory codes, other customers' identities, comments or notes.
+- **BR-51** A customer's addresses are visible only to that customer and to staff.
 
 ## 6. Non-functional requirements
 
@@ -274,7 +280,7 @@ customer account.
 
 ## 8. Out of scope
 
-- Payments, invoices, VAT.
+- Payments, issuing invoices, VAT. The invoice address is only kept for later (FR-6).
 - E-mail or SMS notifications. Staff reply to feedback from their own mail client.
 - Pickup and return times, early pickup, and reasons for early or late returns.
 - Blocking new bookings of a ski that is overdue for return. Staff handle the clash at the counter.
@@ -283,13 +289,15 @@ customer account.
 
 ## 9. Glossary
 
-| Term               | Meaning                                                                                       |
-| ------------------ | --------------------------------------------------------------------------------------------- |
-| **Brand**          | Ski manufacturer, e.g. Atomic.                                                                |
-| **Model**          | A product line of a brand, e.g. Atomic Redster G9. It carries price, type, gender and level.  |
-| **Ski**            | One physical pair: a model in a specific length, at a specific store, with an inventory code. |
-| **Inventory code** | Staff-only identifier printed on the ski, e.g. `SK-0142`.                                     |
-| **Store**          | A rental location with address, contacts and opening hours.                                   |
-| **Front desk**     | The staff page for today's pickups and returns and the overdue ones.                          |
-| **Rental rating**  | Feedback on the rental experience, attached to one reservation.                               |
-| **Model rating**   | Feedback on a ski model, one per customer per model.                                          |
+| Term                | Meaning                                                                                       |
+| ------------------- | --------------------------------------------------------------------------------------------- |
+| **Brand**           | Ski manufacturer, e.g. Atomic.                                                                |
+| **Model**           | A product line of a brand, e.g. Atomic Redster G9. It carries price, type, gender and level.  |
+| **Ski**             | One physical pair: a model in a specific length, at a specific store, with an inventory code. |
+| **Inventory code**  | Staff-only identifier printed on the ski, e.g. `SK-0142`.                                     |
+| **Store**           | A rental location with address, contacts and opening hours.                                   |
+| **Front desk**      | The staff page for today's pickups and returns and the overdue ones.                          |
+| **Rental rating**   | Feedback on the rental experience, attached to one reservation.                               |
+| **Model rating**    | Feedback on a ski model, one per customer per model.                                          |
+| **Mailing address** | Where post for a customer goes, addressed to the customer's name.                             |
+| **Invoice address** | Who a customer's invoices are made out to and where they go; may be a company.                |

@@ -30,7 +30,7 @@ async function write(data: SeedData): Promise<void> {
 
   await db.$transaction(
     async (tx) => {
-      await tx.$executeRaw`TRUNCATE model_rating, reservation_rating, reservation, ski, ski_model, brand, store, session, account, verification, rate_limit, "user" CASCADE`;
+      await tx.$executeRaw`TRUNCATE customer_address, model_rating, reservation_rating, reservation, ski, ski_model, brand, store, session, account, verification, rate_limit, "user" CASCADE`;
 
       const catalogueTimes = { createdAt: CATALOGUE_CREATED, updatedAt: CATALOGUE_CREATED };
 
@@ -75,6 +75,10 @@ async function write(data: SeedData): Promise<void> {
           createdAt: user.createdAt,
           updatedAt: user.createdAt,
         })),
+      });
+
+      await tx.customerAddress.createMany({
+        data: data.addresses.map((address) => ({ ...address, updatedAt: address.createdAt })),
       });
 
       await tx.ski.createMany({

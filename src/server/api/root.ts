@@ -1,3 +1,4 @@
+import { addressRouter } from '~/server/api/routers/address';
 import { authRouter } from '~/server/api/routers/auth';
 import { brandRouter } from '~/server/api/routers/brand';
 import { healthRouter } from '~/server/api/routers/health';
@@ -11,6 +12,7 @@ import { createCallerFactory, createTRPCRouter } from '~/server/api/trpc';
 
 /** Every router in `api/routers` is registered here, in alphabetical order. */
 export const appRouter = createTRPCRouter({
+  address: addressRouter,
   auth: authRouter,
   brand: brandRouter,
   health: healthRouter,

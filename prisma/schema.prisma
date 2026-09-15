@@ -27,6 +27,11 @@ enum Role {
   ADMIN
 }
 
+enum AddressKind {
+  MAILING
+  INVOICE
+}
+
 enum SkiType {
   PISTE
   ALL_MOUNTAIN
@@ -57,27 +62,55 @@ enum ReservationStatus {
 }
 
 model User {
-  id                    String        @id
+  id                    String            @id
   name                  String
   email                 String
-  emailVerified         Boolean       @default(false)
+  emailVerified         Boolean           @default(false)
   image                 String?
   // Never accepted from the client: Better Auth exposes it with `input: false`.
-  role                  Role          @default(USER)
+  role                  Role              @default(USER)
   // Soft delete keeps reservation history truthful. The e-mail stays taken (FR-63).
   deletedAt             DateTime?
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @default(now()) @updatedAt
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @default(now()) @updatedAt
   sessions              Session[]
   accounts              Account[]
   reservations          Reservation[]
   modelRatings          ModelRating[]
-  pickedUpReservations  Reservation[] @relation("PickedUpBy")
-  returnedReservations  Reservation[] @relation("ReturnedBy")
-  cancelledReservations Reservation[] @relation("CancelledBy")
+  pickedUpReservations  Reservation[]     @relation("PickedUpBy")
+  returnedReservations  Reservation[]     @relation("ReturnedBy")
+  cancelledReservations Reservation[]     @relation("CancelledBy")
+  addresses             CustomerAddress[]
 
   @@unique([email])
   @@map("user")
+}
+
+// A customer's postal addresses (FR-6): at most one of each kind. The migration adds a check that only
+// an invoice address names a recipient and carries company numbers, and that it always names a recipient.
+model CustomerAddress {
+  id          String      @id @default(uuid(7))
+  userId      String
+  kind        AddressKind
+  // Invoice only: who the invoice is made out to, a person or a company.
+  recipient   String?
+  // Invoice only, optional: company registration number (IČO) and VAT number (IČ DPH), without spaces.
+  companyId   String?
+  vatId       String?
+  street      String
+  // Text, like a store's: "12/A" and "1543/7" are ordinary house numbers.
+  houseNumber String
+  city        String
+  // Without spaces for Slovak and Czech codes, e.g. "03101"; as entered elsewhere.
+  zipCode     String
+  // ISO 3166-1 alpha-2, e.g. "SK".
+  country     String      @default("SK")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @default(now()) @updatedAt
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind])
+  @@map("customer_address")
 }
 
 model Session {
