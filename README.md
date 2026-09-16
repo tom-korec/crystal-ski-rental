@@ -28,6 +28,9 @@ Postgres listens on **5433** so it does not collide with another Postgres on the
 
 ### Demo accounts
 
+These passwords are for a local database only. A deployed demo is seeded with its own secret password
+(see [Deployment](#deployment)).
+
 | Role     | E-mail                           | Password       |
 | -------- | -------------------------------- | -------------- |
 | Admin    | `admin@crystalskirental.test`    | `Admin123!`    |
@@ -284,19 +287,22 @@ The public demo runs on **Vercel** (Hobby) with **Neon** Postgres (Free), both i
 One-time setup, in the dashboards:
 
 1. Create a Neon project in `aws-eu-central-1` with Postgres 17.
-2. Import the GitHub repository into Vercel and add `BETTER_AUTH_SECRET` (`openssl rand -base64 32`)
-   and `NEXT_PUBLIC_DEMO_MODE=true`.
+2. Import the GitHub repository into Vercel and add `BETTER_AUTH_SECRET` (`openssl rand -base64 32`).
+   Leave `NEXT_PUBLIC_DEMO_MODE` unset: the one-click sign-in uses the committed passwords, which a
+   deployment does not accept.
 3. Install the Neon integration on the Vercel project, and turn on automatic deletion of preview
    branches (the free plan allows ten).
 4. Under the project's Deployment Checks, require the CI workflow before a deployment is promoted to
    production, and protect `main` on GitHub with the same checks.
-5. Add the demo database's **direct** Neon connection string as the `DEMO_DATABASE_URL` repository secret
-   on GitHub, then run the **Reset demo data** workflow once to seed it.
+5. On GitHub, add two repository secrets: the demo database's **direct** Neon connection string as
+   `DEMO_DATABASE_URL`, and the password every seeded account should sign in with as `DEMO_SEED_PASSWORD`.
+   Then run the **Reset demo data** workflow once to seed it.
 
 ### Demo data reset
 
 `.github/workflows/demo-reset.yml` migrates and reseeds the demo database every night at 03:00 UTC, and
 can be started by hand from the Actions tab. Whatever visitors change, book or delete is gone by the
 next morning. The seed only runs with `NODE_ENV=production` when `ALLOW_PRODUCTION_SEED=true` is set as
-well, so it cannot wipe a real database by accident. Resetting also clears sessions, so everyone is
-signed out.
+well, so it cannot wipe a real database by accident. In production it also requires `SEED_PASSWORD` and gives
+it to every account, because the passwords in the seed data are public. Resetting also clears sessions, so
+everyone is signed out.

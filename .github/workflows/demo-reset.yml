@@ -24,11 +24,18 @@ jobs:
       NODE_ENV: production
       # The seed refuses to run in production without this, so it cannot wipe a real database by accident.
       ALLOW_PRODUCTION_SEED: 'true'
+      # The password of every seeded account. The ones committed in the seed data are public.
+      SEED_PASSWORD: ${{ secrets.DEMO_SEED_PASSWORD }}
     steps:
       - name: Require the database secret
         if: env.DATABASE_URL == ''
         run: |
           echo "::error::Set the DEMO_DATABASE_URL repository secret to the demo database's direct connection string."
+          exit 1
+      - name: Require the seed password secret
+        if: env.SEED_PASSWORD == ''
+        run: |
+          echo "::error::Set the DEMO_SEED_PASSWORD repository secret to the password every seeded account should use."
           exit 1
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4

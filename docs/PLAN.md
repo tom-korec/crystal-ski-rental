@@ -194,11 +194,11 @@ owner's manual deployment steps (§4 Part E).
 
 1. Create a GitHub repository and push `main`.
 2. Neon: create a project in `aws-eu-central-1` with Postgres 17.
-3. Vercel: import the repository, set the function region to `fra1`, and set `BETTER_AUTH_SECRET`.
+3. Vercel: import the repository, set the function region to `fra1`, and set `BETTER_AUTH_SECRET`. Demo mode stays off, because its one-click sign-in uses the public passwords.
 4. Install the Neon integration on the Vercel project. It creates a database branch per preview,
    so enable automatic deletion of preview branches (the Free plan allows 10 branches).
 5. Vercel Deployment Checks: require the CI workflow before promoting to production. On GitHub, protect `main` with the same checks.
-6. GitHub: add `DEMO_DATABASE_URL` (Neon direct URL of the production branch) as a secret for the reset workflow, then run it once.
+6. GitHub: add `DEMO_DATABASE_URL` (Neon direct URL of the production branch) and `DEMO_SEED_PASSWORD` (the one password of every seeded account, since the committed ones are public) as secrets for the reset workflow, then run it once.
 7. Smoke test on the production URL: sign in as each demo role and run a booking through to a rating.
 
 ## 5. Testing strategy
