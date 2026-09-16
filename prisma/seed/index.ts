@@ -13,21 +13,27 @@ import { assertSeedData } from './invariants';
 import { loadSeedData } from './load';
 import { writeSeedData } from './write';
 
-const isProduction = process.env.NODE_ENV === 'production';
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) throw new Error('DATABASE_URL is not set.');
 
-if (isProduction && process.env.ALLOW_PRODUCTION_SEED !== 'true') {
-  throw new Error('Refusing to seed with NODE_ENV=production. Set ALLOW_PRODUCTION_SEED=true to reset a demo.');
+// Any database off this machine counts as deployed, whatever NODE_ENV says, so a remote URL left in `.env`
+// cannot be wiped by `pnpm db:seed`.
+const isDeployed =
+  process.env.NODE_ENV === 'production' ||
+  !['localhost', '127.0.0.1', '[::1]'].includes(new URL(connectionString).hostname);
+
+if (isDeployed && process.env.ALLOW_PRODUCTION_SEED !== 'true') {
+  throw new Error('Refusing to seed a production or remote database. Set ALLOW_PRODUCTION_SEED=true to reset a demo.');
 }
 
 // The passwords in `data/` are public in the repository, so a deployed demo signs every account in with
 // its own secret instead.
 const productionPassword = process.env.SEED_PASSWORD;
-if (isProduction && (!productionPassword || productionPassword.length < MIN_PASSWORD_LENGTH)) {
-  throw new Error(`Set SEED_PASSWORD (at least ${MIN_PASSWORD_LENGTH} characters) to seed with NODE_ENV=production.`);
+if (isDeployed && (!productionPassword || productionPassword.length < MIN_PASSWORD_LENGTH)) {
+  throw new Error(
+    `Set SEED_PASSWORD (at least ${MIN_PASSWORD_LENGTH} characters) to seed a production or remote database.`,
+  );
 }
-
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) throw new Error('DATABASE_URL is not set.');
 
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 
@@ -37,7 +43,7 @@ const DEMO_EMAILS = ['admin@crystalskirental.test', 'manager@crystalskirental.te
 async function main() {
   const seedData = loadSeedData();
   const data =
-    isProduction && productionPassword
+    isDeployed && productionPassword
       ? { ...seedData, users: seedData.users.map((user) => ({ ...user, password: productionPassword })) }
       : seedData;
   assertSeedData(data);
@@ -53,7 +59,7 @@ async function main() {
       `${count('CANCELLED_BY_USER') + count('CANCELLED_BY_STORE')} cancelled), ` +
       `${data.reservationRatings.length} rental ratings and ${data.modelRatings.length} model ratings.`,
   );
-  if (isProduction) {
+  if (isDeployed) {
     console.log('Every account signs in with SEED_PASSWORD.');
     return;
   }

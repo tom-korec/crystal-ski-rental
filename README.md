@@ -256,7 +256,8 @@ enums match the database.
 overlap constraint, sessions and redirects actually live. The suite builds into `.next-e2e`, runs on
 port 3100 against `crystal_ski_rental_test`, and reseeds before every run, so it never touches
 development data. Values from `.env.test` are local defaults; variables already set in the environment
-win, which is how CI points it at its own database.
+win, which is how CI points it at its own database. The suite refuses any database that is not local and
+named `*_test`, so it can never run against the deployed demo.
 
 The seed checks the rules the database cannot enforce (price snapshots, lifecycle timestamps, rating
 eligibility, no pair on two rentals at once, everything created within the last 90 days, managers handling
@@ -302,7 +303,7 @@ One-time setup, in the dashboards:
 
 `.github/workflows/demo-reset.yml` migrates and reseeds the demo database every night at 03:00 UTC, and
 can be started by hand from the Actions tab. Whatever visitors change, book or delete is gone by the
-next morning. The seed only runs with `NODE_ENV=production` when `ALLOW_PRODUCTION_SEED=true` is set as
-well, so it cannot wipe a real database by accident. In production it also requires `SEED_PASSWORD` and gives
-it to every account, because the passwords in the seed data are public. Resetting also clears sessions, so
-everyone is signed out.
+next morning. The seed refuses a database that is not on localhost, or any run with `NODE_ENV=production`,
+unless `ALLOW_PRODUCTION_SEED=true` is set, so a remote URL left in `.env` cannot be wiped by accident. Such a
+run also requires `SEED_PASSWORD` and gives it to every account, because the passwords in the seed data are
+public. Resetting also clears sessions, so everyone is signed out.
