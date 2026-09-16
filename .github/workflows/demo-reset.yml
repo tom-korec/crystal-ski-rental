@@ -21,7 +21,6 @@ jobs:
     env:
       # Neon's direct (unpooled) connection string for the production branch, stored as a repository secret.
       DATABASE_URL: ${{ secrets.DEMO_DATABASE_URL }}
-      NODE_ENV: production
       # The seed refuses to run in production without this, so it cannot wipe a real database by accident.
       ALLOW_PRODUCTION_SEED: 'true'
       # The password of every seeded account. The ones committed in the seed data are public.
@@ -46,3 +45,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:migrate
       - run: pnpm exec tsx prisma/seed/index.ts
+        env:
+          # Only here: set for the whole job, it makes `pnpm install` skip the Prisma and tsx CLIs.
+          NODE_ENV: production
