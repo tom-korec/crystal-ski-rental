@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { Button } from '~/components/ui/button';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '~/components/ui/sheet';
 import type { Role } from '~/lib/roles';
-import { LANDING } from '~/lib/routes';
+import { SIGN_IN } from '~/lib/routes';
 import { cn } from '~/lib/utils';
 
 import { AccountPanel } from './account-panel';
@@ -87,7 +87,7 @@ export function MobileNav({ links, account, homeHref }: MobileNavProps) {
               </div>
               <Button
                 nativeButton={false}
-                render={<Link href={LANDING} onClick={close} />}
+                render={<Link href={SIGN_IN} onClick={close} />}
                 data-testid="mobile-nav-sign-in"
               >
                 <LogInIcon aria-hidden />

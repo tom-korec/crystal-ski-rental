@@ -13,9 +13,11 @@ export const STAFF_STORES = '/staff/stores';
 export const STAFF_ACCOUNTS = '/staff/accounts';
 export const PROFILE = '/profile';
 export const ACCEPT_TERMS = '/accept-terms';
+export const SIGN_IN = '/sign-in';
 export const FORGOT_PASSWORD = '/forgot-password';
 export const RESET_PASSWORD = '/reset-password';
 export const SEARCH = '/search';
+export const SITEMAP = '/sitemap.xml';
 export const STORES = '/stores';
 export const RESERVE = '/reserve';
 
@@ -40,6 +42,11 @@ export const LEGAL_ROUTES = {
 
 export function staffSkiRoute(id: string): string {
   return `${STAFF_SKIS}/${id}`;
+}
+
+/** The public stores page, on one store's tab when named. */
+export function storeRoute(id?: string): string {
+  return id ? `${STORES}?${SEARCH_PARAMS.store}=${id}` : STORES;
 }
 
 /** The stores page with one store's tab open. */

@@ -9,7 +9,9 @@
     "eyebrow": "Crystal Ski Rental",
     "headline": "Fresh tracks start here",
     "subtitle": "Skis waiting in Jasná, Tatranská Lomnica, Štrbské Pleso and Donovaly, booked by the day.",
-    "findSkis": "Find skis"
+    "storesTitle": "Where to find us",
+    "openToday": "Open today",
+    "allStores": "All stores and opening hours"
   },
   "auth": {
     "signInTitle": "Sign in",

@@ -12,7 +12,7 @@ export const ACCOUNTS = {
 export async function signIn(page: Page, account: keyof typeof ACCOUNTS) {
   const { email, password, home } = ACCOUNTS[account];
 
-  await page.goto('/');
+  await page.goto('/sign-in');
   await page.getByLabel('E-mail').fill(email);
   await page.getByLabel('Password').fill(password);
   await page.getByTestId('signin-submit').click();

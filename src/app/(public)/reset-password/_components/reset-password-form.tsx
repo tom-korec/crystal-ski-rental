@@ -10,7 +10,7 @@ import { FormError } from '~/components/common/form-error';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
 import { MIN_PASSWORD_LENGTH, type PasswordResetInput, passwordResetSchema } from '~/lib/auth-schema';
-import { FORGOT_PASSWORD, LANDING } from '~/lib/routes';
+import { FORGOT_PASSWORD, SIGN_IN } from '~/lib/routes';
 import { api } from '~/trpc/react';
 
 interface ResetPasswordFormProps {
@@ -77,7 +77,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             </Button>
           </form>
         )}
-        <Button variant="link" className="w-full" nativeButton={false} render={<Link href={LANDING} />}>
+        <Button variant="link" className="w-full" nativeButton={false} render={<Link href={SIGN_IN} />}>
           {t('backToSignIn')}
         </Button>
       </CardContent>

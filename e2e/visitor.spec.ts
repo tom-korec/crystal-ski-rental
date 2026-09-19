@@ -4,10 +4,10 @@ import { ACCOUNTS, openStoreDates, signIn } from './helpers';
 
 test.describe('visitor', () => {
   test('browses skis and stores without an account', async ({ page }) => {
+    // The landing page is the search itself, with signing in only an offer (FR-37).
     await page.goto('/');
-    await page.getByTestId('landing-find-skis').click();
-    await expect(page).toHaveURL('/search');
-    await expect(page.getByTestId('nav-sign-in')).toBeVisible();
+    await expect(page.getByTestId('customer-search')).toBeVisible();
+    await expect(page.getByTestId('landing-sign-in')).toBeVisible();
 
     const { store, from, to } = await openStoreDates(page, 'Jasná', 30, 3);
     await page.goto(`/search?store=${store.id}&from=${from}&to=${to}`);
@@ -20,7 +20,7 @@ test.describe('visitor', () => {
 
     // Pages that belong to an account still ask for one.
     await page.goto('/app/reservations');
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/sign-in');
   });
 
   test('reserves as a guest and books after signing in, replacing the account’s older reservation', async ({

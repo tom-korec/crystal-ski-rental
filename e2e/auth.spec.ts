@@ -4,13 +4,13 @@ import { signIn } from './helpers';
 
 test.describe('signing in and access by role', () => {
   test('a wrong password is refused with a message', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/sign-in');
     await page.getByLabel('E-mail').fill('customer@crystalskirental.test');
     await page.getByLabel('Password').fill('not-the-password');
     await page.getByTestId('signin-submit').click();
 
     await expect(page.getByTestId('auth-error')).toHaveText('Invalid email or password');
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/sign-in');
   });
 
   test('a customer lands on ski search and is kept out of the staff area', async ({ page }) => {
@@ -51,11 +51,11 @@ test.describe('signing in and access by role', () => {
     await expect(page).toHaveURL('/');
 
     await page.goto('/staff');
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/sign-in');
   });
 
   test('a visitor can sign up and becomes a customer', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/sign-in');
     await page.getByTestId('auth-switch').click();
     await page.getByTestId('signup-submit').click();
     await expect(page.getByText('Enter your name.')).toBeVisible();
@@ -86,7 +86,7 @@ test('a customer created by staff accepts the terms after signing in', async ({ 
   await expect(dialog).toBeHidden();
 
   const customer = await browser.newPage();
-  await customer.goto('/');
+  await customer.goto('/sign-in');
   await customer.getByLabel('E-mail').fill(email);
   await customer.getByLabel('Password').fill('Customer123!');
   await customer.getByTestId('signin-submit').click();

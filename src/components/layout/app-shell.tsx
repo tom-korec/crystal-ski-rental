@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 
 import { Button } from '~/components/ui/button';
 import { isCustomer, isStaff, type Role, roleSchema } from '~/lib/roles';
-import { homeForRole, LANDING } from '~/lib/routes';
+import { homeForRole, LANDING, SIGN_IN } from '~/lib/routes';
 
 import { AccountMenu } from './account-menu';
 import { CartLink } from './cart-link';
@@ -72,7 +72,7 @@ export async function AppShell({ account, navigation = true, children }: AppShel
                   variant="outline"
                   size="sm"
                   nativeButton={false}
-                  render={<Link href={LANDING} />}
+                  render={<Link href={SIGN_IN} />}
                   className="hidden md:inline-flex"
                   data-testid="nav-sign-in"
                 >

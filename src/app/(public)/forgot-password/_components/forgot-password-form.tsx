@@ -10,7 +10,7 @@ import { FormError } from '~/components/common/form-error';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
 import { type PasswordResetRequestInput, passwordResetRequestSchema } from '~/lib/auth-schema';
-import { LANDING } from '~/lib/routes';
+import { SIGN_IN } from '~/lib/routes';
 import { api } from '~/trpc/react';
 
 /** Asks for a reset link (FR-8). The confirmation never says whether the address has an account. */
@@ -54,7 +54,7 @@ export function ForgotPasswordForm() {
             </Button>
           </form>
         )}
-        <Button variant="link" className="w-full" nativeButton={false} render={<Link href={LANDING} />}>
+        <Button variant="link" className="w-full" nativeButton={false} render={<Link href={SIGN_IN} />}>
           {t('backToSignIn')}
         </Button>
       </CardContent>

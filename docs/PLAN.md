@@ -196,6 +196,8 @@ owner's manual deployment steps (§4 Part E).
 | --- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
 | 29  | `Add password reset by e-mail` | Nodemailer over SMTP with Mailpit in Docker Compose and CI, e-mail variables in the env schema, a delivery policy that never sends to reserved test domains and can capture them instead, Better Auth reset tokens sent after the response, forgot-password and reset-password pages, rate limits per address and per client, unit tests for the policy and an e2e test that reads the link from Mailpit (FR-8). | M    |
 
+| 30 | `Land visitors on ski search` | The landing page becomes the search itself: hero, the store-and-dates panel that hands over to `/search`, and a card per store with its address, phone and today's hours. Signing in and signing up move to `/sign-in`, where the demo accounts live, and the guards redirect there (FR-37, FR-12). | S |
+
 **Manual steps, done by the owner in the dashboards and documented in the README:**
 
 1. Create a GitHub repository and push `main`.

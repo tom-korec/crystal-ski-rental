@@ -1,22 +1,27 @@
-import { SearchIcon } from 'lucide-react';
+import { LogInIcon } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 
-import { AuthPanel } from '~/components/layout/auth-panel';
-import { DemoAccounts } from '~/components/layout/demo-accounts';
 import { DemoBanner } from '~/components/layout/demo-banner';
 import { HeroArt } from '~/components/layout/hero-art';
 import { Logo } from '~/components/layout/logo';
 import { SiteFooter } from '~/components/layout/site-footer';
 import { ThemeSwitcher } from '~/components/layout/theme-switcher';
 import { Button } from '~/components/ui/button';
-import { SEARCH } from '~/lib/routes';
+import { Skeleton } from '~/components/ui/skeleton';
+import { SIGN_IN } from '~/lib/routes';
 import { redirectIfSignedIn } from '~/server/better-auth/guards';
 
+import { LandingSearch } from './_components/landing-search';
+import { LandingStores } from './_components/landing-stores';
+
+/** Visitors land on the search, not on a sign-in form: an account is only needed to book (FR-37). */
 export default async function Landing() {
   await redirectIfSignedIn();
 
   const t = await getTranslations('landing');
+  const tAuth = await getTranslations('auth');
 
   return (
     <div className="relative isolate flex min-h-screen flex-col overflow-hidden">
@@ -25,10 +30,21 @@ export default async function Landing() {
 
       <header className="flex items-center justify-between gap-4 px-4 py-5 sm:px-10">
         <Logo />
-        <ThemeSwitcher className="bg-card" />
+        <div className="flex items-center gap-2">
+          <ThemeSwitcher className="bg-card" />
+          <Button
+            variant="secondary"
+            nativeButton={false}
+            render={<Link href={SIGN_IN} />}
+            data-testid="landing-sign-in"
+          >
+            <LogInIcon aria-hidden />
+            {tAuth('signIn')}
+          </Button>
+        </div>
       </header>
 
-      <main className="flex flex-1 flex-col items-center gap-10 px-4 pt-8 pb-20 sm:pt-16">
+      <main className="flex flex-1 flex-col items-center gap-12 px-4 pt-8 pb-20 sm:pt-12">
         <div className="flex max-w-4xl flex-col items-center gap-4 text-center [text-shadow:0_0_18px_rgb(243_248_252/0.95)] dark:[text-shadow:0_0_18px_rgb(7_16_31/0.95)]">
           <p className="text-secondary-foreground text-xs font-medium tracking-[0.2em] uppercase sm:text-sm dark:text-white/85">
             {t('eyebrow')}
@@ -41,20 +57,13 @@ export default async function Landing() {
           </p>
         </div>
 
-        <div className="flex w-full flex-col items-center gap-4">
-          <Button
-            size="lg"
-            nativeButton={false}
-            render={<Link href={SEARCH} />}
-            className="-mt-4 mb-2"
-            data-testid="landing-find-skis"
-          >
-            <SearchIcon aria-hidden />
-            {t('findSkis')}
-          </Button>
-          <AuthPanel />
-          <DemoAccounts />
+        <div className="w-full max-w-3xl">
+          <LandingSearch />
         </div>
+
+        <Suspense fallback={<Skeleton className="h-64 w-full max-w-5xl" />}>
+          <LandingStores />
+        </Suspense>
       </main>
       <SiteFooter />
     </div>

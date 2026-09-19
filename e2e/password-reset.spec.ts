@@ -14,7 +14,7 @@ test.describe('password reset', () => {
     await clearMailbox();
     const customer = newCustomer();
 
-    await page.goto('/');
+    await page.goto('/sign-in');
     await page.getByTestId('auth-switch').click();
     await page.getByLabel('Name').fill(customer.name);
     await page.getByLabel('E-mail').fill(customer.email);
@@ -27,6 +27,7 @@ test.describe('password reset', () => {
     await page.getByTestId('sign-out').click();
     await expect(page).toHaveURL('/');
 
+    await page.goto('/sign-in');
     await page.getByTestId('forgot-password').click();
     await expect(page).toHaveURL('/forgot-password');
     await page.getByLabel('E-mail').fill(customer.email);
@@ -44,7 +45,7 @@ test.describe('password reset', () => {
     await page.getByTestId('reset-submit').click();
     await expect(page.getByTestId('reset-done')).toBeVisible();
 
-    await page.goto('/');
+    await page.goto('/sign-in');
     await page.getByLabel('E-mail').fill(customer.email);
     await page.getByLabel('Password').fill(newPassword);
     await page.getByTestId('signin-submit').click();

@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 
 import { hasAcceptedCurrentTerms } from '~/lib/legal';
 import { isAdmin, isCustomer, isStaff } from '~/lib/roles';
-import { ACCEPT_TERMS, APP_HOME, homeForRole, LANDING, STAFF_HOME } from '~/lib/routes';
+import { ACCEPT_TERMS, APP_HOME, homeForRole, SIGN_IN, STAFF_HOME } from '~/lib/routes';
 
 import { getSession } from './server';
 
@@ -20,14 +20,14 @@ interface RequireUserOptions {
 }
 
 /**
- * The signed-in user, or a redirect to the landing page, which has the sign-in form. A customer who has
+ * The signed-in user, or a redirect to the sign-in page. A customer who has
  * not accepted the current Terms and Privacy policy is sent to accept them first (FR-7).
  */
 export async function requireUser({ allowPendingTerms = false }: RequireUserOptions = {}) {
   const user = (await getSession())?.user;
 
   // A deleted account's cookie stays valid until it expires or its sessions are removed.
-  if (!user || user.deletedAt) redirect(LANDING);
+  if (!user || user.deletedAt) redirect(SIGN_IN);
 
   if (!allowPendingTerms && isCustomer(user.role) && !hasAcceptedCurrentTerms(user)) redirect(ACCEPT_TERMS);
 
