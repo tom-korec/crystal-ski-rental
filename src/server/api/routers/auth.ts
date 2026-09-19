@@ -1,12 +1,14 @@
 import { TRPCError } from '@trpc/server';
 import { APIError } from 'better-auth/api';
 
-import { signInSchema, signUpSchema } from '~/lib/auth-schema';
+import { passwordResetRequestSchema, passwordResetSchema, signInSchema, signUpSchema } from '~/lib/auth-schema';
 import { LEGAL_VERSIONS } from '~/lib/legal';
+import { RESET_PASSWORD } from '~/lib/routes';
 import { passwordChangeSchema, profileUpdateSchema } from '~/lib/profile-schema';
 import { clientKey, isRateLimited, RATE_LIMITS, recordAttempt } from '~/server/api/rate-limit';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '~/server/api/trpc';
 import { auth } from '~/server/better-auth';
+import { isEmailConfigured } from '~/server/email/send';
 
 // Sign-in and sign-up go through tRPC so the forms share one typed API and one set of Zod schemas.
 // Better Auth sets the session cookie on its own response, so it is copied onto the tRPC response.
@@ -22,6 +24,7 @@ function forwardCookies(from: Headers, to: Headers | undefined): void {
 }
 
 const TOO_MANY_ATTEMPTS = 'Too many attempts. Please wait a few minutes and try again.';
+const EMAIL_UNAVAILABLE = 'Password reset is unavailable right now. Please ask us to set a new password.';
 
 function toTRPCError(error: unknown): TRPCError {
   if (!(error instanceof APIError)) {
@@ -118,6 +121,54 @@ export const authRouter = createTRPCRouter({
       }
 
       throw failure;
+    }
+  }),
+
+  /**
+   * Asks for a reset link (FR-8). The answer is the same whether or not the address has an account, so
+   * it never reveals who is registered; seeded demo accounts get no link at all (they share one public
+   * password), which the send policy enforces.
+   */
+  requestPasswordReset: publicProcedure.input(passwordResetRequestSchema).mutation(async ({ ctx, input }) => {
+    const clientLimit = `password-reset:client:${clientKey(ctx.headers)}`;
+    const accountLimit = `password-reset:account:${input.email.toLowerCase()}`;
+
+    if (
+      (await isRateLimited(ctx.db, clientLimit, RATE_LIMITS.passwordResetPerClient)) ||
+      (await isRateLimited(ctx.db, accountLimit, RATE_LIMITS.passwordResetPerAccount))
+    ) {
+      throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: TOO_MANY_ATTEMPTS });
+    }
+    await Promise.all([
+      recordAttempt(ctx.db, clientLimit, RATE_LIMITS.passwordResetPerClient),
+      recordAttempt(ctx.db, accountLimit, RATE_LIMITS.passwordResetPerAccount),
+    ]);
+
+    if (!isEmailConfigured()) {
+      throw new TRPCError({ code: 'PRECONDITION_FAILED', message: EMAIL_UNAVAILABLE });
+    }
+
+    try {
+      await auth.api.requestPasswordReset({
+        body: { email: input.email, redirectTo: RESET_PASSWORD },
+        headers: ctx.headers,
+      });
+    } catch (error) {
+      // An unknown address, a closed mailbox or a slow provider all look the same to the caller.
+      console.error('Requesting a password reset failed:', error);
+    }
+
+    return { requested: true };
+  }),
+
+  /** Sets a new password from the link's one-time token, which Better Auth checks and then spends. */
+  resetPassword: publicProcedure.input(passwordResetSchema).mutation(async ({ input }) => {
+    try {
+      await auth.api.resetPassword({ body: { newPassword: input.password, token: input.token } });
+
+      return { reset: true };
+    } catch (error) {
+      throw toTRPCError(error);
     }
   }),
 

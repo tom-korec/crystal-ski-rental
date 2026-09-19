@@ -51,6 +51,8 @@ const databaseUrl = localTestDatabaseUrl();
 export const testPort = Number(process.env.E2E_PORT ?? fromFile.E2E_PORT ?? 3100);
 export const testBaseUrl = `http://localhost:${testPort}`;
 
+export const mailpitUrl = process.env.MAILPIT_URL ?? fromFile.MAILPIT_URL ?? 'http://127.0.0.1:8025';
+
 export const testServerEnv = {
   BETTER_AUTH_SECRET: required('BETTER_AUTH_SECRET'),
   // Always the server under test, so auth callbacks reach the port Playwright started.
@@ -59,4 +61,8 @@ export const testServerEnv = {
   // prisma.config.ts migrates through DATABASE_URL_UNPOOLED when it is set, which a pulled Vercel env would.
   DATABASE_URL_UNPOOLED: databaseUrl,
   PORT: String(testPort),
+  // Mailpit accepts everything and delivers nothing, so the suite can read what the app sent.
+  SMTP_HOST: process.env.SMTP_HOST ?? fromFile.SMTP_HOST ?? '127.0.0.1',
+  SMTP_PORT: process.env.SMTP_PORT ?? fromFile.SMTP_PORT ?? '1025',
+  EMAIL_FROM: required('EMAIL_FROM'),
 };

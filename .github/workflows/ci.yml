@@ -56,6 +56,12 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      mailpit:
+        # Catches the e-mails the app sends, so the password reset test can read the link.
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025
+          - 8025:8025
     env:
       # Set in the environment, these take precedence over the local values in .env.test.
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/crystal_ski_rental_test

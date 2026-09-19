@@ -28,8 +28,21 @@
       "name": "Enter your name.",
       "email": "Enter a valid e-mail address.",
       "password": "Use at least {min} characters.",
-      "passwordRequired": "Enter your password."
-    }
+      "passwordRequired": "Enter your password.",
+      "newPassword": "Use at least {min} characters."
+    },
+    "forgotPassword": "Forgot your password?",
+    "forgotTitle": "Reset your password",
+    "forgotDescription": "Enter the e-mail address of your account and we will send you a link to set a new password.",
+    "sendResetLink": "Send reset link",
+    "resetLinkSent": "If an account uses that address, a reset link is on its way. The link is valid for one hour.",
+    "backToSignIn": "Back to sign in",
+    "resetTitle": "Set a new password",
+    "resetDescription": "Choose a new password for your account.",
+    "newPassword": "New password",
+    "setPassword": "Save new password",
+    "resetDone": "Your password is set. You can sign in with it now.",
+    "resetLinkInvalid": "This link is no longer valid. Ask for a new one."
   },
   "nav": {
     "primary": "Main",
@@ -932,5 +945,19 @@
     "signUpRequired": "Accept the terms and the privacy policy to create an account.",
     "bookingAgree": "I accept the <agreement>Rental agreement</agreement> for these skis.",
     "bookingRequired": "Accept the rental agreement to book."
+  },
+  "emails": {
+    "brand": "Crystal Ski Rental",
+    "signature": "Crystal Ski Rental",
+    "linkFallback": "If the button does not work, open this link:",
+    "passwordReset": {
+      "subject": "Reset your Crystal Ski Rental password",
+      "title": "Reset your password",
+      "greeting": "Hello {name},",
+      "intro": "Someone asked to set a new password for your account. Choose one here:",
+      "action": "Set a new password",
+      "expiry": "The link works once and expires in one hour.",
+      "ignore": "If this was not you, ignore this e-mail. Your password stays as it is."
+    }
   }
 }

@@ -18,13 +18,14 @@ Requires Node 24+, pnpm 9 and Docker.
 ```bash
 pnpm install
 cp .env.example .env     # then set BETTER_AUTH_SECRET (openssl rand -base64 32)
-pnpm db:up               # Postgres 17 on localhost:5433
+pnpm db:up               # Postgres 17 on localhost:5433 and Mailpit on localhost:8025
 pnpm db:migrate          # create the schema
 pnpm db:seed             # demo stores, fleet, accounts, reservations and ratings
 pnpm dev                 # http://localhost:3000
 ```
 
-Postgres listens on **5433** so it does not collide with another Postgres on the default port.
+Postgres listens on **5433** so it does not collide with another Postgres on the default port. Mailpit
+catches every e-mail the app sends and delivers none of it; read them at http://localhost:8025.
 
 ### Demo accounts
 
@@ -76,7 +77,7 @@ the result and writes it; it never generates anything.
 | `pnpm format:write`     | Prettier                                    |
 | `pnpm test`             | Unit tests (Vitest)                         |
 | `pnpm test:e2e`         | End-to-end tests (Playwright, own database) |
-| `pnpm db:up`            | Start Postgres in Docker                    |
+| `pnpm db:up`            | Start Postgres and Mailpit in Docker        |
 | `pnpm db:generate`      | Create and apply a migration                |
 | `pnpm db:migrate`       | Apply pending migrations                    |
 | `pnpm db:seed`          | Reset the database to the demo data         |
@@ -239,6 +240,22 @@ per client an hour. Only failures count, so someone who knows their password is 
 Better Auth's own HTTP endpoints for those two actions are closed, since calling them directly would
 bypass the limits. The client is taken from `x-forwarded-for`, which Vercel sets itself.
 
+### E-mail goes nowhere by accident
+
+One Nodemailer transport over SMTP serves every environment, so switching providers is configuration,
+not code: Mailpit locally and in CI, Resend in production. Without `SMTP_HOST` and `EMAIL_FROM` nothing
+is sent and the password reset says so instead of failing.
+
+`src/lib/email-address.ts` decides where a message may go, as a pure function with its own tests. The
+seeded accounts use reserved domains (`.test`, `example.com`), which no mail server can deliver to:
+sending to them would bounce and cost the sending domain its reputation. In production those messages
+go to a capture inbox (`EMAIL_CAPTURE_ADDRESS`) with the original recipient in the subject, so they can
+be read in one place. A password reset is the exception: it is never captured, because every seeded
+account shares the public demo password and the link would hand the account over (FR-8).
+
+Sending happens in `after()`, once the response is on its way, so a slow mail server cannot delay a
+reset or a booking, and the answer is the same whether or not the address has an account.
+
 ### Translations
 
 The app ships in English, but every user-facing string is in `messages/en.json` and message keys are
@@ -288,7 +305,9 @@ The public demo runs on **Vercel** (Hobby) with **Neon** Postgres (Free), both i
 One-time setup, in the dashboards:
 
 1. Create a Neon project in `aws-eu-central-1` with Postgres 17.
-2. Import the GitHub repository into Vercel and add `BETTER_AUTH_SECRET` (`openssl rand -base64 32`).
+2. Import the GitHub repository into Vercel and add `BETTER_AUTH_SECRET` (`openssl rand -base64 32`),
+   plus the e-mail variables for production: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`,
+   `EMAIL_FROM` and `EMAIL_CAPTURE_ADDRESS`.
    Leave `NEXT_PUBLIC_DEMO_MODE` unset: the one-click sign-in uses the committed passwords, which a
    deployment does not accept.
 3. Install the Neon integration on the Vercel project, and turn on automatic deletion of preview

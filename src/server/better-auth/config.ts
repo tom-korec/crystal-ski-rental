@@ -1,3 +1,5 @@
+import { after } from 'next/server';
+
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { APIError } from 'better-auth/api';
@@ -5,6 +7,7 @@ import { APIError } from 'better-auth/api';
 import { env } from '~/env';
 import { appUrl, trustedOrigins } from '~/lib/app-url';
 import { db } from '~/server/db';
+import { sendPasswordResetEmail } from '~/server/email/password-reset';
 
 // Identical to Better Auth's own wrong-password message, so a deleted account is indistinguishable from it.
 export const INVALID_CREDENTIALS = 'Invalid email or password';
@@ -16,6 +19,14 @@ export const auth = betterAuth({
   database: prismaAdapter(db, { provider: 'postgresql' }),
   emailAndPassword: {
     enabled: true,
+    resetPasswordTokenExpiresIn: 60 * 60,
+    // Sent after the response: the answer must not wait for the mail server, and it says the same
+    // thing whether or not the address has an account.
+    sendResetPassword: ({ user, url }) => {
+      after(() => sendPasswordResetEmail({ to: user.email, name: user.name, url }));
+
+      return Promise.resolve();
+    },
   },
   // Every sign-in and sign-up goes through the tRPC auth router, which rate-limits them. Better Auth's own
   // HTTP endpoints for the same actions would bypass that, so they are closed; server-side calls still work.

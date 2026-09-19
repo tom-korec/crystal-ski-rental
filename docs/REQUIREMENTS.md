@@ -95,6 +95,9 @@ customer account.
   account created by staff, or after a new version) is asked right after signing in and can use nothing
   else until they accept or sign out. The accepted versions and times are kept on the account, and staff
   see them. Data export and erasure are not part of release 1.
+- **FR-8** Anyone can ask for a **password reset** by e-mail. The answer is the same whether or not the
+  address has an account, and the link works once and expires after an hour. Accounts on reserved test
+  domains (the demo data) are never sent a link, because their password is public.
 
 ### 4.2 Catalogue (admin)
 
@@ -337,7 +340,8 @@ Models and brands share the **Models** page, with a switch between their tables.
 ## 8. Out of scope
 
 - Payments, issuing invoices, VAT. The invoice address is only kept for later (FR-6).
-- E-mail or SMS notifications. Staff reply to feedback from their own mail client.
+- E-mail about bookings (confirmation, reminder, cancellation) and SMS of any kind. Only the password
+  reset e-mail is in scope (FR-8). Staff reply to feedback from their own mail client.
 - Pickup and return times, early pickup, and reasons for early or late returns.
 - Blocking new bookings of a ski that is overdue for return. Staff handle the clash at the counter.
 - Maps and geolocation.

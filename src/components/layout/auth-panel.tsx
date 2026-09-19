@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -14,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { handOverGuestCart } from '~/hooks/use-reservation-cart';
 import { MIN_PASSWORD_LENGTH, type SignInInput, signInSchema, type SignUpInput, signUpSchema } from '~/lib/auth-schema';
 import { isCustomer } from '~/lib/roles';
-import { APP_HOME, homeForRole } from '~/lib/routes';
+import { APP_HOME, FORGOT_PASSWORD, homeForRole } from '~/lib/routes';
 import { cn } from '~/lib/utils';
 import { api } from '~/trpc/react';
 
@@ -108,6 +109,16 @@ function SignInForm({ customerDestination }: AuthFormProps) {
       <FormError message={signIn.error?.message} data-testid="auth-error" />
       <Button type="submit" className="w-full" disabled={signIn.isPending} data-testid="signin-submit">
         {signIn.isPending ? t('submitting') : t('signIn')}
+      </Button>
+      <Button
+        type="button"
+        variant="link"
+        className="w-full"
+        nativeButton={false}
+        render={<Link href={FORGOT_PASSWORD} />}
+        data-testid="forgot-password"
+      >
+        {t('forgotPassword')}
       </Button>
     </form>
   );
