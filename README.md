@@ -240,6 +240,18 @@ per client an hour. Only failures count, so someone who knows their password is 
 Better Auth's own HTTP endpoints for those two actions are closed, since calling them directly would
 bypass the limits. The client is taken from `x-forwarded-for`, which Vercel sets itself.
 
+### Optimised for search, kept out of it
+
+The public pages carry the metadata a real site needs: canonical URLs, Open Graph and Twitter cards, a
+generated share image, a sitemap and `SkiRental` structured data built from the stores' own addresses and
+opening hours. `SEARCH_INDEXING` decides whether they may be indexed, and it is off, so every page sends
+`noindex, nofollow`.
+
+`robots.ts` still allows crawling the public pages, because a crawler has to fetch a page to see its
+`noindex`, and because Google's own testing tools cannot inspect what `robots.txt` blocks. The signed-in
+areas and the API are never crawlable. The demo describes four stores that do not exist, so keeping it out
+of results matters more than being found.
+
 ### E-mail goes nowhere by accident
 
 One Nodemailer transport over SMTP serves every environment, so switching providers is configuration,

@@ -5,12 +5,12 @@ import { Suspense } from 'react';
 import { PageHeader } from '~/components/common/page-header';
 import { CardGridSkeleton } from '~/components/common/skeletons/card-grid-skeleton';
 import { SkiSearch } from '~/components/skis/ski-search';
-import { APP_HOME } from '~/lib/routes';
+import { APP_HOME, SEARCH } from '~/lib/routes';
 import { type PageSearchParams, redirectSignedInShopper } from '~/server/better-auth/guards';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('search');
-  return { title: t('title') };
+  return { title: t('title'), alternates: { canonical: SEARCH } };
 }
 
 interface PublicSearchPageProps {

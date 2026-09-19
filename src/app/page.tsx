@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { LogInIcon } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
@@ -10,11 +11,18 @@ import { SiteFooter } from '~/components/layout/site-footer';
 import { ThemeSwitcher } from '~/components/layout/theme-switcher';
 import { Button } from '~/components/ui/button';
 import { Skeleton } from '~/components/ui/skeleton';
-import { SIGN_IN } from '~/lib/routes';
+import { LANDING, SIGN_IN } from '~/lib/routes';
 import { redirectIfSignedIn } from '~/server/better-auth/guards';
 
 import { LandingSearch } from './_components/landing-search';
 import { LandingStores } from './_components/landing-stores';
+import { StructuredData } from './_components/structured-data';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('landing');
+
+  return { description: t('subtitle'), alternates: { canonical: LANDING } };
+}
 
 /** Visitors land on the search, not on a sign-in form: an account is only needed to book (FR-37). */
 export default async function Landing() {
@@ -25,6 +33,7 @@ export default async function Landing() {
 
   return (
     <div className="relative isolate flex min-h-screen flex-col overflow-hidden">
+      <StructuredData />
       <HeroArt />
       <DemoBanner />
 

@@ -4,6 +4,12 @@ import { z } from 'zod';
 export const env = createEnv({
   server: {
     BETTER_AUTH_SECRET: z.string().min(32),
+    // Off by default: the public demo is fully SEO-optimised but asks search engines not to index it,
+    // so it never competes with real ski rentals (see .claude/seo-plan.md).
+    SEARCH_INDEXING: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
     // Optional: on Vercel the URL is worked out from the variables below (see src/lib/app-url.ts).
     BETTER_AUTH_URL: z.url().optional(),
     DATABASE_URL: z.url(),
@@ -36,6 +42,7 @@ export const env = createEnv({
   runtimeEnv: {
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
+    SEARCH_INDEXING: process.env.SEARCH_INDEXING,
     DATABASE_URL: process.env.DATABASE_URL,
     SMTP_HOST: process.env.SMTP_HOST,
     SMTP_PORT: process.env.SMTP_PORT,
