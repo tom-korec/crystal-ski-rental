@@ -42,8 +42,14 @@ export const storeUpdateSchema = z.object({ id: z.uuid(), ...storeFields });
 
 export type StoreCreateInput = z.input<typeof storeCreateSchema>;
 export type StoreUpdateInput = z.input<typeof storeUpdateSchema>;
+/** The parsed shapes, which is what a procedure hands on to the service. */
+export type StoreCreate = z.infer<typeof storeCreateSchema>;
+export type StoreUpdate = z.infer<typeof storeUpdateSchema>;
 
 /** Set a store's hours for one date, or close it (BR-7). */
 export const specialDaySetSchema = specialDaySchema.extend({ storeId: z.uuid() });
 
 export const specialDayRemoveSchema = z.object({ storeId: z.uuid(), date: specialDaySchema.shape.date });
+
+export type SpecialDaySetInput = z.infer<typeof specialDaySetSchema>;
+export type SpecialDayRemoveInput = z.infer<typeof specialDayRemoveSchema>;

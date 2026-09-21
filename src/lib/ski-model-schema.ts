@@ -22,3 +22,4 @@ export const skiModelListSchema = z.object({ brandId: z.uuid().optional() }).pre
 
 export type SkiModelCreateInput = z.infer<typeof skiModelCreateSchema>;
 export type SkiModelUpdateInput = z.infer<typeof skiModelUpdateSchema>;
+export type SkiModelListInput = z.infer<typeof skiModelListSchema>;

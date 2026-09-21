@@ -5,12 +5,15 @@ import { asClass, asValue, type AwilixContainer, createContainer, InjectionMode 
 import { db } from '~/server/db';
 import { AddressService } from '~/server/services/address-service';
 import { AuthService } from '~/server/services/auth-service';
+import { BrandService } from '~/server/services/brand-service';
 import { SystemClock } from '~/server/services/clock';
 import { Mailer } from '~/server/services/mailer';
 import { RateLimiter } from '~/server/services/rate-limiter';
 import { RatingService } from '~/server/services/rating-service';
 import { ReservationService } from '~/server/services/reservation-service';
+import { SkiModelService } from '~/server/services/ski-model-service';
 import { SkiService } from '~/server/services/ski-service';
+import { StoreService } from '~/server/services/store-service';
 import { UserService } from '~/server/services/user-service';
 import type { Services } from '~/server/services/types';
 
@@ -31,12 +34,15 @@ function buildContainer(): AwilixContainer<Services> {
     db: asValue(db),
     addresses: asClass(AddressService).scoped(),
     auth: asClass(AuthService).scoped(),
+    brands: asClass(BrandService).scoped(),
     clock: asClass(SystemClock).singleton(),
     mailer: asClass(Mailer).singleton(),
     rateLimiter: asClass(RateLimiter).singleton(),
     ratings: asClass(RatingService).scoped(),
     reservations: asClass(ReservationService).scoped(),
+    skiModels: asClass(SkiModelService).scoped(),
     skis: asClass(SkiService).scoped(),
+    stores: asClass(StoreService).scoped(),
     users: asClass(UserService).scoped(),
   });
 
