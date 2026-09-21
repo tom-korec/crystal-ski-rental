@@ -1,26 +1,20 @@
-import { gendersMatching } from '~/lib/catalog';
-import { todayUtc, toUtcDate, utcDaysBetween } from '~/lib/date';
 import { mayChangeSkisAt, type StaffActor } from '~/lib/account-rules';
+import { gendersMatching } from '~/lib/catalog';
+import { toUtcDate, utcDaysBetween } from '~/lib/date';
+import type { IdInput } from '~/lib/id-schema';
 import { closedRentalDays, rentalDays as rentalDaysOf } from '~/lib/opening-hours';
-import { idSchema } from '~/lib/id-schema';
 import { BATCH_SIZE, nextCursor } from '~/lib/pagination';
 import { quoteRental } from '~/lib/pricing';
-import {
-  skiCreateSchema,
-  type SkiListInput,
-  skiListSchema,
-  skiSearchSchema,
-  type SkiSort,
-  skiUpdateSchema,
-} from '~/lib/ski-schema';
+import type { SkiCreateInput, SkiListInput, SkiSearch, SkiSort, SkiUpdateInput } from '~/lib/ski-schema';
 import { conflict, forbidden, isPrismaError, notFound, rethrowPrismaError } from '~/server/api/errors';
 import { overlappingItem } from '~/server/api/overlap';
-import { storeWithHours } from '~/server/api/store-hours';
 import { countOf } from '~/server/api/plural';
 import { skiPublicSelect, withPlainModel } from '~/server/api/selects';
-import { createTRPCRouter, publicProcedure, staffProcedure } from '~/server/api/trpc';
+import { storeWithHours } from '~/server/api/store-hours';
+import type { Clock } from './clock';
+import type { Services } from './types';
 
-import type { Prisma } from '../../../../generated/prisma/client';
+import type { Prisma, PrismaClient } from '../../../generated/prisma/client';
 
 // Skis are soft-deleted once they have history, so reservations keep pointing at them (BR-32). Lists
 // hide deleted skis; `byId` returns them with `deletedAt` so history can label them.
@@ -87,16 +81,17 @@ const SEARCH_ORDER: Record<SkiSort, Prisma.SkiOrderByWithRelationInput[]> = {
   ],
 };
 
-/** Managers change skis only at their own store (FR-64); the message says so rather than "not allowed". */
-function assertMayChangeSkisAt(actor: StaffActor, storeId: string): void {
-  if (!mayChangeSkisAt(actor, storeId)) {
-    throw forbidden('You can only add or change skis at your own store.');
-  }
-}
+export class SkiService {
+  private readonly db: PrismaClient;
+  private readonly clock: Clock;
 
-export const skiRouter = createTRPCRouter({
+  constructor({ db, clock }: Services) {
+    this.db = db;
+    this.clock = clock;
+  }
+
   /** The fleet (FR-20). Includes skis taken out of rental: staff need to see those. */
-  list: staffProcedure.input(skiListSchema).query(async ({ ctx, input }) => {
+  async list(input: SkiListInput) {
     const where: Prisma.SkiWhereInput = {
       ...skiWhere(input),
       model: modelWhere(input),
@@ -104,33 +99,32 @@ export const skiRouter = createTRPCRouter({
     };
     const cursor = input.cursor ?? 0;
 
-    const [rows, total] = await ctx.db.$transaction([
-      ctx.db.ski.findMany({
+    const [rows, total] = await this.db.$transaction([
+      this.db.ski.findMany({
         where,
         select: skiStaffSelect,
         orderBy: [{ inventoryCode: 'asc' }],
         skip: cursor,
         take: BATCH_SIZE,
       }),
-      ctx.db.ski.count({ where }),
+      this.db.ski.count({ where }),
     ]);
 
     return { items: rows.map(withPlainModel), total, nextCursor: nextCursor(cursor, rows.length, total) };
-  }),
+  }
 
   /**
    * The customer search (FR-30…34): in the fleet, offered for rental, and free on every chosen day. Pairs
    * of the same model and length are one result, with the free pairs in the order they are handed out.
-   * Each result carries the quote for the chosen dates, computed exactly as the booking will be. Public, so
-   * visitors can browse before they have an account (FR-37).
+   * Each result carries the quote for the chosen dates, computed exactly as the booking will be.
    */
-  search: publicProcedure.input(skiSearchSchema).query(async ({ ctx, input }) => {
+  async search(input: SkiSearch) {
     const startDate = toUtcDate(input.startDate);
     const endDate = toUtcDate(input.endDate);
     const rentalDays = utcDaysBetween(startDate, endDate);
 
     // Pickup and return need the store open (BR-7): on a closed day there is nothing to offer.
-    const store = await storeWithHours(ctx.db, input.storeId);
+    const store = await storeWithHours(this.db, input.storeId);
     const days = store ? rentalDaysOf(store, input) : null;
     const closedDays = days ? closedRentalDays(days) : [];
     if (!days || closedDays.length > 0) {
@@ -138,7 +132,7 @@ export const skiRouter = createTRPCRouter({
     }
 
     // One store's free pairs are few enough to group in memory, which keeps batches whole results.
-    const rows = await ctx.db.ski.findMany({
+    const rows = await this.db.ski.findMany({
       where: {
         ...skiWhere(input),
         isAvailable: true,
@@ -176,48 +170,46 @@ export const skiRouter = createTRPCRouter({
       days,
       closedDays,
     };
-  }),
+  }
 
   /** Staff detail (FR-23). Returns deleted skis too, because past reservations still point at them. */
-  byId: staffProcedure.input(idSchema).query(async ({ ctx, input }) => {
-    const row = await ctx.db.ski.findUnique({ where: { id: input.id }, select: skiStaffSelect });
+  async byId({ id }: IdInput) {
+    const row = await this.db.ski.findUnique({ where: { id }, select: skiStaffSelect });
 
     if (!row) throw notFound(NOT_FOUND);
 
     return withPlainModel(row);
-  }),
+  }
 
-  create: staffProcedure.input(skiCreateSchema).mutation(async ({ ctx, input }) => {
-    assertMayChangeSkisAt(ctx.session.user, input.storeId);
+  async create(actor: StaffActor, input: SkiCreateInput) {
+    this.assertMayChangeSkisAt(actor, input.storeId);
 
     try {
-      return withPlainModel(await ctx.db.ski.create({ data: input, select: skiStaffSelect }));
+      return withPlainModel(await this.db.ski.create({ data: input, select: skiStaffSelect }));
     } catch (error) {
       rethrowPrismaError(error, { P2002: CODE_TAKEN, P2003: REFERENCE_MISSING });
     }
-  }),
+  }
 
   /**
    * Taking a ski out of rental is never refused: it stops new bookings and honours existing ones
    * (BR-22). Moving it to another store is refused while a customer expects it where they booked it
    * (BR-30), checked on the change rather than the value, since the edit form resubmits every field.
    */
-  update: staffProcedure.input(skiUpdateSchema).mutation(async ({ ctx, input }) => {
-    const { id, ...data } = input;
-
-    const existing = await ctx.db.ski.findFirst({ where: { id, deletedAt: null }, select: { storeId: true } });
+  async update(actor: StaffActor, { id, ...data }: SkiUpdateInput) {
+    const existing = await this.db.ski.findFirst({ where: { id, deletedAt: null }, select: { storeId: true } });
 
     if (!existing) throw notFound(NOT_FOUND);
 
     // Both ends of a move: a manager can neither take a ski from another store nor send one there.
-    assertMayChangeSkisAt(ctx.session.user, existing.storeId);
-    if (data.storeId !== undefined) assertMayChangeSkisAt(ctx.session.user, data.storeId);
+    this.assertMayChangeSkisAt(actor, existing.storeId);
+    if (data.storeId !== undefined) this.assertMayChangeSkisAt(actor, data.storeId);
 
     if (data.storeId !== undefined && data.storeId !== existing.storeId) {
-      const blocking = await ctx.db.reservation.count({
+      const blocking = await this.db.reservation.count({
         where: {
           items: { some: { skiId: id } },
-          OR: [{ status: 'ACTIVE' }, { status: 'CREATED', endDate: { gt: todayUtc() } }],
+          OR: [{ status: 'ACTIVE' }, { status: 'CREATED', endDate: { gt: this.clock.todayUtc() } }],
         },
       });
 
@@ -229,29 +221,26 @@ export const skiRouter = createTRPCRouter({
     }
 
     try {
-      return withPlainModel(await ctx.db.ski.update({ where: { id }, data, select: skiStaffSelect }));
+      return withPlainModel(await this.db.ski.update({ where: { id }, data, select: skiStaffSelect }));
     } catch (error) {
       rethrowPrismaError(error, { P2002: CODE_TAKEN, P2003: REFERENCE_MISSING, P2025: NOT_FOUND });
     }
-  }),
+  }
 
   /**
    * Refused while any reservation still holds the ski (BR-31). Without any history the ski is removed
    * completely; with history it is soft-deleted and taken out of rental (BR-32).
    */
-  delete: staffProcedure.input(idSchema).mutation(async ({ ctx, input }) => {
-    const ski = await ctx.db.ski.findFirst({
-      where: { id: input.id, deletedAt: null },
-      select: { id: true, storeId: true },
-    });
+  async delete(actor: StaffActor, { id }: IdInput) {
+    const ski = await this.db.ski.findFirst({ where: { id, deletedAt: null }, select: { id: true, storeId: true } });
 
     if (!ski) throw notFound(NOT_FOUND);
 
-    assertMayChangeSkisAt(ctx.session.user, ski.storeId);
+    this.assertMayChangeSkisAt(actor, ski.storeId);
 
-    const [open, history] = await ctx.db.$transaction([
-      ctx.db.reservationItem.count({ where: { skiId: ski.id, holdsDates: true } }),
-      ctx.db.reservationItem.count({ where: { skiId: ski.id } }),
+    const [open, history] = await this.db.$transaction([
+      this.db.reservationItem.count({ where: { skiId: ski.id, holdsDates: true } }),
+      this.db.reservationItem.count({ where: { skiId: ski.id } }),
     ]);
 
     if (open > 0) {
@@ -262,7 +251,7 @@ export const skiRouter = createTRPCRouter({
 
     if (history === 0) {
       try {
-        await ctx.db.ski.delete({ where: { id: ski.id } });
+        await this.db.ski.delete({ where: { id: ski.id } });
         return { id: ski.id, removedCompletely: true };
       } catch (error) {
         // A reservation arrived since the count. Soft-deleting instead is always safe.
@@ -270,8 +259,18 @@ export const skiRouter = createTRPCRouter({
       }
     }
 
-    await ctx.db.ski.update({ where: { id: ski.id }, data: { deletedAt: new Date(), isAvailable: false } });
+    await this.db.ski.update({ where: { id: ski.id }, data: { deletedAt: this.clock.now(), isAvailable: false } });
 
     return { id: ski.id, removedCompletely: false };
-  }),
-});
+  }
+
+  /**
+   * Managers change skis only at their own store (FR-64); the message says so rather than "not allowed".
+   * The actor is handed in by the procedure — the service never reads the session.
+   */
+  private assertMayChangeSkisAt(actor: StaffActor, storeId: string): void {
+    if (!mayChangeSkisAt(actor, storeId)) {
+      throw forbidden('You can only add or change skis at your own store.');
+    }
+  }
+}

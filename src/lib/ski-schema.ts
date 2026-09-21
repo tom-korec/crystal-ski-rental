@@ -90,4 +90,6 @@ export type SkiCreateInput = z.infer<typeof skiCreateSchema>;
 export type SkiUpdateInput = z.infer<typeof skiUpdateSchema>;
 export type SkiListInput = z.infer<typeof skiListSchema>;
 export type SkiSearchInput = z.input<typeof skiSearchSchema>;
+/** The parsed shape, which is what a procedure hands on to the service. */
+export type SkiSearch = z.infer<typeof skiSearchSchema>;
 export type SkiSearchFilters = z.output<typeof skiSearchFiltersSchema>;

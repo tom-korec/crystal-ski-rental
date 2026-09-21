@@ -31,3 +31,4 @@ export const ratingSchema = z
 export const modelRatingsSchema = z.object({ modelId: z.uuid(), page: pageSchema });
 
 export type RatingInput = z.infer<typeof ratingSchema>;
+export type ModelRatingsInput = z.infer<typeof modelRatingsSchema>;
