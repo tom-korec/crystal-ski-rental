@@ -81,6 +81,9 @@ export const addressRemoveSchema = z.object({ kind: z.enum(ADDRESS_KINDS) });
 export type MailingAddressInput = z.input<typeof mailingAddressSchema>;
 export type InvoiceAddressInput = z.input<typeof invoiceAddressSchema>;
 export type AddressSaveInput = z.input<typeof addressSaveSchema>;
+/** The parsed shapes, which is what a procedure hands on to the service. */
+export type AddressSave = z.infer<typeof addressSaveSchema>;
+export type AddressRemoveInput = z.infer<typeof addressRemoveSchema>;
 
 /** Slovak and Czech postal codes are shown as "031 01"; others as stored. */
 export function formatPostalCode(zipCode: string, country: string): string {

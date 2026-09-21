@@ -1,7 +1,10 @@
+import type { AddressService } from './address-service';
+import type { AuthService } from './auth-service';
 import type { Clock } from './clock';
 import type { Mailer } from './mailer';
 import type { ReservationService } from './reservation-service';
 import type { SkiService } from './ski-service';
+import type { UserService } from './user-service';
 import type { RateLimiter } from './rate-limiter';
 import type { RatingService } from './rating-service';
 
@@ -13,10 +16,13 @@ import type { PrismaClient } from '../../../generated/prisma/client';
  */
 export interface Services {
   db: PrismaClient;
+  addresses: AddressService;
+  auth: AuthService;
   clock: Clock;
   mailer: Mailer;
   rateLimiter: RateLimiter;
   ratings: RatingService;
   reservations: ReservationService;
   skis: SkiService;
+  users: UserService;
 }

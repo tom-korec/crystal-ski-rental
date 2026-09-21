@@ -48,6 +48,9 @@ export const userListSchema = z
   .prefault({});
 
 export type UserCreateInput = z.input<typeof userCreateSchema>;
+/** The parsed shapes, which is what a procedure hands on to the service. */
+export type UserCreate = z.infer<typeof userCreateSchema>;
+export type UserIdInput = z.infer<typeof userIdSchema>;
 export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 export type UserEditInput = z.infer<typeof userEditSchema>;
 export type UserListInput = z.infer<typeof userListSchema>;
