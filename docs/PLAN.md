@@ -213,6 +213,10 @@ owner's manual deployment steps (§4 Part E).
 
 | 38 | `Retire the database from the context` | `db` leaves `createTRPCContext`, so a procedure can only reach data through a service. README architecture section updated. | S |
 
+**Not done, and deliberately so:** services are unit-testable by construction, but the suite still has
+no test double for Prisma, so they are covered by the end-to-end tests rather than in isolation. A test
+database for Vitest is its own decision, not a leftover of this refactor.
+
 **Manual steps, done by the owner in the dashboards and documented in the README:**
 
 1. Create a GitHub repository and push `main`.

@@ -165,10 +165,27 @@ rewrites what someone agreed to.
 
 Formatting goes from the decimal string straight to `Intl.NumberFormat`, which accepts strings.
 
+### One endpoint per file, over a service
+
+Each tRPC endpoint is its own file: who may call it, what it accepts, and one call into a service. The
+queries and the orchestration live in `src/server/services/`, and the container in
+`src/server/container.ts` wires them, so a service names its dependencies in its constructor and never
+builds them. The database is not on the request context: an endpoint can only reach data through a
+service.
+
+Awilix injects in `PROXY` mode. The alternative recovers dependency names by parsing the constructor
+signature, which the minified production bundle no longer has — and since the end-to-end suite runs
+against `next build`, that mistake would have surfaced only there.
+
+Services never read the session. Whoever is acting is passed in as an argument, so authorization stays
+in the procedure, beside the role middleware that already decides it. Two places need more than an id
+and say so in their signature: cancelling a reservation takes whether the caller acts as staff, and
+changing a ski takes the acting staff member, because the answer depends on the store the ski is at.
+
 ### Rules live in pure modules
 
 The reservation lifecycle (`src/lib/reservation-lifecycle.ts`) and the rating windows
-(`src/lib/rating-rules.ts`) are plain functions with table-driven tests. The routers enforce them;
+(`src/lib/rating-rules.ts`) are plain functions with table-driven tests. The services enforce them;
 the screens import the same functions only to decide which buttons to show, so a screen never offers
 an action the server would refuse. Every status change is written as a conditional update on the
 status it expects, so two people pressing at once cannot both succeed.
