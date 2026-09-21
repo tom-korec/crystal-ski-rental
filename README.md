@@ -101,7 +101,8 @@ src/app/              Routes; each keeps the components only it uses in _compone
 src/components/       Shared components: ui/ (shadcn), layout/, common/, skis/, reservations/, stores/
 src/hooks/            Client hooks: URL state, money and date formatting
 src/lib/              Client-safe code: Zod schemas, domain rules, pricing, dates, routes
-src/server/api/       tRPC routers, procedures, errors and shared selects
+src/server/api/       tRPC procedures, one endpoint per file, plus errors and shared selects
+src/server/services/  What the endpoints call: data access and orchestration, wired in container.ts
 src/server/better-auth/  Auth configuration and page guards
 ```
 

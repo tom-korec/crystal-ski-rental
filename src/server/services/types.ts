@@ -1,5 +1,6 @@
 import type { Clock } from './clock';
 import type { Mailer } from './mailer';
+import type { ReservationService } from './reservation-service';
 import type { RateLimiter } from './rate-limiter';
 
 import type { PrismaClient } from '../../../generated/prisma/client';
@@ -13,4 +14,5 @@ export interface Services {
   clock: Clock;
   mailer: Mailer;
   rateLimiter: RateLimiter;
+  reservations: ReservationService;
 }

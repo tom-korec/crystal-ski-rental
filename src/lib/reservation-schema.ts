@@ -87,3 +87,13 @@ export const reservationSearchSchema = z
 export const reservationByCodeSchema = z.object({ code: reservationCodeSchema });
 
 export type ReservationSearchInput = z.input<typeof reservationSearchSchema>;
+
+// The parsed shapes, which is what a procedure hands on to the service.
+export type FrontDeskInput = z.infer<typeof frontDeskSchema>;
+export type MyReservationsInput = z.infer<typeof myReservationsSchema>;
+export type ReservationByCodeInput = z.infer<typeof reservationByCodeSchema>;
+export type ReservationIdInput = z.infer<typeof reservationIdSchema>;
+export type ReservationQuoteInput = z.infer<typeof reservationQuoteSchema>;
+export type ReservationSearch = z.infer<typeof reservationSearchSchema>;
+export type ReservationsBySkiInput = z.infer<typeof reservationsBySkiSchema>;
+export type ReservationsByUserInput = z.infer<typeof reservationsByUserSchema>;
