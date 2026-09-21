@@ -199,6 +199,8 @@ owner's manual deployment steps (§4 Part E).
 | 30 | `Land visitors on ski search` | The landing page becomes the search itself: hero, the store-and-dates panel that hands over to `/search`, and a card per store with its address, phone and today's hours. Signing in and signing up move to `/sign-in`, where the demo accounts live, and the guards redirect there (FR-37, FR-12). | S |
 | 31 | `Add metadata and structured data` | Canonical URLs, Open Graph and Twitter cards, a generated share image, `sitemap.ts`, `robots.ts` and `SkiRental` JSON-LD from the stores' own hours, all behind `SEARCH_INDEXING`, which is off so the demo is crawlable but not indexable. | S |
 
+| 32 | `Add e-mail confirmation` | Better Auth's `requireEmailVerification`, on only where a mail server is configured: sign-up sends a confirmation link instead of a session, sign-in refuses an unconfirmed account without counting a failed attempt, a rate-limited `resendConfirmation` procedure with its own generic answer, a `/verify-email` page for the link's two endings, and an e2e test that confirms from Mailpit (FR-9). | S |
+
 **Manual steps, done by the owner in the dashboards and documented in the README:**
 
 1. Create a GitHub repository and push `main`.

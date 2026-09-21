@@ -54,7 +54,7 @@ test.describe('signing in and access by role', () => {
     await expect(page).toHaveURL('/sign-in');
   });
 
-  test('a visitor can sign up and becomes a customer', async ({ page }) => {
+  test('a visitor can sign up and is asked to confirm the address (FR-1, FR-9)', async ({ page }) => {
     await page.goto('/sign-in');
     await page.getByTestId('auth-switch').click();
     await page.getByTestId('signup-submit').click();
@@ -68,8 +68,10 @@ test.describe('signing in and access by role', () => {
     await page.getByTestId('signup-accept').check();
     await page.getByTestId('signup-submit').click();
 
-    await expect(page).toHaveURL('/app');
-    await expect(page.getByTestId('role-badge')).toHaveCount(0);
+    // The account exists but has no session until the link in the e-mail is opened.
+    await expect(page.getByTestId('confirm-notice')).toBeVisible();
+    await page.goto('/app');
+    await expect(page).toHaveURL('/sign-in');
   });
 });
 

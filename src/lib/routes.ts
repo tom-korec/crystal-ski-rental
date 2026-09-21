@@ -16,6 +16,7 @@ export const ACCEPT_TERMS = '/accept-terms';
 export const SIGN_IN = '/sign-in';
 export const FORGOT_PASSWORD = '/forgot-password';
 export const RESET_PASSWORD = '/reset-password';
+export const VERIFY_EMAIL = '/verify-email';
 export const SEARCH = '/search';
 export const SITEMAP = '/sitemap.xml';
 export const STORES = '/stores';

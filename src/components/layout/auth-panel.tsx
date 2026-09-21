@@ -72,6 +72,42 @@ function useSignedIn(customerDestination: string) {
   };
 }
 
+interface ConfirmEmailNoticeProps {
+  email: string;
+  message: string;
+}
+
+/** What an account that has not confirmed its address sees, with a new link one click away (FR-9). */
+function ConfirmEmailNotice({ email, message }: ConfirmEmailNoticeProps) {
+  const t = useTranslations('auth');
+  const resend = api.auth.resendConfirmation.useMutation();
+
+  return (
+    <div className="flex flex-col gap-3" data-testid="confirm-notice">
+      <p className="text-sm">{message}</p>
+      {resend.isSuccess ? (
+        <p className="text-sm" data-testid="confirm-resent">
+          {t('confirmResent')}
+        </p>
+      ) : (
+        <>
+          <FormError message={resend.error?.message} data-testid="confirm-error" />
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={resend.isPending}
+            onClick={() => resend.mutate({ email })}
+            data-testid="confirm-resend"
+          >
+            {resend.isPending ? t('submitting') : t('confirmResend')}
+          </Button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function SignInForm({ customerDestination }: AuthFormProps) {
   const t = useTranslations('auth');
   const signedIn = useSignedIn(customerDestination);
@@ -81,6 +117,12 @@ function SignInForm({ customerDestination }: AuthFormProps) {
   });
   const signIn = api.auth.signIn.useMutation({ onSuccess: signedIn });
   const { errors } = form.formState;
+  // Better Auth refuses an unconfirmed account even with the right password (FR-9).
+  const unconfirmed = signIn.error?.data?.code === 'FORBIDDEN';
+
+  if (unconfirmed) {
+    return <ConfirmEmailNotice email={form.getValues('email')} message={t('confirmRequired')} />;
+  }
 
   return (
     <form
@@ -132,8 +174,15 @@ function SignUpForm({ customerDestination }: AuthFormProps) {
     resolver: zodResolver(signUpSchema),
     defaultValues: { name: '', email: '', password: '', acceptLegal: false },
   });
-  const signUp = api.auth.signUp.useMutation({ onSuccess: signedIn });
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const signUp = api.auth.signUp.useMutation({
+    onSuccess: (result) => (result.status === 'signedIn' ? signedIn(result) : setConfirming(form.getValues('email'))),
+  });
   const { errors } = form.formState;
+
+  if (confirming) {
+    return <ConfirmEmailNotice email={confirming} message={t('confirmSent', { email: confirming })} />;
+  }
 
   return (
     <form

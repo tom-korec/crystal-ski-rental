@@ -256,7 +256,8 @@ of results matters more than being found.
 
 One Nodemailer transport over SMTP serves every environment, so switching providers is configuration,
 not code: Mailpit locally and in CI, Resend in production. Without `SMTP_HOST` and `EMAIL_FROM` nothing
-is sent and the password reset says so instead of failing.
+is sent, the password reset says so instead of failing, and the address confirmation is not required at
+all, so the app still works end to end without a mail server.
 
 `src/lib/email-address.ts` decides where a message may go, as a pure function with its own tests. The
 seeded accounts use reserved domains (`.test`, `example.com`), which no mail server can deliver to:
@@ -267,6 +268,16 @@ account shares the public demo password and the link would hand the account over
 
 Sending happens in `after()`, once the response is on its way, so a slow mail server cannot delay a
 reset or a booking, and the answer is the same whether or not the address has an account.
+
+### Confirming an address
+
+A sign-up gets a confirmation link instead of a session, and signing in before it is opened is refused
+with a button that sends a new one (FR-9). That refusal is not a failed attempt, so it never counts
+towards the sign-in rate limit; the resend has its own limit, per address and per client, and answers
+the same for an address with no account, one waiting and one already confirmed. A new link is only ever
+sent when someone asks for it, never automatically on a refused sign-in, which would turn the form into
+a way of mailing a stranger. Seeded and staff-created accounts count as confirmed: their addresses could
+never receive a link.
 
 ### Translations
 

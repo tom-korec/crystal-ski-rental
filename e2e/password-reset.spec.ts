@@ -21,11 +21,11 @@ test.describe('password reset', () => {
     await page.getByLabel('Password').fill(customer.password);
     await page.getByTestId('signup-accept').check();
     await page.getByTestId('signup-submit').click();
-    await expect(page).toHaveURL('/app');
-    await page.getByTestId('account-menu').click();
-    await expect(page.getByTestId('account-panel')).toBeVisible();
-    await page.getByTestId('sign-out').click();
-    await expect(page).toHaveURL('/');
+
+    // The account has to confirm its address before it can sign in at all (FR-9).
+    const confirmation = await waitForEmail(customer.email);
+    await page.goto(linkIn(confirmation.text));
+    await expect(page.getByTestId('confirm-done')).toBeVisible();
 
     await page.goto('/sign-in');
     await page.getByTestId('forgot-password').click();

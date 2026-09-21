@@ -44,7 +44,15 @@
     "newPassword": "New password",
     "setPassword": "Save new password",
     "resetDone": "Your password is set. You can sign in with it now.",
-    "resetLinkInvalid": "This link is no longer valid. Ask for a new one."
+    "resetLinkInvalid": "This link is no longer valid. Ask for a new one.",
+    "confirmTitle": "Confirm your e-mail address",
+    "confirmSent": "Your account is ready. We sent a confirmation link to {email}; open it and then sign in. The link is valid for one hour.",
+    "confirmRequired": "Confirm your e-mail address first. We sent you a link when you signed up.",
+    "confirmResend": "Send a new link",
+    "confirmResent": "If that address needs confirming, a new link is on its way.",
+    "confirmUnavailable": "Confirmation e-mail is unavailable right now. Please ask us to confirm your account.",
+    "confirmDone": "Your e-mail address is confirmed. You can sign in now.",
+    "confirmInvalid": "This confirmation link is no longer valid. Ask for a new one below."
   },
   "nav": {
     "primary": "Main",
@@ -960,6 +968,15 @@
       "action": "Set a new password",
       "expiry": "The link works once and expires in one hour.",
       "ignore": "If this was not you, ignore this e-mail. Your password stays as it is."
+    },
+    "verifyEmail": {
+      "subject": "Confirm your Crystal Ski Rental e-mail address",
+      "title": "Confirm your e-mail address",
+      "greeting": "Hello {name},",
+      "intro": "Welcome to Crystal Ski Rental. Confirm this address to start renting skis:",
+      "action": "Confirm my address",
+      "expiry": "The link works once and expires in one hour.",
+      "ignore": "If you did not create an account, ignore this e-mail."
     }
   }
 }

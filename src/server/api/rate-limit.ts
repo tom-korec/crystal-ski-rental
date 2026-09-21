@@ -13,6 +13,8 @@ export const RATE_LIMITS = {
   signUpPerClient: { max: 5, windowMs: 60 * 60_000 },
   passwordResetPerClient: { max: 5, windowMs: 60 * 60_000 },
   passwordResetPerAccount: { max: 3, windowMs: 60 * 60_000 },
+  confirmationPerClient: { max: 5, windowMs: 60 * 60_000 },
+  confirmationPerAccount: { max: 3, windowMs: 60 * 60_000 },
 } as const satisfies Record<string, RateLimitRule>;
 
 /** The client as the platform reports it. Vercel puts the real address first in `x-forwarded-for`. */

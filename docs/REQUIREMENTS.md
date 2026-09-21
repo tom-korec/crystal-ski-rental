@@ -98,6 +98,12 @@ customer account.
 - **FR-8** Anyone can ask for a **password reset** by e-mail. The answer is the same whether or not the
   address has an account, and the link works once and expires after an hour. Accounts on reserved test
   domains (the demo data) are never sent a link, because their password is public.
+- **FR-9** A sign-up must **confirm its e-mail address** before it can sign in. Creating the account
+  sends a confirmation link, which works once and expires after an hour; signing in before it is opened
+  is refused with a way to send a new link. Asking for a new link answers the same whether or not the
+  address has an account or is already confirmed. Accounts created by staff and the seeded demo accounts
+  count as confirmed. Where no mail server is configured, the confirmation is not required, so the app
+  stays usable without e-mail.
 
 ### 4.2 Catalogue (admin)
 
@@ -341,7 +347,8 @@ Models and brands share the **Models** page, with a switch between their tables.
 
 - Payments, issuing invoices, VAT. The invoice address is only kept for later (FR-6).
 - E-mail about bookings (confirmation, reminder, cancellation) and SMS of any kind. Only the password
-  reset e-mail is in scope (FR-8). Staff reply to feedback from their own mail client.
+  reset (FR-8) and the address confirmation (FR-9) are in scope. Staff reply to feedback from their own
+  mail client.
 - Pickup and return times, early pickup, and reasons for early or late returns.
 - Blocking new bookings of a ski that is overdue for return. Staff handle the clash at the counter.
 - Maps and geolocation.

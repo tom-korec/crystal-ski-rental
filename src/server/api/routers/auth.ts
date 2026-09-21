@@ -1,9 +1,15 @@
 import { TRPCError } from '@trpc/server';
 import { APIError } from 'better-auth/api';
 
-import { passwordResetRequestSchema, passwordResetSchema, signInSchema, signUpSchema } from '~/lib/auth-schema';
+import {
+  passwordResetRequestSchema,
+  passwordResetSchema,
+  signInSchema,
+  signUpSchema,
+  verificationRequestSchema,
+} from '~/lib/auth-schema';
 import { LEGAL_VERSIONS } from '~/lib/legal';
-import { RESET_PASSWORD } from '~/lib/routes';
+import { RESET_PASSWORD, VERIFY_EMAIL } from '~/lib/routes';
 import { passwordChangeSchema, profileUpdateSchema } from '~/lib/profile-schema';
 import { clientKey, isRateLimited, RATE_LIMITS, recordAttempt } from '~/server/api/rate-limit';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '~/server/api/trpc';
@@ -25,6 +31,13 @@ function forwardCookies(from: Headers, to: Headers | undefined): void {
 
 const TOO_MANY_ATTEMPTS = 'Too many attempts. Please wait a few minutes and try again.';
 const EMAIL_UNAVAILABLE = 'Password reset is unavailable right now. Please ask us to set a new password.';
+const EMAIL_NOT_CONFIRMED = 'Confirm your e-mail address first.';
+const CONFIRMATION_UNAVAILABLE = 'Confirmation e-mail is unavailable right now. Please ask us to confirm your account.';
+
+/** Better Auth refuses an unconfirmed account with this code, which the sign-in form answers with a resend (FR-9). */
+function isUnconfirmedEmail(error: unknown): boolean {
+  return error instanceof APIError && error.body?.code === 'EMAIL_NOT_VERIFIED';
+}
 
 function toTRPCError(error: unknown): TRPCError {
   if (!(error instanceof APIError)) {
@@ -64,7 +77,7 @@ export const authRouter = createTRPCRouter({
 
     try {
       const { headers, response } = await auth.api.signUpEmail({
-        body: { name: input.name, email: input.email, password: input.password },
+        body: { name: input.name, email: input.email, password: input.password, callbackURL: VERIFY_EMAIL },
         headers: ctx.headers,
         returnHeaders: true,
       });
@@ -72,8 +85,10 @@ export const authRouter = createTRPCRouter({
       forwardCookies(headers, ctx.resHeaders);
 
       // The checkbox said yes; what was accepted is always the current version, whatever the client sent.
+      // `updateMany` because a sign-up with an address that already has an account answers with a
+      // generated user that was never written, and must stay indistinguishable from a new one.
       const now = new Date();
-      await ctx.db.user.update({
+      await ctx.db.user.updateMany({
         where: { id: response.user.id },
         data: {
           termsAcceptedVersion: LEGAL_VERSIONS.terms,
@@ -83,7 +98,10 @@ export const authRouter = createTRPCRouter({
         },
       });
 
-      return { id: response.user.id, role: response.user.role };
+      // With confirmation on there is no session yet: the account waits for the link (FR-9).
+      if (!response.token) return { status: 'confirmationPending' as const };
+
+      return { status: 'signedIn' as const, id: response.user.id, role: response.user.role };
     } catch (error) {
       throw toTRPCError(error);
     }
@@ -111,6 +129,11 @@ export const authRouter = createTRPCRouter({
 
       return { id: response.user.id, role: response.user.role };
     } catch (error) {
+      // The password was right, so this is not a failed attempt: it must not count towards the limit.
+      if (isUnconfirmedEmail(error)) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: EMAIL_NOT_CONFIRMED, cause: error });
+      }
+
       const failure = toTRPCError(error);
 
       if (failure.code === 'UNAUTHORIZED') {
@@ -156,6 +179,40 @@ export const authRouter = createTRPCRouter({
     } catch (error) {
       // An unknown address, a closed mailbox or a slow provider all look the same to the caller.
       console.error('Requesting a password reset failed:', error);
+    }
+
+    return { requested: true };
+  }),
+
+  /**
+   * Asks for a new confirmation link (FR-9). Like the reset, the answer is the same for an address with
+   * no account, one already confirmed and one still waiting, so it reveals nothing.
+   */
+  resendConfirmation: publicProcedure.input(verificationRequestSchema).mutation(async ({ ctx, input }) => {
+    const clientLimit = `confirmation:client:${clientKey(ctx.headers)}`;
+    const accountLimit = `confirmation:account:${input.email.toLowerCase()}`;
+
+    if (
+      (await isRateLimited(ctx.db, clientLimit, RATE_LIMITS.confirmationPerClient)) ||
+      (await isRateLimited(ctx.db, accountLimit, RATE_LIMITS.confirmationPerAccount))
+    ) {
+      throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: TOO_MANY_ATTEMPTS });
+    }
+    await Promise.all([
+      recordAttempt(ctx.db, clientLimit, RATE_LIMITS.confirmationPerClient),
+      recordAttempt(ctx.db, accountLimit, RATE_LIMITS.confirmationPerAccount),
+    ]);
+
+    if (!isEmailConfigured()) {
+      throw new TRPCError({ code: 'PRECONDITION_FAILED', message: CONFIRMATION_UNAVAILABLE });
+    }
+
+    try {
+      // Without the caller's headers Better Auth takes its anonymous path, which is constant-time and
+      // says the same thing for every address.
+      await auth.api.sendVerificationEmail({ body: { email: input.email, callbackURL: VERIFY_EMAIL } });
+    } catch (error) {
+      console.error('Sending a confirmation link failed:', error);
     }
 
     return { requested: true };
