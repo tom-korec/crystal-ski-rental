@@ -27,6 +27,9 @@ test.describe('password reset', () => {
     await page.goto(linkIn(confirmation.text));
     await expect(page.getByTestId('confirm-done')).toBeVisible();
 
+    // Emptied again, so the wait below cannot find the confirmation e-mail and take it for the reset.
+    await clearMailbox();
+
     await page.goto('/sign-in');
     await page.getByTestId('forgot-password').click();
     await expect(page).toHaveURL('/forgot-password');
