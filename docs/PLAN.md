@@ -201,6 +201,18 @@ owner's manual deployment steps (§4 Part E).
 
 | 32 | `Add e-mail confirmation` | Better Auth's `requireEmailVerification`, on only where a mail server is configured: sign-up sends a confirmation link instead of a session, sign-in refuses an unconfirmed account without counting a failed attempt, a rate-limited `resendConfirmation` procedure with its own generic answer, a `/verify-email` page for the link's two endings, and an e2e test that confirms from Mailpit (FR-9). | S |
 
+| 33 | `Add a service container` | Awilix in `PROXY` mode (`CLASSIC` parses constructor names, which minification removes) with explicit registrations: `Clock`, `Mailer` and `RateLimiter` behind interfaces, a typed `Services` cradle, and a request scope on the tRPC context beside the existing `ctx.db`. No procedure moves yet. | S |
+
+| 34 | `Move reservations behind a service` | The 13 procedures of the reservation router into one file each under `routers/reservation/`, with the Prisma work and the orchestration in `ReservationService`. Authorization stays in the procedure; the service takes the caller's id as an argument and never reads the session. | L |
+
+| 35 | `Move skis and ratings behind a service` | `ski` (6) and `rating` (2) the same way. The rating windows are judged by the injected clock, so the first service unit tests with a fixed clock land here (BR-40…42). | M |
+
+| 36 | `Move accounts and auth behind a service` | `user` (6), `address` (3) and `auth` (10). `AuthService` takes the mailer and the rate limiter, which is what lets the confirmation and reset paths be tested without SMTP (FR-8, FR-9). | L |
+
+| 37 | `Move the catalogue behind a service` | `brand` (4), `skiModel` (4), `store` (7) and `health` (1). | M |
+
+| 38 | `Retire the database from the context` | `db` leaves `createTRPCContext`, so a procedure can only reach data through a service. README architecture section updated. | S |
+
 **Manual steps, done by the owner in the dashboards and documented in the README:**
 
 1. Create a GitHub repository and push `main`.

@@ -7,6 +7,7 @@ import { hasAcceptedCurrentTerms } from '~/lib/legal';
 import { isAdmin, isCustomer, isStaff } from '~/lib/roles';
 import { clientErrorMessage } from '~/server/api/errors';
 import { auth } from '~/server/better-auth';
+import { createRequestScope } from '~/server/container';
 import { db } from '~/server/db';
 
 /** @see https://trpc.io/docs/server/context */
@@ -17,7 +18,9 @@ export const createTRPCContext = async (opts: {
 }) => {
   const session = await auth.api.getSession({ headers: opts.headers });
 
-  return { db, session, ...opts };
+  // `services` is what a procedure works through; `db` is still here for the routers that have not
+  // moved behind a service yet.
+  return { db, services: createRequestScope().cradle, session, ...opts };
 };
 
 const isProduction = env.NODE_ENV === 'production';
